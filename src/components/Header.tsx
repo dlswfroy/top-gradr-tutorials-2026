@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from '@/components/Logo';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -20,6 +27,12 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>
+                A list of links to navigate the application.
+              </SheetDescription>
+            </SheetHeader>
             <nav className="grid gap-4 py-6 text-lg font-medium">
               <Link
                 href="#"
@@ -28,19 +41,34 @@ export function Header() {
                 <Logo className="h-6 w-6 text-primary" />
                 <span className="">School Navigator</span>
               </Link>
-              <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Dashboard
               </Link>
-              <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Students
               </Link>
-              <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Teachers
               </Link>
-              <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Classes
               </Link>
-              <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Settings
               </Link>
             </nav>
@@ -57,9 +85,9 @@ export function Header() {
       <div className="flex items-center gap-4">
         <Avatar className="h-9 w-9">
           {profilePhoto && (
-            <AvatarImage 
-              src={profilePhoto.imageUrl} 
-              alt="School Representative" 
+            <AvatarImage
+              src={profilePhoto.imageUrl}
+              alt="School Representative"
               data-ai-hint={profilePhoto.imageHint}
             />
           )}
