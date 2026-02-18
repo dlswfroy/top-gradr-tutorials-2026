@@ -15,6 +15,7 @@ import { getSubjects, Subject } from '@/lib/subjects';
 import { getResultsForClass, ClassResult } from '@/lib/results-data';
 import { processStudentResults, StudentProcessedResult } from '@/lib/results-calculation';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
@@ -201,7 +202,7 @@ export default function ViewResultsPage() {
                                                             <TableCell className="text-center border-l">{(subjectRes?.mcq?.toLocaleString('bn-BD')) ?? '-'}</TableCell>
                                                             {subject.practical && <TableCell className="text-center border-l">{(subjectRes?.practical?.toLocaleString('bn-BD')) ?? '-'}</TableCell>}
                                                             <TableCell className="text-center border-l font-semibold">{subjectRes?.marks.toLocaleString('bn-BD') ?? '-'}</TableCell>
-                                                            <TableCell className="text-center border-l">{subjectRes?.grade ?? '-'}</TableCell>
+                                                            <TableCell className={cn("text-center border-l", {"text-destructive font-bold": subjectRes && !subjectRes.isPass})}>{subjectRes?.grade ?? '-'}</TableCell>
                                                             <TableCell className="text-center border-l border-r">{subjectRes?.point.toFixed(2).toLocaleString('bn-BD') ?? '-'}</TableCell>
                                                         </React.Fragment>
                                                     )
@@ -209,7 +210,7 @@ export default function ViewResultsPage() {
                                                 <TableCell className="text-center font-bold">{res.totalMarks.toLocaleString('bn-BD')}</TableCell>
                                                 <TableCell className="text-center font-bold">{res.gpa.toFixed(2).toLocaleString('bn-BD')}</TableCell>
                                                 <TableCell className="text-center font-bold">{res.finalGrade}</TableCell>
-                                                <TableCell className="text-center font-bold">{res.isPass ? renderMeritPosition(res.meritPosition) : 'ফেল'}</TableCell>
+                                                <TableCell className={cn("text-center font-bold", {"text-destructive": !res.isPass})}>{res.isPass ? renderMeritPosition(res.meritPosition) : 'ফেল'}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

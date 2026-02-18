@@ -56,13 +56,19 @@ export default function ResultsPage() {
 
     useEffect(() => {
         if (className) {
-            const subjects = getSubjects(className, group);
-            setAvailableSubjects(subjects);
-            setSubject(''); 
-            setSelectedSubjectInfo(null);
+            const newSubjects = getSubjects(className, group);
+            setAvailableSubjects(newSubjects);
+            // Only reset subject if it's no longer in the list of available subjects
+            if (subject && !newSubjects.some(s => s.name === subject)) {
+                setSubject('');
+                setSelectedSubjectInfo(null);
+            }
         } else {
             setAvailableSubjects([]);
+            setSubject('');
+            setSelectedSubjectInfo(null);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [className, group]);
 
     useEffect(() => {
