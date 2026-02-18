@@ -67,16 +67,16 @@ export default function StudentListPage() {
                               <TableCell>
                                 <Image
                                   src={student.photoUrl}
-                                  alt={student.name}
+                                  alt={student.studentNameBn}
                                   width={40}
                                   height={40}
                                   className="rounded-full"
                                 />
                               </TableCell>
                               <TableCell>{student.roll.toLocaleString('bn-BD')}</TableCell>
-                              <TableCell>{student.name}</TableCell>
-                              <TableCell>{student.fatherName}</TableCell>
-                              <TableCell>{student.mobile.toLocaleString('bn-BD')}</TableCell>
+                              <TableCell>{student.studentNameBn}</TableCell>
+                              <TableCell>{student.fatherNameBn}</TableCell>
+                              <TableCell>{student.mobile}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
                                   <Button variant="outline" size="icon">

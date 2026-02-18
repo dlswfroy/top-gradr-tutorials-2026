@@ -16,6 +16,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from "@/hooks/use-toast"
+import { addStudent, Student } from '@/lib/student-data';
 
 
 export default function AddStudentPage() {
@@ -23,6 +24,7 @@ export default function AddStudentPage() {
     const { toast } = useToast();
     const [date, setDate] = useState<Date>()
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [studentClass, setStudentClass] = useState<string>('');
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -37,15 +39,48 @@ export default function AddStudentPage() {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // Here you would typically handle form data submission to a server/database
-        console.log("Form submitted");
+        const form = event.currentTarget;
+
+        if (!photoPreview) {
+            toast({
+                variant: "destructive",
+                title: "ছবি আবশ্যক",
+                description: "অনুগ্রহ করে একটি ছবি আপলোড করুন।",
+            });
+            return;
+        }
+
+        if (!studentClass) {
+            toast({
+                variant: "destructive",
+                title: "শ্রেণি আবশ্যক",
+                description: "অনুগ্রহ করে একটি শ্রেণি নির্বাচন করুন।",
+            });
+            return;
+        }
+        
+        const newStudentData: Omit<Student, 'id'> = {
+            studentNameBn: (form.elements.namedItem('student-name-bn') as HTMLInputElement).value,
+            studentNameEn: (form.elements.namedItem('student-name-en') as HTMLInputElement).value,
+            fatherNameBn: (form.elements.namedItem('father-name-bn') as HTMLInputElement).value,
+            fatherNameEn: (form.elements.namedItem('father-name-en') as HTMLInputElement).value,
+            motherNameBn: (form.elements.namedItem('mother-name-bn') as HTMLInputElement).value,
+            motherNameEn: (form.elements.namedItem('mother-name-en') as HTMLInputElement).value,
+            dob: date,
+            className: studentClass,
+            roll: parseInt((form.elements.namedItem('roll') as HTMLInputElement).value, 10),
+            mobile: (form.elements.namedItem('mobile') as HTMLInputElement).value,
+            address: (form.elements.namedItem('address') as HTMLTextAreaElement).value,
+            photoUrl: photoPreview,
+        };
+
+        addStudent(newStudentData);
 
         toast({
             title: "শিক্ষার্থী যোগ হয়েছে",
             description: "নতুন শিক্ষার্থী সফলভাবে তালিকায় যোগ করা হয়েছে।",
         });
 
-        // Redirect to the student list page
         router.push('/student-list');
     };
 
@@ -62,27 +97,27 @@ export default function AddStudentPage() {
             <form className="grid grid-cols-1 gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="student-name-bn">শিক্ষার্থীর নাম (বাংলা)</Label>
-                <Input id="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায় লিখুন" required />
+                <Input id="student-name-bn" name="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায় লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="student-name-en">Student's Name (English)</Label>
-                <Input id="student-name-en" placeholder="Enter student's name in English" />
+                <Input id="student-name-en" name="student-name-en" placeholder="Enter student's name in English" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-bn">পিতার নাম (বাংলা)</Label>
-                <Input id="father-name-bn" placeholder="পিতার নাম বাংলায় লিখুন" required />
+                <Input id="father-name-bn" name="father-name-bn" placeholder="পিতার নাম বাংলায় লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-en">Father's Name (English)</Label>
-                <Input id="father-name-en" placeholder="Enter father's name in English" />
+                <Input id="father-name-en" name="father-name-en" placeholder="Enter father's name in English" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mother-name-bn">মাতার নাম (বাংলা)</Label>
-                <Input id="mother-name-bn" placeholder="মাতার নাম বাংলায় লিখুন" />
+                <Input id="mother-name-bn" name="mother-name-bn" placeholder="মাতার নাম বাংলায় লিখুন" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mother-name-en">Mother's Name (English)</Label>
-                <Input id="mother-name-en" placeholder="Enter mother's name in English" />
+                <Input id="mother-name-en" name="mother-name-en" placeholder="Enter mother's name in English" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dob">জন্ম তারিখ</Label>
@@ -111,8 +146,8 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="class">শ্রেণি</Label>
-                <Select required>
-                  <SelectTrigger id="class">
+                <Select required onValueChange={setStudentClass}>
+                  <SelectTrigger id="class" name="class">
                     <SelectValue placeholder="শ্রেণি নির্বাচন করুন" />
                   </SelectTrigger>
                   <SelectContent>
@@ -126,15 +161,15 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="roll">রোল নম্বর</Label>
-                <Input id="roll" type="number" placeholder="রোল নম্বর লিখুন" required />
+                <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mobile">মোবাইল নম্বর</Label>
-                <Input id="mobile" placeholder="মোবাইল নম্বর লিখুন" />
+                <Input id="mobile" name="mobile" placeholder="মোবাইল নম্বর লিখুন" />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">ঠিকানা</Label>
-                <Textarea id="address" placeholder="ঠিকানা লিখুন" />
+                <Textarea id="address" name="address" placeholder="ঠিকানা লিখুন" />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>ছবি</Label>
@@ -149,7 +184,7 @@ export default function AddStudentPage() {
                             </div>
                         )}
                     </div>
-                    <Input id="photo" type="file" className="hidden" onChange={handlePhotoChange} accept="image/*" />
+                    <Input id="photo" name="photo" type="file" className="hidden" onChange={handlePhotoChange} accept="image/*" />
                     <Button type="button" variant="outline" onClick={() => document.getElementById('photo')?.click()}>
                         ছবি আপলোড করুন
                     </Button>
