@@ -64,10 +64,14 @@ export function processStudentResults(
 
         // Determine the actual list of subjects for this specific student
         const subjectsForStudent = allSubjectsForGroup.filter(subjectInfo => {
+            // For science group, if optional subject is selected, filter out the other one.
             if (student.group === 'science' && optionalSubjectName) {
                 if (optionalSubjectName === 'উচ্চতর গণিত' && subjectInfo.name === 'কৃষি শিক্ষা') return false;
                 if (optionalSubjectName === 'কৃষি শিক্ষা' && subjectInfo.name === 'উচ্চতর গণিত') return false;
             }
+            // For arts and commerce, any subject can be optional, but we only explicitly handle Agri for now.
+            // This logic assumes we don't need to filter out a compulsory subject if an optional one is chosen,
+            // which is correct for arts/commerce.
             return true;
         });
 
@@ -78,20 +82,44 @@ export function processStudentResults(
         subjectsForStudent.forEach(subjectInfo => {
             const classResult = resultsBySubject.find(r => r.subject === subjectInfo.name && r.group === (student.group || undefined) && r.className === student.className);
             const studentResult = classResult?.results.find(r => r.studentId === student.id);
-            const fullMarks = classResult?.fullMarks || 100;
+            const fullMarks = classResult?.fullMarks || (subjectInfo.name === 'তথ্য ও যোগাযোগ প্রযুক্তি' ? 50 : 100);
 
             const written = studentResult?.written;
             const mcq = studentResult?.mcq;
             const practical = studentResult?.practical;
             const obtainedMarks = (written || 0) + (mcq || 0) + (practical || 0);
 
-            let isPassSubject = true;
-            // Only check for pass marks if marks are actually entered
-            if (written !== undefined || mcq !== undefined || practical !== undefined) {
-                 const percentage = (obtainedMarks / fullMarks) * 100;
-                 isPassSubject = percentage >= PASS_PERCENTAGE;
+            let isPassSubject: boolean;
+
+            if (written === undefined && mcq === undefined && practical === undefined) {
+                isPassSubject = false;
             } else {
-                isPassSubject = false; // Fail if no marks are entered
+                if (subjectInfo.practical) {
+                    let theoreticalFull: number, practicalFull: number;
+                    
+                    if (subjectInfo.name === 'তথ্য ও যোগাযোগ প্রযুক্তি') {
+                        // ICT is 50 marks: 25 theoretical (MCQ), 25 practical
+                        theoreticalFull = 25;
+                        practicalFull = 25;
+                    } else {
+                        // Default for other 100-mark practical subjects
+                        theoreticalFull = 75;
+                        practicalFull = 25;
+                    }
+
+                    const theoreticalMarks = (written || 0) + (mcq || 0);
+                    const practicalMarks = practical || 0;
+
+                    // Pass marks are 33% (e.g., 8.25 -> 9 out of 25, 24.75 -> 25 out of 75)
+                    const passedTheoretical = theoreticalMarks >= Math.ceil(theoreticalFull * (PASS_PERCENTAGE / 100));
+                    const passedPractical = practicalMarks >= Math.ceil(practicalFull * (PASS_PERCENTAGE / 100));
+                    
+                    isPassSubject = passedTheoretical && passedPractical;
+                } else {
+                    // For non-practical subjects, total marks must be >= 33% of full marks
+                    const percentage = (obtainedMarks / fullMarks) * 100;
+                    isPassSubject = percentage >= PASS_PERCENTAGE;
+                }
             }
             
             const percentageForGrade = (obtainedMarks / fullMarks) * 100;
