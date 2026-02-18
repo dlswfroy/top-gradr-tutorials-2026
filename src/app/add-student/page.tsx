@@ -20,33 +20,65 @@ import { addStudent, Student } from '@/lib/student-data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 
+const initialStudentState: Partial<Omit<Student, 'id'>> = {
+  roll: undefined,
+  className: '',
+  academicYear: '',
+  group: '',
+  studentNameBn: '',
+  studentNameEn: '',
+  dob: undefined,
+  birthRegNo: '',
+  gender: '',
+  religion: '',
+  photoUrl: '',
+  fatherNameBn: '',
+  fatherNameEn: '',
+  fatherNid: '',
+  motherNameBn: '',
+  motherNameEn: '',
+  motherNid: '',
+  guardianMobile: '',
+  studentMobile: '',
+  presentVillage: '',
+  presentUnion: '',
+  presentPostOffice: '',
+  presentUpazila: '',
+  presentDistrict: '',
+  permanentVillage: '',
+  permanentUnion: '',
+  permanentPostOffice: '',
+  permanentUpazila: '',
+  permanentDistrict: '',
+};
 
 export default function AddStudentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { selectedYear, availableYears } = useAcademicYear();
-
-    const [date, setDate] = useState<Date>()
+    
+    const [student, setStudent] = useState(initialStudentState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-    const [academicYear, setAcademicYear] = useState<string>('');
-    const [studentClass, setStudentClass] = useState<string>('');
-    const [gender, setGender] = useState<string>('');
-    const [religion, setReligion] = useState<string>('');
-    const [group, setGroup] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (selectedYear) {
-            setAcademicYear(selectedYear);
+            setStudent(prev => ({...prev, academicYear: selectedYear}));
         }
     }, [selectedYear]);
+
+    const handleInputChange = (field: keyof Omit<Student, 'id'>, value: string | number | Date | undefined) => {
+        setStudent(prev => ({...prev, [field]: value}));
+    };
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPhotoPreview(reader.result as string);
+                const result = reader.result as string;
+                setPhotoPreview(result);
+                handleInputChange('photoUrl', result);
             };
             reader.readAsDataURL(file);
         }
@@ -54,9 +86,8 @@ export default function AddStudentPage() {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const form = event.currentTarget;
 
-        if (!photoPreview) {
+        if (!student.photoUrl) {
             toast({
                 variant: "destructive",
                 title: "ছবি আবশ্যক",
@@ -65,7 +96,7 @@ export default function AddStudentPage() {
             return;
         }
 
-        if (!academicYear) {
+        if (!student.academicYear) {
             toast({
                 variant: "destructive",
                 title: "শিক্ষাবর্ষ আবশ্যক",
@@ -74,7 +105,7 @@ export default function AddStudentPage() {
             return;
         }
 
-        if (!studentClass) {
+        if (!student.className) {
             toast({
                 variant: "destructive",
                 title: "শ্রেণি আবশ্যক",
@@ -83,39 +114,7 @@ export default function AddStudentPage() {
             return;
         }
         
-        const newStudentData: Omit<Student, 'id'> = {
-            roll: parseInt((form.elements.namedItem('roll') as HTMLInputElement).value, 10),
-            className: studentClass,
-            academicYear: academicYear,
-            group,
-            studentNameBn: (form.elements.namedItem('student-name-bn') as HTMLInputElement).value,
-            studentNameEn: (form.elements.namedItem('student-name-en') as HTMLInputElement).value,
-            dob: date,
-            birthRegNo: (form.elements.namedItem('birth-reg-no') as HTMLInputElement).value,
-            gender,
-            religion,
-            photoUrl: photoPreview,
-            fatherNameBn: (form.elements.namedItem('father-name-bn') as HTMLInputElement).value,
-            fatherNameEn: (form.elements.namedItem('father-name-en') as HTMLInputElement).value,
-            fatherNid: (form.elements.namedItem('father-nid') as HTMLInputElement).value,
-            motherNameBn: (form.elements.namedItem('mother-name-bn') as HTMLInputElement).value,
-            motherNameEn: (form.elements.namedItem('mother-name-en') as HTMLInputElement).value,
-            motherNid: (form.elements.namedItem('mother-nid') as HTMLInputElement).value,
-            guardianMobile: (form.elements.namedItem('guardian-mobile') as HTMLInputElement).value,
-            studentMobile: (form.elements.namedItem('student-mobile') as HTMLInputElement).value,
-            presentVillage: (form.elements.namedItem('present-village') as HTMLInputElement).value,
-            presentUnion: (form.elements.namedItem('present-union') as HTMLInputElement).value,
-            presentPostOffice: (form.elements.namedItem('present-post-office') as HTMLInputElement).value,
-            presentUpazila: (form.elements.namedItem('present-upazila') as HTMLInputElement).value,
-            presentDistrict: (form.elements.namedItem('present-district') as HTMLInputElement).value,
-            permanentVillage: (form.elements.namedItem('permanent-village') as HTMLInputElement).value,
-            permanentUnion: (form.elements.namedItem('permanent-union') as HTMLInputElement).value,
-            permanentPostOffice: (form.elements.namedItem('permanent-post-office') as HTMLInputElement).value,
-            permanentUpazila: (form.elements.namedItem('permanent-upazila') as HTMLInputElement).value,
-            permanentDistrict: (form.elements.namedItem('permanent-district') as HTMLInputElement).value,
-        };
-
-        addStudent(newStudentData);
+        addStudent(student as Omit<Student, 'id'>);
 
         toast({
             title: "শিক্ষার্থী যোগ হয়েছে",
@@ -127,23 +126,29 @@ export default function AddStudentPage() {
 
     const handleSameAddress = (checked: boolean | string) => {
         if (checked) {
-            (document.getElementById('permanent-village') as HTMLInputElement).value = (document.getElementById('present-village') as HTMLInputElement).value;
-            (document.getElementById('permanent-union') as HTMLInputElement).value = (document.getElementById('present-union') as HTMLInputElement).value;
-            (document.getElementById('permanent-post-office') as HTMLInputElement).value = (document.getElementById('present-post-office') as HTMLInputElement).value;
-            (document.getElementById('permanent-upazila') as HTMLInputElement).value = (document.getElementById('present-upazila') as HTMLInputElement).value;
-            (document.getElementById('permanent-district') as HTMLInputElement).value = (document.getElementById('present-district') as HTMLInputElement).value;
+            setStudent(prev => ({
+                ...prev,
+                permanentVillage: prev.presentVillage,
+                permanentUnion: prev.presentUnion,
+                permanentPostOffice: prev.presentPostOffice,
+                permanentUpazila: prev.presentUpazila,
+                permanentDistrict: prev.presentDistrict,
+            }));
         } else {
-            (document.getElementById('permanent-village') as HTMLInputElement).value = '';
-            (document.getElementById('permanent-union') as HTMLInputElement).value = '';
-            (document.getElementById('permanent-post-office') as HTMLInputElement).value = '';
-            (document.getElementById('permanent-upazila') as HTMLInputElement).value = '';
-            (document.getElementById('permanent-district') as HTMLInputElement).value = '';
+            setStudent(prev => ({
+                ...prev,
+                permanentVillage: '',
+                permanentUnion: '',
+                permanentPostOffice: '',
+                permanentUpazila: '',
+                permanentDistrict: '',
+            }));
         }
     }
 
     const handleDownloadSample = () => {
         const headers = [
-            ['রোল', 'শ্রেণি', 'শিক্ষাবর্ষ', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'অভিভাবকের মোবাইল নম্বর', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
+            ['রোল', 'শ্রেণি', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'মোবাইল', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
         ];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         const wb = XLSX.utils.book_new();
@@ -173,40 +178,40 @@ export default function AddStudentPage() {
                     return;
                 }
 
-                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl'> } = {
-                    'রোল': 'roll', 'শ্রেণি': 'className', 'শিক্ষাবর্ষ': 'academicYear', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'অভিভাবকের মোবাইল নম্বর': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
+                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl' | 'academicYear'> } = {
+                    'রোল': 'roll', 'শ্রেণি': 'className', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'মোবাইল': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
                 };
                 
                 const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
 
                 const studentsToAdd = json.map((row: any) => {
-                    const student: Partial<Student> = {};
+                    const newStudent: Partial<Student> = {};
                     Object.keys(row).forEach(excelHeader => {
                         const studentKey = headerMapping[excelHeader.trim()];
                         if (studentKey) {
-                            (student as any)[studentKey] = row[excelHeader];
+                            (newStudent as any)[studentKey] = row[excelHeader];
                         }
                     });
 
-                    student.photoUrl = `https://picsum.photos/seed/${student.roll || Math.random()}/96/96`;
+                    newStudent.academicYear = selectedYear;
+                    newStudent.photoUrl = `https://picsum.photos/seed/${newStudent.roll || Math.random()}/96/96`;
                     
-                    if (student.roll) student.roll = Number(student.roll);
-                    if (student.className) student.className = String(student.className);
-                    if (student.academicYear) student.academicYear = String(student.academicYear);
+                    if (newStudent.roll) newStudent.roll = Number(newStudent.roll);
+                    if (newStudent.className) newStudent.className = String(newStudent.className);
 
 
-                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'academicYear', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
-                    const missingFields = requiredFields.filter(field => !student[field]);
+                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
+                    const missingFields = requiredFields.filter(field => !newStudent[field]);
 
                     if (missingFields.length > 0) {
                         const missingHeaders = missingFields.map(field => englishToBengaliHeaderMap[field as keyof typeof englishToBengaliHeaderMap]).join(', ');
                         throw new Error(`কিছু আবশ্যকীয় তথ্য অনুপস্থিত: ${missingHeaders}`);
                     }
 
-                    return student as Omit<Student, 'id'>;
+                    return newStudent as Omit<Student, 'id'>;
                 });
                 
-                studentsToAdd.forEach(student => addStudent(student));
+                studentsToAdd.forEach(s => addStudent(s));
                 
                 toast({
                     title: `${studentsToAdd.length} জন শিক্ষার্থী যোগ হয়েছে`,
@@ -263,11 +268,11 @@ export default function AddStudentPage() {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                       <div className="space-y-2">
                           <Label htmlFor="roll">রোল নম্বর</Label>
-                          <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর" required />
+                          <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর" required value={student.roll || ''} onChange={e => handleInputChange('roll', e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="academic-year">শিক্ষাবর্ষ</Label>
-                          <Select required value={academicYear} onValueChange={setAcademicYear}>
+                          <Select required value={student.academicYear || ''} onValueChange={value => handleInputChange('academicYear', value)}>
                               <SelectTrigger id="academic-year" name="academic-year">
                                   <SelectValue placeholder="শিক্ষাবর্ষ নির্বাচন করুন" />
                               </SelectTrigger>
@@ -280,7 +285,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="class">শ্রেণি</Label>
-                          <Select required onValueChange={setStudentClass}>
+                          <Select required value={student.className} onValueChange={value => handleInputChange('className', value)}>
                               <SelectTrigger id="class" name="class">
                                   <SelectValue placeholder="শ্রেণি নির্বাচন করুন" />
                               </SelectTrigger>
@@ -295,7 +300,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="group">গ্রুপ</Label>
-                          <Select onValueChange={setGroup}>
+                          <Select value={student.group} onValueChange={value => handleInputChange('group', value)}>
                               <SelectTrigger id="group" name="group">
                                   <SelectValue placeholder="গ্রুপ নির্বাচন করুন (যদি থাকে)" />
                               </SelectTrigger>
@@ -314,33 +319,33 @@ export default function AddStudentPage() {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
                           <Label htmlFor="student-name-bn">নাম (বাংলা)</Label>
-                          <Input id="student-name-bn" name="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায়" required />
+                          <Input id="student-name-bn" name="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায়" required value={student.studentNameBn} onChange={e => handleInputChange('studentNameBn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="student-name-en">Name (English)</Label>
-                          <Input id="student-name-en" name="student-name-en" placeholder="Student's name in English" />
+                          <Input id="student-name-en" name="student-name-en" placeholder="Student's name in English" value={student.studentNameEn} onChange={e => handleInputChange('studentNameEn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="dob">জন্ম তারিখ</Label>
                           <Popover>
                               <PopoverTrigger asChild>
-                                  <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                                  <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !student.dob && "text-muted-foreground")}>
                                       <CalendarIcon className="mr-2 h-4 w-4" />
-                                      {date ? format(date, "PPP") : <span>একটি তারিখ নির্বাচন করুন</span>}
+                                      {student.dob ? format(student.dob, "PPP") : <span>একটি তারিখ নির্বাচন করুন</span>}
                                   </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0">
-                                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                                  <Calendar mode="single" selected={student.dob} onSelect={date => handleInputChange('dob', date)} initialFocus />
                               </PopoverContent>
                           </Popover>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="birth-reg-no">জন্ম নিবন্ধন নম্বর</Label>
-                          <Input id="birth-reg-no" name="birth-reg-no" placeholder="জন্ম নিবন্ধন নম্বর" />
+                          <Input id="birth-reg-no" name="birth-reg-no" placeholder="জন্ম নিবন্ধন নম্বর" value={student.birthRegNo} onChange={e => handleInputChange('birthRegNo', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="gender">লিঙ্গ</Label>
-                          <Select onValueChange={setGender}>
+                          <Select value={student.gender} onValueChange={value => handleInputChange('gender', value)}>
                               <SelectTrigger id="gender" name="gender"><SelectValue placeholder="লিঙ্গ নির্বাচন করুন" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="male">পুরুষ</SelectItem>
@@ -351,7 +356,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="religion">ধর্ম</Label>
-                          <Select onValueChange={setReligion}>
+                          <Select value={student.religion} onValueChange={value => handleInputChange('religion', value)}>
                               <SelectTrigger id="religion" name="religion"><SelectValue placeholder="ধর্ম নির্বাচন করুন" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="islam">ইসলাম</SelectItem>
@@ -389,27 +394,27 @@ export default function AddStudentPage() {
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className="space-y-2">
                           <Label htmlFor="father-name-bn">পিতার নাম (বাংলা)</Label>
-                          <Input id="father-name-bn" name="father-name-bn" placeholder="পিতার নাম বাংলায়" required />
+                          <Input id="father-name-bn" name="father-name-bn" placeholder="পিতার নাম বাংলায়" required value={student.fatherNameBn} onChange={e => handleInputChange('fatherNameBn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="father-name-en">Father's Name (English)</Label>
-                          <Input id="father-name-en" name="father-name-en" placeholder="Father's name in English" />
+                          <Input id="father-name-en" name="father-name-en" placeholder="Father's name in English" value={student.fatherNameEn} onChange={e => handleInputChange('fatherNameEn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="father-nid">পিতার NID</Label>
-                            <Input id="father-nid" name="father-nid" placeholder="পিতার NID নম্বর" />
+                            <Input id="father-nid" name="father-nid" placeholder="পিতার NID নম্বর" value={student.fatherNid} onChange={e => handleInputChange('fatherNid', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="mother-name-bn">মাতার নাম (বাংলা)</Label>
-                          <Input id="mother-name-bn" name="mother-name-bn" placeholder="মাতার নাম বাংলায়" required/>
+                          <Input id="mother-name-bn" name="mother-name-bn" placeholder="মাতার নাম বাংলায়" required value={student.motherNameBn} onChange={e => handleInputChange('motherNameBn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="mother-name-en">Mother's Name (English)</Label>
-                          <Input id="mother-name-en" name="mother-name-en" placeholder="Mother's name in English" />
+                          <Input id="mother-name-en" name="mother-name-en" placeholder="Mother's name in English" value={student.motherNameEn} onChange={e => handleInputChange('motherNameEn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="mother-nid">মাতার NID</Label>
-                            <Input id="mother-nid" name="mother-nid" placeholder="মাতার NID নম্বর" />
+                            <Input id="mother-nid" name="mother-nid" placeholder="মাতার NID নম্বর" value={student.motherNid} onChange={e => handleInputChange('motherNid', e.target.value)} />
                         </div>
                    </div>
               </div>
@@ -419,11 +424,11 @@ export default function AddStudentPage() {
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="space-y-2">
                           <Label htmlFor="guardian-mobile">অভিভাবকের মোবাইল নম্বর</Label>
-                          <Input id="guardian-mobile" name="guardian-mobile" placeholder="অভিভাবকের মোবাইল নম্বর" />
+                          <Input id="guardian-mobile" name="guardian-mobile" placeholder="অভিভাবকের মোবাইল নম্বর" value={student.guardianMobile} onChange={e => handleInputChange('guardianMobile', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="student-mobile">শিক্ষার্থীর মোবাইল নম্বর</Label>
-                          <Input id="student-mobile" name="student-mobile" placeholder="শিক্ষার্থীর মোবাইল নম্বর (যদি থাকে)" />
+                          <Input id="student-mobile" name="student-mobile" placeholder="শিক্ষার্থীর মোবাইল নম্বর (যদি থাকে)" value={student.studentMobile} onChange={e => handleInputChange('studentMobile', e.target.value)} />
                       </div>
                    </div>
                </div>
@@ -433,23 +438,23 @@ export default function AddStudentPage() {
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className="space-y-2">
                             <Label htmlFor="present-village">গ্রাম</Label>
-                            <Input id="present-village" name="present-village" placeholder="গ্রাম" />
+                            <Input id="present-village" name="present-village" placeholder="গ্রাম" value={student.presentVillage} onChange={e => handleInputChange('presentVillage', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="present-union">ইউনিয়ন</Label>
-                            <Input id="present-union" name="present-union" placeholder="ইউনিয়ন" />
+                            <Input id="present-union" name="present-union" placeholder="ইউনিয়ন" value={student.presentUnion} onChange={e => handleInputChange('presentUnion', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="present-post-office">ডাকঘর</Label>
-                            <Input id="present-post-office" name="present-post-office" placeholder="ডাকঘর" />
+                            <Input id="present-post-office" name="present-post-office" placeholder="ডাকঘর" value={student.presentPostOffice} onChange={e => handleInputChange('presentPostOffice', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="present-upazila">উপজেলা</Label>
-                            <Input id="present-upazila" name="present-upazila" placeholder="উপজেলা" />
+                            <Input id="present-upazila" name="present-upazila" placeholder="উপজেলা" value={student.presentUpazila} onChange={e => handleInputChange('presentUpazila', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="present-district">জেলা</Label>
-                            <Input id="present-district" name="present-district" placeholder="জেলা" />
+                            <Input id="present-district" name="present-district" placeholder="জেলা" value={student.presentDistrict} onChange={e => handleInputChange('presentDistrict', e.target.value)} />
                         </div>
                    </div>
                </div>
@@ -470,23 +475,23 @@ export default function AddStudentPage() {
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className="space-y-2">
                             <Label htmlFor="permanent-village">গ্রাম</Label>
-                            <Input id="permanent-village" name="permanent-village" placeholder="গ্রাম" />
+                            <Input id="permanent-village" name="permanent-village" placeholder="গ্রাম" value={student.permanentVillage} onChange={e => handleInputChange('permanentVillage', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="permanent-union">ইউনিয়ন</Label>
-                            <Input id="permanent-union" name="permanent-union" placeholder="ইউনিয়ন" />
+                            <Input id="permanent-union" name="permanent-union" placeholder="ইউনিয়ন" value={student.permanentUnion} onChange={e => handleInputChange('permanentUnion', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="permanent-post-office">ডাকঘর</Label>
-                            <Input id="permanent-post-office" name="permanent-post-office" placeholder="ডাকঘর" />
+                            <Input id="permanent-post-office" name="permanent-post-office" placeholder="ডাকঘর" value={student.permanentPostOffice} onChange={e => handleInputChange('permanentPostOffice', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="permanent-upazila">উপজেলা</Label>
-                            <Input id="permanent-upazila" name="permanent-upazila" placeholder="উপজেলা" />
+                            <Input id="permanent-upazila" name="permanent-upazila" placeholder="উপজেলা" value={student.permanentUpazila} onChange={e => handleInputChange('permanentUpazila', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="permanent-district">জেলা</Label>
-                            <Input id="permanent-district" name="permanent-district" placeholder="জেলা" />
+                            <Input id="permanent-district" name="permanent-district" placeholder="জেলা" value={student.permanentDistrict} onChange={e => handleInputChange('permanentDistrict', e.target.value)} />
                         </div>
                    </div>
                </div>
