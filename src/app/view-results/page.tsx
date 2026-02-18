@@ -36,7 +36,6 @@ export default function ViewResultsPage() {
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
-    const [optionalSubject, setOptionalSubject] = useState('');
     
     const [processedResults, setProcessedResults] = useState<StudentProcessedResult[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -69,35 +68,14 @@ export default function ViewResultsPage() {
             return;
         }
 
-        let subjectsForCalculation = getSubjects(className, group);
-        if (group === 'science' && optionalSubject) {
-            if (optionalSubject === 'কৃষি শিক্ষা') {
-                subjectsForCalculation = subjectsForCalculation.filter(s => s.name !== 'উচ্চতর গণিত');
-            } else if (optionalSubject === 'উচ্চতর গণিত') {
-                subjectsForCalculation = subjectsForCalculation.filter(s => s.name !== 'কৃষি শিক্ষা');
-            }
-        }
-        setSubjects(subjectsForCalculation);
+        const allSubjectsForGroup = getSubjects(className, group);
+        setSubjects(allSubjectsForGroup);
         
-        const resultsBySubject: ClassResult[] = subjectsForCalculation.map(subject => {
-            let subjectNameToFetch = subject.name;
-            // For science group, if the subject is the designated optional subject, always fetch marks from 'কৃষি শিক্ষা'
-            if (group === 'science' && subject.name === optionalSubject) {
-                subjectNameToFetch = 'কৃষি শিক্ষা';
-            }
-            
-            const result = getResultsForClass(selectedYear, className, subjectNameToFetch, group);
-
-            // If we fetched a result for a different subject name, we need to remap it
-            // so it looks like it's for the original subject.
-            if (result && result.subject !== subject.name) {
-                return { ...result, subject: subject.name };
-            }
-            
-            return result;
+        const resultsBySubject: ClassResult[] = allSubjectsForGroup.map(subject => {
+            return getResultsForClass(selectedYear, className, subject.name, group);
         }).filter((result): result is ClassResult => result !== undefined);
 
-        const finalResults = processStudentResults(studentsInClass, resultsBySubject, subjectsForCalculation, optionalSubject);
+        const finalResults = processStudentResults(studentsInClass, resultsBySubject, allSubjectsForGroup);
         setProcessedResults(finalResults);
 
         setIsLoading(false);
@@ -178,10 +156,10 @@ export default function ViewResultsPage() {
         return (
             <TableHeader>
                 <TableRow>
-                    <TableHead rowSpan={2} className="align-middle text-center bg-background sticky left-0 z-10">রোল</TableHead>
-                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px] bg-background md:sticky md:left-[50px] md:z-10">শিক্ষার্থীর নাম</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center bg-background sticky left-0 z-10 md:min-w-[80px]">রোল</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px] bg-background md:sticky md:left-[80px] md:z-10">শিক্ষার্থীর নাম</TableHead>
                     {subjects.map(subject => (
-                        <TableHead key={subject.name} colSpan={3} className={cn("text-center border-x", optionalSubject === subject.name && "bg-blue-50")}>
+                        <TableHead key={subject.name} colSpan={3} className={cn("text-center border-x")}>
                             {subject.name}
                         </TableHead>
                     ))}
@@ -202,7 +180,7 @@ export default function ViewResultsPage() {
                 </TableRow>
             </TableHeader>
         );
-    }, [subjects, optionalSubject]);
+    }, [subjects]);
 
 
     return (
@@ -243,10 +221,10 @@ export default function ViewResultsPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end p-4 border rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
                             <div className="space-y-2">
                                 <Label htmlFor="class">শ্রেণি</Label>
-                                <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); setOptionalSubject(''); }}>
+                                <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); }}>
                                     <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="6">৬ষ্ঠ</SelectItem>
@@ -261,7 +239,7 @@ export default function ViewResultsPage() {
                             {showGroupSelector && (
                                 <div className="space-y-2">
                                     <Label htmlFor="group">শাখা/গ্রুপ</Label>
-                                    <Select value={group} onValueChange={g => { setGroup(g); setOptionalSubject(''); }}>
+                                    <Select value={group} onValueChange={g => { setGroup(g); }}>
                                         <SelectTrigger id="group"><SelectValue placeholder="শাখা নির্বাচন" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="science">বিজ্ঞান</SelectItem>
@@ -271,39 +249,21 @@ export default function ViewResultsPage() {
                                     </Select>
                                 </div>
                             )}
-
-                            {showGroupSelector && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="optional-subject">ঐচ্ছিক বিষয় (৪র্থ)</Label>
-                                    <Select value={optionalSubject} onValueChange={value => setOptionalSubject(value === 'none' ? '' : value)} disabled={!group}>
-                                        <SelectTrigger id="optional-subject"><SelectValue placeholder="ঐচ্ছিক বিষয় নির্বাচন" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">ঐচ্ছিক বিষয় নেই</SelectItem>
-                                            {getSubjects(className, group).map(s => {
-                                                if (s.name === 'কৃষি শিক্ষা' || (group === 'science' && s.name === 'উচ্চতর গণিত')) {
-                                                    return <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
-                                                }
-                                                return null;
-                                            })}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
                             
-                            <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-start-5">
+                            <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-span-2 lg:col-start-3">
                                 {isLoading ? 'লোড হচ্ছে...' : 'ফলাফল দেখুন'}
                             </Button>
                         </div>
                         
                         {processedResults.length > 0 && subjects.length > 0 && (
-                            <div className="border rounded-md overflow-x-auto">
+                            <div className="border rounded-md overflow-x-auto relative">
                                 <Table className="min-w-max">
                                     {tableHeaders}
                                     <TableBody>
                                         {processedResults.map(res => (
                                             <TableRow key={res.student.id}>
-                                                <TableCell className="text-center bg-background sticky left-0 z-10">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
-                                                <TableCell className="whitespace-nowrap bg-background md:sticky md:left-[50px] md:z-10">{res.student.studentNameBn}</TableCell>
+                                                <TableCell className="text-center bg-background sticky left-0 z-10 md:min-w-[80px]">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
+                                                <TableCell className="whitespace-nowrap bg-background md:sticky md:left-[80px] md:z-10">{res.student.studentNameBn}</TableCell>
                                                 {subjects.map(subject => {
                                                     const subjectRes = res.subjectResults.get(subject.name);
                                                     return (
@@ -321,7 +281,7 @@ export default function ViewResultsPage() {
                                                     {res.isPass ? renderMeritPosition(res.meritPosition) : `ফেল (${res.failedSubjectsCount.toLocaleString('bn-BD')})`}
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Link href={`/marksheet/${res.student.id}?academicYear=${selectedYear}&className=${className}&group=${group || ''}&optionalSubject=${optionalSubject || ''}`} target="_blank">
+                                                    <Link href={`/marksheet/${res.student.id}?academicYear=${selectedYear}&className=${className}&group=${group || ''}&optionalSubject=${res.student.optionalSubject || ''}`} target="_blank">
                                                         <Button variant="outline" size="icon">
                                                             <BookOpen className="h-4 w-4" />
                                                         </Button>

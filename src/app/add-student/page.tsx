@@ -18,6 +18,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { addStudent, getStudents, updateStudent, Student } from '@/lib/student-data';
+import { getSubjects, Subject } from '@/lib/subjects';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 
@@ -26,6 +27,7 @@ const initialStudentState: Partial<Omit<Student, 'id'>> = {
   className: '',
   academicYear: '',
   group: '',
+  optionalSubject: '',
   studentNameBn: '',
   studentNameEn: '',
   dob: undefined,
@@ -61,12 +63,32 @@ export default function AddStudentPage() {
     const [student, setStudent] = useState(initialStudentState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [optionalSubjects, setOptionalSubjects] = useState<Subject[]>([]);
 
     useEffect(() => {
         if (selectedYear) {
             setStudent(prev => ({...prev, academicYear: selectedYear}));
         }
     }, [selectedYear]);
+
+    useEffect(() => {
+        const studentClassName = student.className;
+        const studentGroup = student.group;
+        if (studentClassName === '9' || studentClassName === '10') {
+            const allSubjects = getSubjects(studentClassName, studentGroup);
+            const opts = allSubjects.filter(s => 
+                (studentGroup === 'science' && (s.name === 'উচ্চতর গণিত' || s.name === 'কৃষি শিক্ষা')) ||
+                (studentGroup === 'arts' && s.name === 'কৃষি শিক্ষা') ||
+                (studentGroup === 'commerce' && s.name === 'কৃষি শিক্ষা')
+            );
+            setOptionalSubjects(opts);
+        } else {
+            setOptionalSubjects([]);
+            handleInputChange('optionalSubject', '');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [student.className, student.group]);
+
 
     const handleInputChange = (field: keyof Omit<Student, 'id'>, value: string | number | Date | undefined) => {
         setStudent(prev => ({...prev, [field]: value}));
@@ -149,7 +171,7 @@ export default function AddStudentPage() {
 
     const handleDownloadSample = () => {
         const headers = [
-            ['রোল', 'শ্রেণি', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'মোবাইল', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
+            ['রোল', 'শ্রেণি', 'গ্রুপ', 'ঐচ্ছিক বিষয়', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'মোবাইল', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
         ];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         const wb = XLSX.utils.book_new();
@@ -180,7 +202,26 @@ export default function AddStudentPage() {
                 }
 
                 const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl' > } = {
-                    'রোল': 'roll', 'শ্রেণি': 'className', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'মোবাইল': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
+                    'রোল': 'roll', 'roll': 'roll', 
+                    'শ্রেণি': 'className', 'class': 'className', 
+                    'গ্রুপ': 'group', 'group': 'group', 'শাখা': 'group', 'বিভাগ': 'group',
+                    'ঐচ্ছিক বিষয়': 'optionalSubject', 'optional subject': 'optionalSubject',
+                    'নাম (বাংলা)': 'studentNameBn', 
+                    'নাম (ইংরেজি)': 'studentNameEn', 
+                    'জন্ম তারিখ': 'dob', 'date of birth': 'dob',
+                    'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 
+                    'লিঙ্গ': 'gender', 'gender': 'gender',
+                    'ধর্ম': 'religion', 'religion': 'religion',
+                    'পিতার নাম (বাংলা)': 'fatherNameBn', 
+                    'পিতার নাম (ইংরেজি)': 'fatherNameEn', 
+                    'পিতার NID': 'fatherNid', 
+                    'মাতার নাম (বাংলা)': 'motherNameBn', 
+                    'মাতার নাম (ইংরেজি)': 'motherNameEn', 
+                    'মাতার NID': 'motherNid', 
+                    'মোবাইল': 'guardianMobile', 'guardian mobile': 'guardianMobile',
+                    'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'student mobile': 'studentMobile',
+                    'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 
+                    'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
                 };
                 
                 const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
@@ -192,7 +233,10 @@ export default function AddStudentPage() {
                     'মানবিক': 'arts', 'arts': 'arts', 'humanities': 'arts',
                     'ব্যবসায় শিক্ষা': 'commerce', 'commerce': 'commerce', 'business studies': 'commerce', 'business': 'commerce'
                 };
-
+                const optionalSubjectMap: { [key: string]: string } = {
+                    'উচ্চতর গণিত': 'উচ্চতর গণিত', 'higher math': 'উচ্চতর গণিত',
+                    'কৃষি শিক্ষা': 'কৃষি শিক্ষা', 'agriculture': 'কৃষি শিক্ষা'
+                };
 
                 const bengaliToEnglishDigit: { [key: string]: string } = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
                 const convertToNumber = (value: any): number | undefined => {
@@ -212,7 +256,7 @@ export default function AddStudentPage() {
                     try {
                         const newStudentData: Partial<Student> = {};
                         Object.keys(row).forEach(excelHeader => {
-                            const studentKey = headerMapping[excelHeader.trim()];
+                            const studentKey = headerMapping[excelHeader.trim().toLowerCase()];
                             if (studentKey) {
                                 let value = row[excelHeader];
                                 
@@ -234,6 +278,8 @@ export default function AddStudentPage() {
                                     (newStudentData as any)[studentKey] = religionMap[valueStr] || religionMap[valueStrLower] || 'other';
                                 } else if (studentKey === 'group') {
                                     (newStudentData as any)[studentKey] = groupMap[valueStr] || groupMap[valueStrLower] || undefined;
+                                } else if (studentKey === 'optionalSubject') {
+                                    (newStudentData as any)[studentKey] = optionalSubjectMap[valueStr] || optionalSubjectMap[valueStrLower] || undefined;
                                 } else if (studentKey === 'dob') {
                                     let parsedDate: Date | undefined;
                                     if (value instanceof Date && !isNaN(value.getTime())) {
@@ -389,7 +435,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="group">গ্রুপ</Label>
-                          <Select value={student.group} onValueChange={value => handleInputChange('group', value)}>
+                          <Select value={student.group || ''} onValueChange={value => handleInputChange('group', value)}>
                               <SelectTrigger id="group" name="group">
                                   <SelectValue placeholder="গ্রুপ নির্বাচন করুন (যদি থাকে)" />
                               </SelectTrigger>
@@ -400,6 +446,21 @@ export default function AddStudentPage() {
                               </SelectContent>
                           </Select>
                       </div>
+                       {(student.className === '9' || student.className === '10') && (
+                          <div className="space-y-2">
+                              <Label htmlFor="optional-subject">ঐচ্ছিক বিষয় (৪র্থ)</Label>
+                              <Select value={student.optionalSubject || ''} onValueChange={value => handleInputChange('optionalSubject', value)} disabled={optionalSubjects.length === 0}>
+                                  <SelectTrigger id="optional-subject" name="optional-subject">
+                                      <SelectValue placeholder="ঐচ্ছিক বিষয় নির্বাচন করুন" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {optionalSubjects.map(sub => (
+                                          <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                      )}
                   </div>
               </div>
 
@@ -434,7 +495,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="gender">লিঙ্গ</Label>
-                          <Select value={student.gender} onValueChange={value => handleInputChange('gender', value)}>
+                          <Select value={student.gender || ''} onValueChange={value => handleInputChange('gender', value)}>
                               <SelectTrigger id="gender" name="gender"><SelectValue placeholder="লিঙ্গ নির্বাচন করুন" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="male">পুরুষ</SelectItem>
@@ -445,7 +506,7 @@ export default function AddStudentPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="religion">ধর্ম</Label>
-                          <Select value={student.religion} onValueChange={value => handleInputChange('religion', value)}>
+                          <Select value={student.religion || ''} onValueChange={value => handleInputChange('religion', value)}>
                               <SelectTrigger id="religion" name="religion"><SelectValue placeholder="ধর্ম নির্বাচন করুন" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="islam">ইসলাম</SelectItem>

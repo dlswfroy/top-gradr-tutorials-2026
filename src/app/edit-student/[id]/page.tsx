@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,6 +17,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { getStudentById, updateStudent, deleteStudent, Student } from '@/lib/student-data';
+import { getSubjects, Subject } from '@/lib/subjects';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
@@ -42,6 +44,7 @@ export default function EditStudentPage() {
     const [student, setStudent] = useState<Student | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [optionalSubjects, setOptionalSubjects] = useState<Subject[]>([]);
 
     useEffect(() => {
         if (studentId) {
@@ -60,6 +63,27 @@ export default function EditStudentPage() {
             }
         }
     }, [studentId, router, toast]);
+
+     useEffect(() => {
+        if (!student) return;
+
+        const studentClassName = student.className;
+        const studentGroup = student.group;
+
+        if (studentClassName === '9' || studentClassName === '10') {
+            const allSubjects = getSubjects(studentClassName, studentGroup);
+            const opts = allSubjects.filter(s => 
+                (studentGroup === 'science' && (s.name === 'উচ্চতর গণিত' || s.name === 'কৃষি শিক্ষা')) ||
+                (studentGroup === 'arts' && s.name === 'কৃষি শিক্ষা') ||
+                (studentGroup === 'commerce' && s.name === 'কৃষি শিক্ষা')
+            );
+            setOptionalSubjects(opts);
+        } else {
+            setOptionalSubjects([]);
+            handleInputChange('optionalSubject', '');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [student?.className, student?.group]);
 
     const handleInputChange = (field: keyof Student, value: any) => {
         if (!student) return;
@@ -226,6 +250,21 @@ export default function EditStudentPage() {
                               </SelectContent>
                           </Select>
                       </div>
+                      {(student.className === '9' || student.className === '10') && (
+                          <div className="space-y-2">
+                              <Label htmlFor="optional-subject">ঐচ্ছিক বিষয় (৪র্থ)</Label>
+                              <Select value={student.optionalSubject || ''} onValueChange={value => handleInputChange('optionalSubject', value)} disabled={optionalSubjects.length === 0}>
+                                  <SelectTrigger id="optional-subject" name="optional-subject">
+                                      <SelectValue placeholder="ঐচ্ছিক বিষয় নির্বাচন করুন" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {optionalSubjects.map(sub => (
+                                          <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                      )}
                   </div>
               </div>
 

@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { getStudentById, Student } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { getResultsForClass, ClassResult } from '@/lib/results-data';
-import { processStudentResults, StudentProcessedResult, getGradePoint } from '@/lib/results-calculation';
+import { processStudentResults, StudentProcessedResult } from '@/lib/results-calculation';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Image from 'next/image';
@@ -44,14 +44,26 @@ export default function MarksheetPage() {
         }
         setStudent(studentData);
 
-        const subjectsForClass = getSubjects(className, group || undefined);
-        setSubjects(subjectsForClass);
+        const allSubjectsForGroup = getSubjects(className, group || undefined);
+        let subjectsForThisStudent = allSubjectsForGroup;
 
-        const resultsBySubject: ClassResult[] = subjectsForClass
+        // The optionalSubject is for the specific student, passed from the view-results page
+        if (group === 'science' && optionalSubject) {
+            if (optionalSubject === 'উচ্চতর গণিত') {
+                subjectsForThisStudent = allSubjectsForGroup.filter(s => s.name !== 'কৃষি শিক্ষা');
+            } else if (optionalSubject === 'কৃষি শিক্ষা') {
+                subjectsForThisStudent = allSubjectsForGroup.filter(s => s.name !== 'উচ্চতর গণিত');
+            }
+        }
+        setSubjects(subjectsForThisStudent);
+
+        // Fetch results for all possible subjects in the group, let processStudentResults handle logic
+        const resultsBySubject: ClassResult[] = allSubjectsForGroup
             .map(subject => getResultsForClass(academicYear, className, subject.name, group || undefined))
             .filter((result): result is ClassResult => !!result);
         
-        const [finalResult] = processStudentResults([studentData], resultsBySubject, subjectsForClass, optionalSubject || undefined);
+        // Use the new processStudentResults which correctly handles per-student optional subjects
+        const [finalResult] = processStudentResults([studentData], resultsBySubject, allSubjectsForGroup);
         setProcessedResult(finalResult);
         setIsLoading(false);
 
@@ -83,10 +95,11 @@ export default function MarksheetPage() {
     }
 
     if (!student || !processedResult) {
-        return <div className="flex items-center justify-center min-h-screen">Marksheet data not found.</div>;
+        return <div className="flex items-center justify-center min-h-screen">Marksheet data not found. Please ensure all marks are entered.</div>;
     }
 
     const sortedSubjects = [...subjects].sort((a,b) => parseInt(a.code) - parseInt(b.code));
+    const studentOptionalSubject = student.optionalSubject;
 
     return (
         <div className="bg-gray-100 p-4 font-sans">
@@ -167,13 +180,13 @@ export default function MarksheetPage() {
                                             <td className="border-r border-black p-1 text-center">{index + 1}</td>
                                             <td className="border-r border-black p-1">
                                                 {subject.englishName}
-                                                {optionalSubject === subject.name && <span className="font-bold"> (Optional)</span>}
+                                                {studentOptionalSubject === subject.name && <span className="font-bold"> (Optional)</span>}
                                             </td>
                                             <td className="border-r border-black p-1 text-center">{subject.code}</td>
                                             <td className="border-r border-black p-1 text-center">100</td>
                                             <td className="border-r border-black p-1 text-center">{result?.marks ?? '-'}</td>
                                             <td className="border-r border-black p-1 text-center">{result?.grade ?? '-'}</td>
-                                            <td className="p-1 text-center">{result?.point.toFixed(2) ?? '-'}</td>
+                                            <td className="p-1 text-center">{result?.point !== undefined ? result.point.toFixed(2) : '-'}</td>
                                         </tr>
                                     );
                                 })}
@@ -225,4 +238,3 @@ export default function MarksheetPage() {
         </div>
     );
 }
-

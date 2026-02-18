@@ -18,6 +18,7 @@ export type Student = {
   gender?: string;
   religion?: string;
   group?: string;
+  optionalSubject?: string;
   presentVillage?: string;
   presentUnion?: string;
   presentPostOffice?: string;
