@@ -6,20 +6,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Users, UserCheck, UserX, GraduationCap } from 'lucide-react';
 import { getStudents } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
+import { getAttendanceForDate } from '@/lib/attendance-data';
+import { format } from 'date-fns';
 
 export default function Home() {
   const [totalStudents, setTotalStudents] = useState(0);
+  const [presentStudents, setPresentStudents] = useState(0);
+  const [absentStudents, setAbsentStudents] = useState(0);
   const { selectedYear } = useAcademicYear();
   
-  // For now, let's keep these as static until attendance is implemented
-  const presentStudents = 0;
-  const absentStudents = 0;
+  // For now, let's keep these as static
   const totalTeachers = 0;
 
   useEffect(() => {
-      // getStudents now reads from localStorage, so it must be called on the client.
+      // All data is from localStorage, must be run on client
       const studentsForYear = getStudents().filter(s => s.academicYear === selectedYear);
       setTotalStudents(studentsForYear.length);
+
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const todaysAttendance = getAttendanceForDate(todayStr, selectedYear);
+      
+      let present = 0;
+      let absent = 0;
+      
+      if (todaysAttendance.length > 0) {
+        const studentIdsForYear = new Set(studentsForYear.map(s => s.id));
+        todaysAttendance.forEach(classAttendance => {
+            classAttendance.attendance.forEach(studentAttendance => {
+                if (studentIdsForYear.has(studentAttendance.studentId)) {
+                  if (studentAttendance.status === 'present') {
+                      present++;
+                  } else {
+                      absent++;
+                  }
+                }
+            });
+        });
+      }
+
+      setPresentStudents(present);
+      setAbsentStudents(absent);
+
   }, [selectedYear]);
 
 
