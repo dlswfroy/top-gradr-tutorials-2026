@@ -20,25 +20,23 @@ export function Header() {
   const schoolLogo = PlaceHolderImages.find(p => p.id === 'school-logo');
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-[#00B2EE] px-4 text-white shadow-sm sm:px-6 md:px-8">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-primary px-4 text-primary-foreground shadow-sm sm:px-6 md:px-8">
       <div className="flex items-center gap-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0 rounded-lg bg-white hover:bg-gray-100">
-              <Menu className="h-6 w-6 text-gray-500" />
+            <Button variant="ghost" size="icon" className="shrink-0 rounded-lg bg-white text-primary hover:bg-gray-100">
+              <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col">
-            <SheetHeader>
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-              <SheetDescription className="sr-only">
-                A list of links to navigate the application.
-              </SheetDescription>
-            </SheetHeader>
-            <nav className="grid gap-4 py-6 text-lg font-medium">
+            <SheetHeader className="p-4 border-b">
+                <SheetTitle className="sr-only">নেভিগেশন মেনু</SheetTitle>
+                <SheetDescription className="sr-only">
+                    অ্যাপ্লিকেশন নেভিগেট করার জন্য লিঙ্কের একটি তালিকা।
+                </SheetDescription>
               <Link
-                href="#"
+                href="/"
                 className="flex items-center gap-2 text-lg font-semibold text-foreground"
               >
                 {schoolLogo && (
@@ -46,39 +44,41 @@ export function Header() {
                 )}
                 <span className="">বীরগঞ্জ পৌর উচ্চ বিদ্যালয়</span>
               </Link>
+            </SheetHeader>
+            <nav className="grid gap-2 p-4 text-base font-medium">
               <Link
-                href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                href="/"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 ড্যাসবোর্ড
               </Link>
               <Link
-                href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                href="/add-student"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 নতুন শিক্ষাথী যোগ
               </Link>
               <Link
                 href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 ডিজিটাল হাজিরা
               </Link>
               <Link
                 href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 শিক্ষক ও কর্মচারী
               </Link>
               <Link
                 href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 ফলাফল
               </Link>
               <Link
                 href="#"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 সেটিং
               </Link>
@@ -97,7 +97,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-10 w-10 border-2 border-white">
           {profilePhoto && (
             <AvatarImage
               src={profilePhoto.imageUrl}
