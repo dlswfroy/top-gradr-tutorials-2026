@@ -29,9 +29,9 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation Menu</SheetTitle>
-              <SheetDescription>
+            <SheetHeader>
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SheetDescription className="sr-only">
                 A list of links to navigate the application.
               </SheetDescription>
             </SheetHeader>
@@ -47,31 +47,37 @@ export function Header() {
                 href="#"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Dashboard
+                ড্যাসবোর্ড
               </Link>
               <Link
                 href="#"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Students
+                নতুন শিক্ষাথী যোগ
               </Link>
               <Link
                 href="#"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Teachers
+                ডিজিটাল হাজিরা
               </Link>
               <Link
                 href="#"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Classes
+                শিক্ষক ও কর্মচারী
               </Link>
               <Link
                 href="#"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Settings
+                ফলাফল
+              </Link>
+              <Link
+                href="#"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                সেটিং
               </Link>
             </nav>
           </SheetContent>
