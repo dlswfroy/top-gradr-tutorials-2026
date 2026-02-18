@@ -105,7 +105,7 @@ export default function ViewResultsPage() {
             <TableHeader>
                 <TableRow>
                     <TableHead rowSpan={2} className="align-middle text-center sticky left-0 bg-background z-10">রোল</TableHead>
-                    <TableHead rowSpan={2} className="align-middle text-center sticky left-16 bg-background z-10 min-w-[200px]">শিক্ষার্থীর নাম</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center bg-background min-w-[200px]">শিক্ষার্থীর নাম</TableHead>
                     {subjects.map(subject => (
                         <TableHead key={subject.name} colSpan={subject.practical ? 6 : 5} className="text-center border-x">
                             {subject.name}
@@ -192,7 +192,7 @@ export default function ViewResultsPage() {
                                         {processedResults.map(res => (
                                             <TableRow key={res.student.id}>
                                                 <TableCell className="text-center sticky left-0 bg-background z-10">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
-                                                <TableCell className="sticky left-16 bg-background z-10 whitespace-nowrap">{res.student.studentNameBn}</TableCell>
+                                                <TableCell className="whitespace-nowrap bg-background">{res.student.studentNameBn}</TableCell>
                                                 {subjects.map(subject => {
                                                     const subjectRes = res.subjectResults.get(subject.name);
                                                     return (

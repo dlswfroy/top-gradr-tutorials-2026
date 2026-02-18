@@ -16,7 +16,7 @@ import { getSubjects, Subject as SubjectType } from '@/lib/subjects';
 import { saveClassResults, getResultsForClass, getAllResults, deleteClassResult, ClassResult, StudentResult } from '@/lib/results-data';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, FileUp, Download } from 'lucide-react';
+import { Trash2, FileUp, Download, FilePen } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 
@@ -164,6 +164,16 @@ export default function ResultsPage() {
             description: `${result.subject} বিষয়ের ফলাফল মুছে ফেলা হয়েছে।`
         });
     }
+
+    const handleEditClick = (resultToEdit: ClassResult) => {
+        setClassName(resultToEdit.className);
+        setGroup(resultToEdit.group || '');
+        setSubject(resultToEdit.subject);
+        setFullMarks(resultToEdit.fullMarks);
+        setStudents([]);
+        setMarks(new Map());
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     const handleDownloadSample = () => {
         if (!className) {
@@ -584,27 +594,32 @@ export default function ResultsPage() {
                                                     <TableCell>{res.group ? groupMap[res.group] : '-'}</TableCell>
                                                     <TableCell>{res.subject}</TableCell>
                                                     <TableCell className="text-right">
-                                                         <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="destructive" size="icon">
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        এই বিষয়ের ফলাফল স্থায়ীভাবে মুছে যাবে।
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteResult(res)}>
-                                                                        মুছে ফেলুন
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="outline" size="icon" onClick={() => handleEditClick(res)}>
+                                                                <FilePen className="h-4 w-4" />
+                                                            </Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="destructive" size="icon">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            এই বিষয়ের ফলাফল স্থায়ীভাবে মুছে যাবে।
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleDeleteResult(res)}>
+                                                                            মুছে ফেলুন
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
