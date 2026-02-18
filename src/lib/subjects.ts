@@ -14,7 +14,7 @@ const subjectsFor6to8: Subject[] = [
     { name: 'ইংরেজি দ্বিতীয়', englishName: 'English 2nd Paper', code: '108', practical: false, fullMarks: 100 },
     { name: 'গণিত', englishName: 'Mathematics', code: '109', practical: false, fullMarks: 100 },
     { name: 'ধর্ম ও নৈতিক শিক্ষা', englishName: 'Religion & Moral Education', code: '111', practical: false, fullMarks: 100 },
-    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: false, fullMarks: 50 },
+    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: false, fullMarks: 25 },
     { name: 'সাধারণ বিজ্ঞান', englishName: 'General Science', code: '127', practical: false, fullMarks: 100 },
     { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', englishName: 'Bangladesh & Global Studies', code: '150', practical: false, fullMarks: 100 },
     { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: false, fullMarks: 100 },
@@ -27,7 +27,7 @@ const commonSubjectsFor9to10: Subject[] = [
     { name: 'ইংরেজি দ্বিতীয়', englishName: 'English 2nd Paper', code: '108', practical: false, fullMarks: 100 },
     { name: 'গণিত', englishName: 'Mathematics', code: '109', practical: false, fullMarks: 100 },
     { name: 'ধর্ম ও নৈতিক শিক্ষা', englishName: 'Religion & Moral Education', code: '111', practical: false, fullMarks: 100 },
-    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: false, fullMarks: 50 },
+    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: false, fullMarks: 25 },
 ];
 
 const scienceSubjects: Subject[] = [
