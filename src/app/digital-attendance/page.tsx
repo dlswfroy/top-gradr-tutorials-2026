@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { saveDailyAttendance, getAttendanceForClassAndDate, StudentAttendance, DailyAttendance, AttendanceStatus } from '@/lib/attendance-data';
+import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
 
@@ -26,6 +27,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const [attendance, setAttendance] = useState<Map<number, AttendanceStatus>>(new Map());
     const [savedAttendance, setSavedAttendance] = useState<DailyAttendance | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeHoliday, setActiveHoliday] = useState<Holiday | undefined>(undefined);
 
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
@@ -38,6 +40,10 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
         const existingAttendance = getAttendanceForClassAndDate(todayStr, classId, selectedYear);
         setSavedAttendance(existingAttendance);
+
+        const holidayToday = isHoliday(todayStr);
+        setActiveHoliday(holidayToday);
+        
         setIsLoading(false);
 
     }, [students, todayStr, classId, selectedYear]);
@@ -49,6 +55,10 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const handleSaveAttendance = () => {
         if (isWeekend) {
             toast({ variant: "destructive", title: "আজ সাপ্তাহিক ছুটি।" });
+            return;
+        }
+        if (activeHoliday) {
+            toast({ variant: "destructive", title: `আজ ${activeHoliday.description} উপলক্ষে ছুটি।` });
             return;
         }
 
@@ -75,6 +85,10 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
     if (isWeekend) {
         return <p className="text-center text-muted-foreground p-8">আজ সাপ্তাহিক ছুটি, তাই হাজিরা বন্ধ আছে।</p>
+    }
+
+    if (activeHoliday) {
+        return <p className="text-center text-muted-foreground p-8">আজ {activeHoliday.description} উপলক্ষে ছুটি, তাই হাজিরা বন্ধ আছে।</p>;
     }
 
     if (savedAttendance) {

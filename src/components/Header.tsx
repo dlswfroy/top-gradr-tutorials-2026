@@ -107,6 +107,12 @@ export function Header() {
                 >
                   হাজিরা রিপোর্ট
                 </Link>
+                 <Link
+                  href="/holidays"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  অতিরিক্ত ছুটি
+                </Link>
                 <Link
                   href="#"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
