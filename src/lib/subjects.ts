@@ -35,6 +35,7 @@ const scienceSubjects: Subject[] = [
     { name: 'রসায়ন', englishName: 'Chemistry', code: '137', practical: true },
     { name: 'জীব বিজ্ঞান', englishName: 'Biology', code: '138', practical: true },
     { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: true },
+    { name: 'উচ্চতর গণিত', englishName: 'Higher Mathematics', code: '126', practical: true },
 ];
 
 const artsSubjects: Subject[] = [

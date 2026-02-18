@@ -32,7 +32,7 @@ import { BookOpen } from 'lucide-react';
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
-    const { selectedYear, availableYears } = useAcademicYear();
+    const { selectedYear } = useAcademicYear();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -172,8 +172,8 @@ export default function ViewResultsPage() {
         return (
             <TableHeader>
                 <TableRow>
-                    <TableHead rowSpan={2} className="align-middle text-center sticky left-0 bg-background z-10">রোল</TableHead>
-                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px] sticky left-[50px] bg-background z-10">শিক্ষার্থীর নাম</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center bg-background">রোল</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px]">শিক্ষার্থীর নাম</TableHead>
                     {subjects.map(subject => (
                         <TableHead key={subject.name} colSpan={3} className={cn("text-center border-x", optionalSubject === subject.name && "bg-blue-50")}>
                             {subject.name}
@@ -272,8 +272,8 @@ export default function ViewResultsPage() {
                                     <Select value={optionalSubject} onValueChange={value => setOptionalSubject(value === 'none' ? '' : value)} disabled={!group}>
                                         <SelectTrigger id="optional-subject"><SelectValue placeholder="ঐচ্ছিক বিষয় নির্বাচন" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            {subjects.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                                            <SelectItem value="none">ঐচ্ছিক বিষয় নেই</SelectItem>
+                                            {getSubjects(className, group).map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -291,8 +291,8 @@ export default function ViewResultsPage() {
                                     <TableBody>
                                         {processedResults.map(res => (
                                             <TableRow key={res.student.id}>
-                                                <TableCell className="text-center sticky left-0 bg-background z-10">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
-                                                <TableCell className="whitespace-nowrap sticky left-[50px] bg-background z-10">{res.student.studentNameBn}</TableCell>
+                                                <TableCell className="text-center bg-background">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{res.student.studentNameBn}</TableCell>
                                                 {subjects.map(subject => {
                                                     const subjectRes = res.subjectResults.get(subject.name);
                                                     return (

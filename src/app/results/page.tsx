@@ -57,6 +57,7 @@ export default function ResultsPage() {
         if (className) {
             const newSubjects = getSubjects(className, group);
             setAvailableSubjects(newSubjects);
+            // If the previously selected subject is not in the new list, reset it.
             if (subject && !newSubjects.some(s => s.name === subject)) {
                 setSubject('');
                 setSelectedSubjectInfo(null);
@@ -92,7 +93,7 @@ export default function ResultsPage() {
             s.academicYear === selectedYear && 
             s.className === className &&
             (className < '9' || !group || s.group === group)
-        );
+        ).sort((a,b) => a.roll - b.roll);
         setStudents(filteredStudents);
 
         const existingResults = getResultsForClass(selectedYear, className, subject, group);
@@ -107,6 +108,8 @@ export default function ResultsPage() {
                     practical: res.practical
                 });
             });
+        } else {
+            setFullMarks(100);
         }
         
         filteredStudents.forEach(student => {
@@ -171,11 +174,14 @@ export default function ResultsPage() {
     const handleEditClick = (resultToEdit: ClassResult) => {
         setClassName(resultToEdit.className);
         setGroup(resultToEdit.group || '');
-        setSubject(resultToEdit.subject);
-        setFullMarks(resultToEdit.fullMarks);
-        setStudents([]);
-        setMarks(new Map());
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // This needs a little delay to allow availableSubjects to update
+        setTimeout(() => {
+            setSubject(resultToEdit.subject);
+            setFullMarks(resultToEdit.fullMarks);
+            setStudents([]);
+            setMarks(new Map());
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 0);
     };
 
     const handleDownloadSample = () => {
@@ -210,12 +216,17 @@ export default function ResultsPage() {
                 'ইংরেজি দ্বিতীয় (লিখিত)', 'ইংরেজি দ্বিতীয় (বহুনির্বাচনী)',
                 'গণিত (লিখিত)', 'গণিত (বহুনির্বাচনী)',
                 'ধর্ম ও নৈতিক শিক্ষা (লিখিত)', 'ধর্ম ও নৈতিক শিক্ষা (বহুনির্বাচনী)',
-                'তথ্য ও যোগাযোগ প্রযুক্তি (লিখিত)', 'তথ্য ও যোগাযোগ প্রযুক্তি (বহুনির্বাচনী)',
+                'তথ্য ও যোগাযোগ প্রযুক্তি (লিখিত)', 'তথ্য ও যোগাযোগ প্রযুক্তি (ব্যবহারিক)',
                 'কৃষি শিক্ষা (লিখিত)', 'কৃষি শিক্ষা (বহুনির্বাচনী)', 'কৃষি শিক্ষা (ব্যবহারিক)',
-                'সাধারণ বিজ্ঞান/বাংলাদেশ ও বিশ্ব পরিচয় (লিখিত)', 'সাধারণ বিজ্ঞান/বাংলাদেশ ও বিশ্ব পরিচয় (বহুনির্বাচনী)',
-                'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা/পদার্থ (লিখিত)', 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা/পদার্থ (বহুনির্বাচনী)', 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা/পদার্থ (ব্যবহারিক)',
-                'ভূগোল ও পরিবেশ/রসায়ন (লিখিত)', 'ভূগোল ও পরিবেশ/রসায়ন (বহুনির্বাচনী)', 'ভূগোল ও পরিবেশ/রসায়ন (ব্যবহারিক)',
-                'পৌরনীতি ও নাগরিকতা/জীব বিজ্ঞান (লিখিত)', 'পৌরনীতি ও নাগরিকতা/জীব বিজ্ঞান (বহুনির্বাচনী)', 'পৌরনীতি ও নাগরিকতা/জীব বিজ্ঞান (ব্যবহারিক)',
+                'উচ্চতর গণিত (লিখিত)', 'উচ্চতর গণিত (বহুনির্বাচনী)', 'উচ্চতর গণিত (ব্যবহারিক)',
+                'সাধারণ বিজ্ঞান (লিখিত)', 'সাধারণ বিজ্ঞান (বহুনির্বাচনী)',
+                'বাংলাদেশ ও বিশ্ব পরিচয় (লিখিত)', 'বাংলাদেশ ও বিশ্ব পরিচয় (বহুনির্বাচনী)',
+                'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা (লিখিত)', 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা (বহুনির্বাচনী)',
+                'পদার্থ (লিখিত)', 'পদার্থ (বহুনির্বাচনী)', 'পদার্থ (ব্যবহারিক)',
+                'রসায়ন (লিখিত)', 'রসায়ন (বহুনির্বাচনী)', 'রসায়ন (ব্যবহারিক)',
+                'ভূগোল ও পরিবেশ (লিখিত)', 'ভূগোল ও পরিবেশ (বহুনির্বাচনী)',
+                'পৌরনীতি ও নাগরিকতা (লিখিত)', 'পৌরনীতি ও নাগরিকতা (বহুনির্বাচনী)',
+                'জীব বিজ্ঞান (লিখিত)', 'জীব বিজ্ঞান (বহুনির্বাচনী)', 'জীব বিজ্ঞান (ব্যবহারিক)',
                 'হিসাব বিজ্ঞান (লিখিত)', 'হিসাব বিজ্ঞান (বহুনির্বাচনী)',
                 'ফিন্যান্স ও ব্যাংকিং (লিখিত)', 'ফিন্যান্স ও ব্যাংকিং (বহুনির্বাচনী)',
                 'ব্যবসায় উদ্যোগ (লিখিত)', 'ব্যবসায় উদ্যোগ (বহুনির্বাচনী)',
@@ -277,12 +288,13 @@ export default function ResultsPage() {
                     'ইংরেজি প্রথম': 'ইংরেজি প্রথম', 'english 1st': 'ইংরেজি প্রথম', 'english first': 'ইংরেজি প্রথম',
                     'ইংরেজি দ্বিতীয়': 'ইংরেজি দ্বিতীয়', 'english 2nd': 'ইংরেজি দ্বিতীয়', 'english second': 'ইংরেজি দ্বিতীয়',
                     'গণিত': 'গণিত', 'math': 'গণিত', 'mathematics': 'গণিত',
+                    'উচ্চতর গণিত': 'উচ্চতর গণিত', 'higher mathematics': 'উচ্চতর গণিত', 'higher math': 'উচ্চতর গণিত',
                     'ধর্ম ও নৈতিক শিক্ষা': 'ধর্ম ও নৈতিক শিক্ষা', 'religion': 'ধর্ম ও নৈতিক শিক্ষা', 'ধর্ম শিক্ষা': 'ধর্ম ও নৈতিক শিক্ষা',
                     'তথ্য ও যোগাযোগ প্রযুক্তি': 'তথ্য ও যোগাযোগ প্রযুক্তি', 'ict': 'তথ্য ও যোগাযোগ প্রযুক্তি',
                     'সাধারণ বিজ্ঞান': 'সাধারণ বিজ্ঞান', 'general science': 'সাধারণ বিজ্ঞান',
                     'বাংলাদেশ ও বিশ্ব পরিচয়': 'বাংলাদেশ ও বিশ্ব পরিচয়', 'bangladesh and global studies': 'বাংলাদেশ ও বিশ্ব পরিচয়', 'bgs': 'বাংলাদেশ ও বিশ্ব পরিচয়',
                     'কৃষি শিক্ষা': 'কৃষি শিক্ষা', 'agriculture studies': 'কৃষি শিক্ষা', 'agriculture': 'কৃষি শিক্ষা',
-                    'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'history and world civilization': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'history': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'ইতিহাস ও বিশ্ব সভ্যতা': 'ইতিহাস ও বিশ্ব সভ্যতা',
+                    'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'history and world civilization': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'history': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', 'ইতিহাস ও বিশ্ব সভ্যতা': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা',
                     'ভূগোল ও পরিবেশ': 'ভূগোল ও পরিবেশ', 'geography and environment': 'ভূগোল ও পরিবেশ', 'geography': 'ভূগোল ও পরিবেশ',
                     'পৌরনীতি ও নাগরিকতা': 'পৌরনীতি ও নাগরিকতা', 'civics and citizenship': 'পৌরনীতি ও নাগরিকতা', 'civics': 'পৌরনীতি ও নাগরিকতা',
                     'পদার্থ': 'পদার্থ', 'physics': 'পদার্থ',
@@ -304,7 +316,9 @@ export default function ResultsPage() {
 
                 json.forEach((row: any, rowIndex: number) => {
                     try {
-                        const roll = row['রোল'];
+                        const rollHeader = Object.keys(row).find(k => k.trim().toLowerCase() === 'রোল' || k.trim().toLowerCase() === 'roll');
+                        const roll = rollHeader ? row[rollHeader] : undefined;
+
                         if (roll === undefined) {
                             processingErrors.push(`সারি ${rowIndex + 2}: রোল নম্বর অনুপস্থিত।`);
                             return;
@@ -313,7 +327,9 @@ export default function ResultsPage() {
                         let studentGroup: string | undefined;
 
                         if (showGroupSelector) {
-                             const studentGroupInput = row['শাখা'] ? String(row['শাখা']).trim() : undefined;
+                             const groupHeader = Object.keys(row).find(k => k.trim().toLowerCase() === 'শাখা' || k.trim().toLowerCase() === 'group' || k.trim().toLowerCase() === 'বিভাগ');
+                             const studentGroupInput = groupHeader ? String(row[groupHeader]).trim() : undefined;
+                            
                             if (studentGroupInput) {
                                 studentGroup = groupNameToCode[studentGroupInput] || groupNameToCode[studentGroupInput.toLowerCase()];
                                 if (!studentGroup) {
@@ -351,7 +367,8 @@ export default function ResultsPage() {
                         }
 
                         Object.entries(row).forEach(([header, value]) => {
-                            if (header === 'রোল' || header === 'নাম' || header === 'শাখা') return;
+                             const trimmedHeader = header.trim().toLowerCase();
+                             if (['রোল', 'roll', 'নাম', 'name', 'শাখা', 'group', 'বিভাগ'].includes(trimmedHeader)) return;
                             
                             const match = header.match(/(.+) \((.+)\)/);
                             if (!match) return;
@@ -363,6 +380,15 @@ export default function ResultsPage() {
                             if (!markType) return;
                             
                             let finalSubjectName : string | undefined = subjectNameMap[subjectNamePart] || subjectNameMap[subjectNamePart.toLowerCase()];
+                            
+                            if (!finalSubjectName) {
+                                for (const key in subjectNameMap) {
+                                    if (key.includes(subjectNamePart.toLowerCase())) {
+                                        finalSubjectName = subjectNameMap[key];
+                                        break;
+                                    }
+                                }
+                            }
                             
                             if (!finalSubjectName && subjectNamePart.includes('/')) {
                                 const combinedName = Object.keys(combinedHeaderMap).find(k => k.toLowerCase().includes(subjectNamePart.split('/')[0].toLowerCase()) && k.toLowerCase().includes(subjectNamePart.split('/')[1].toLowerCase()));
@@ -382,7 +408,7 @@ export default function ResultsPage() {
 
                             let subjectData = resultsBySubject.get(finalSubjectName);
                             if (!subjectData) {
-                                subjectData = { fullMarks: fullMarks || 100, results: [] };
+                                subjectData = { fullMarks: 100, results: [] };
                                 resultsBySubject.set(finalSubjectName, subjectData);
                             }
 
