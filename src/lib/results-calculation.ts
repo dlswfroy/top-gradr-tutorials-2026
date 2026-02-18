@@ -1,3 +1,4 @@
+
 'use client';
 import type { Student } from './student-data';
 import type { ClassResult } from './results-data';
@@ -55,14 +56,13 @@ const getFinalGrade = (gpa: number): string => {
 export function processStudentResults(
     students: Student[],
     resultsBySubject: ClassResult[],
-    subjects: Subject[]
+    subjects: Subject[],
+    optionalSubjectName?: string
 ): StudentProcessedResult[] {
 
     const studentResults: StudentProcessedResult[] = students.map(student => {
         let totalMarks = 0;
         let totalPossibleMarks = 0;
-        let totalPoints = 0;
-        let failedSubjectsCount = 0;
         const subjectResults = new Map<string, StudentSubjectResult>();
 
         subjects.forEach(subjectInfo => {
@@ -82,12 +82,7 @@ export function processStudentResults(
             const { grade, point } = getGradePoint(percentage);
             
             const isPassSubject = percentage >= PASS_PERCENTAGE;
-            if (!isPassSubject) {
-                failedSubjectsCount++;
-            }
             
-            totalPoints += point;
-
             subjectResults.set(subjectInfo.name, {
                 written,
                 mcq,
@@ -98,26 +93,66 @@ export function processStudentResults(
                 isPass: isPassSubject
             });
         });
+        
+        let totalCompulsoryPoints = 0;
+        let compulsorySubjectsCount = 0;
+        let failedInCompulsoryCount = 0;
+        let bonusPoints = 0;
 
-        const isPass = failedSubjectsCount === 0;
-        const gpa = isPass && subjects.length > 0 ? parseFloat((totalPoints / subjects.length).toFixed(2)) : 0.0;
+        subjects.forEach(subjectInfo => {
+            const result = subjectResults.get(subjectInfo.name);
+            if (!result) return;
+    
+            if (subjectInfo.name === optionalSubjectName) {
+                if (result.point > 2.0) {
+                    bonusPoints = result.point - 2.0;
+                }
+            } else {
+                totalCompulsoryPoints += result.point;
+                compulsorySubjectsCount++;
+                if (!result.isPass) {
+                    failedInCompulsoryCount++;
+                }
+            }
+        });
+
+        const isPass = failedInCompulsoryCount === 0;
+        let gpa = 0;
+
+        if (isPass && compulsorySubjectsCount > 0) {
+            gpa = totalCompulsoryPoints / compulsorySubjectsCount;
+            if (optionalSubjectName) {
+                gpa += bonusPoints / compulsorySubjectsCount;
+            }
+        }
+        
+        if (gpa > 5.0) {
+            gpa = 5.0;
+        }
+
         const finalGrade = isPass ? getFinalGrade(gpa) : 'F';
         
         return {
             student,
             totalMarks,
             totalPossibleMarks,
-            gpa,
+            gpa: isPass ? parseFloat(gpa.toFixed(2)) : 0.0,
             finalGrade,
             isPass,
-            failedSubjectsCount,
+            failedSubjectsCount: failedInCompulsoryCount,
             subjectResults,
         };
     });
 
     const passedStudents = studentResults
         .filter(s => s.isPass)
-        .sort((a, b) => b.totalMarks - a.totalMarks);
+        .sort((a, b) => {
+             if (b.totalMarks !== a.totalMarks) {
+                return b.totalMarks - a.totalMarks;
+            }
+            // If total marks are same, sort by student roll
+            return a.student.roll - b.student.roll;
+        });
 
     let rank = 1;
     for (let i = 0; i < passedStudents.length; i++) {

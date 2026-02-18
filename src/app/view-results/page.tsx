@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -27,6 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { BookOpen } from 'lucide-react';
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
@@ -34,6 +36,7 @@ export default function ViewResultsPage() {
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
+    const [optionalSubject, setOptionalSubject] = useState('');
     
     const [processedResults, setProcessedResults] = useState<StudentProcessedResult[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -73,18 +76,22 @@ export default function ViewResultsPage() {
             return getResultsForClass(selectedYear, className, subject.name, group);
         }).filter((result): result is ClassResult => !!result);
 
-        if (resultsBySubject.length < subjectsForClass.length) {
+        const subjectsWithResults = new Set(resultsBySubject.map(r => r.subject));
+        const missingSubjects = subjectsForClass.filter(s => !subjectsWithResults.has(s.name));
+
+        if (missingSubjects.length > 0) {
             toast({ 
                 variant: 'destructive',
                 title: 'ফলাফল অসম্পূর্ণ',
-                description: 'এই শ্রেণির সকল বিষয়ের নম্বর এখনও ইনপুট করা হয়নি।',
+                description: `এই শ্রেণির সকল বিষয়ের নম্বর এখনও ইনপুট করা হয়নি। অনুপস্থিত বিষয়: ${missingSubjects.map(s => s.name).join(', ')}`,
+                duration: 8000,
             });
             setProcessedResults([]);
             setIsLoading(false);
             return;
         }
 
-        const finalResults = processStudentResults(studentsInClass, resultsBySubject, subjectsForClass);
+        const finalResults = processStudentResults(studentsInClass, resultsBySubject, subjectsForClass, optionalSubject);
         setProcessedResults(finalResults);
 
         setIsLoading(false);
@@ -166,9 +173,9 @@ export default function ViewResultsPage() {
             <TableHeader>
                 <TableRow>
                     <TableHead rowSpan={2} className="align-middle text-center sticky left-0 bg-background z-10">রোল</TableHead>
-                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px]">শিক্ষার্থীর নাম</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center min-w-[200px] sticky left-[50px] bg-background z-10">শিক্ষার্থীর নাম</TableHead>
                     {subjects.map(subject => (
-                        <TableHead key={subject.name} colSpan={subject.practical ? 6 : 5} className="text-center border-x">
+                        <TableHead key={subject.name} colSpan={subject.practical ? 4 : 3} className={cn("text-center border-x", optionalSubject === subject.name && "bg-blue-50")}>
                             {subject.name}
                         </TableHead>
                     ))}
@@ -176,13 +183,14 @@ export default function ViewResultsPage() {
                     <TableHead rowSpan={2} className="align-middle text-center">জি.পি.এ</TableHead>
                     <TableHead rowSpan={2} className="align-middle text-center">গ্রেড</TableHead>
                     <TableHead rowSpan={2} className="align-middle text-center">মেধাস্থান</TableHead>
+                    <TableHead rowSpan={2} className="align-middle text-center">মার্কশিট</TableHead>
                 </TableRow>
                 <TableRow>
                     {subjects.map(subject => (
                         <React.Fragment key={`${subject.name}-cols`}>
-                            <TableHead className="text-center border-l">লিখিত</TableHead>
+                            {/* <TableHead className="text-center border-l">লিখিত</TableHead>
                             <TableHead className="text-center border-l">বহুনি.</TableHead>
-                            {subject.practical && <TableHead className="text-center border-l">ব্যবহারিক</TableHead>}
+                            {subject.practical && <TableHead className="text-center border-l">ব্যবহারিক</TableHead>} */}
                             <TableHead className="text-center border-l">মোট</TableHead>
                             <TableHead className="text-center border-l">গ্রেড</TableHead>
                             <TableHead className="text-center border-l border-r">পয়েন্ট</TableHead>
@@ -191,7 +199,7 @@ export default function ViewResultsPage() {
                 </TableRow>
             </TableHeader>
         );
-    }, [subjects]);
+    }, [subjects, optionalSubject]);
 
 
     return (
@@ -232,10 +240,10 @@ export default function ViewResultsPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end p-4 border rounded-lg">
                             <div className="space-y-2">
                                 <Label htmlFor="class">শ্রেণি</Label>
-                                <Select value={className} onValueChange={setClassName}>
+                                <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); setOptionalSubject(''); }}>
                                     <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="6">৬ষ্ঠ</SelectItem>
@@ -250,7 +258,7 @@ export default function ViewResultsPage() {
                             {showGroupSelector && (
                                 <div className="space-y-2">
                                     <Label htmlFor="group">শাখা/গ্রুপ</Label>
-                                    <Select value={group} onValueChange={setGroup}>
+                                    <Select value={group} onValueChange={g => { setGroup(g); setOptionalSubject(''); }}>
                                         <SelectTrigger id="group"><SelectValue placeholder="শাখা নির্বাচন" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="science">বিজ্ঞান</SelectItem>
@@ -260,8 +268,21 @@ export default function ViewResultsPage() {
                                     </Select>
                                 </div>
                             )}
+
+                            {showGroupSelector && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="optional-subject">ঐচ্ছিক বিষয় (৪র্থ)</Label>
+                                    <Select value={optionalSubject} onValueChange={setOptionalSubject} disabled={!group}>
+                                        <SelectTrigger id="optional-subject"><SelectValue placeholder="ঐচ্ছিক বিষয় নির্বাচন" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="">None</SelectItem>
+                                            {subjects.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             
-                            <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-start-4">
+                            <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-start-5">
                                 {isLoading ? 'লোড হচ্ছে...' : 'ফলাফল দেখুন'}
                             </Button>
                         </div>
@@ -274,14 +295,14 @@ export default function ViewResultsPage() {
                                         {processedResults.map(res => (
                                             <TableRow key={res.student.id}>
                                                 <TableCell className="text-center sticky left-0 bg-background z-10">{res.student.roll.toLocaleString('bn-BD')}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{res.student.studentNameBn}</TableCell>
+                                                <TableCell className="whitespace-nowrap sticky left-[50px] bg-background z-10">{res.student.studentNameBn}</TableCell>
                                                 {subjects.map(subject => {
                                                     const subjectRes = res.subjectResults.get(subject.name);
                                                     return (
                                                         <React.Fragment key={`${res.student.id}-${subject.name}`}>
-                                                            <TableCell className="text-center border-l">{(subjectRes?.written?.toLocaleString('bn-BD')) ?? '-'}</TableCell>
+                                                            {/* <TableCell className="text-center border-l">{(subjectRes?.written?.toLocaleString('bn-BD')) ?? '-'}</TableCell>
                                                             <TableCell className="text-center border-l">{(subjectRes?.mcq?.toLocaleString('bn-BD')) ?? '-'}</TableCell>
-                                                            {subject.practical && <TableCell className="text-center border-l">{(subjectRes?.practical?.toLocaleString('bn-BD')) ?? '-'}</TableCell>}
+                                                            {subject.practical && <TableCell className="text-center border-l">{(subjectRes?.practical?.toLocaleString('bn-BD')) ?? '-'}</TableCell>} */}
                                                             <TableCell className="text-center border-l font-semibold">{subjectRes?.marks.toLocaleString('bn-BD') ?? '-'}</TableCell>
                                                             <TableCell className={cn("text-center border-l", {"text-destructive font-bold": subjectRes && !subjectRes.isPass})}>{subjectRes?.grade ?? '-'}</TableCell>
                                                             <TableCell className="text-center border-l border-r">{subjectRes?.point.toFixed(2).toLocaleString('bn-BD') ?? '-'}</TableCell>
@@ -293,6 +314,13 @@ export default function ViewResultsPage() {
                                                 <TableCell className="text-center font-bold">{res.finalGrade}</TableCell>
                                                 <TableCell className={cn("text-center font-bold", {"text-destructive": !res.isPass})}>
                                                     {res.isPass ? renderMeritPosition(res.meritPosition) : `ফেল (${res.failedSubjectsCount.toLocaleString('bn-BD')})`}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Link href={`/marksheet/${res.student.id}?academicYear=${selectedYear}&className=${className}&group=${group || ''}&optionalSubject=${optionalSubject || ''}`} target="_blank">
+                                                        <Button variant="outline" size="icon">
+                                                            <BookOpen className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
                                                 </TableCell>
                                             </TableRow>
                                         ))}

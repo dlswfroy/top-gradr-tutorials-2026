@@ -1,52 +1,56 @@
 
 export interface Subject {
-    name: string;
+    name: string; // Bengali name
+    englishName: string;
+    code: string;
     practical: boolean;
 }
 
 const subjectsFor6to8: Subject[] = [
-    { name: 'বাংলা প্রথম', practical: false },
-    { name: 'বাংলা দ্বিতীয়', practical: false },
-    { name: 'ইংরেজি প্রথম', practical: false },
-    { name: 'ইংরেজি দ্বিতীয়', practical: false },
-    { name: 'গণিত', practical: false },
-    { name: 'ধর্ম ও নৈতিক শিক্ষা', practical: false },
-    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', practical: false },
-    { name: 'সাধারণ বিজ্ঞান', practical: false },
-    { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', practical: false },
-    { name: 'কৃষি শিক্ষা', practical: false },
+    { name: 'বাংলা প্রথম', englishName: 'Bangla 1st Paper', code: '101', practical: false },
+    { name: 'বাংলা দ্বিতীয়', englishName: 'Bangla 2nd Paper', code: '102', practical: false },
+    { name: 'ইংরেজি প্রথম', englishName: 'English 1st Paper', code: '107', practical: false },
+    { name: 'ইংরেজি দ্বিতীয়', englishName: 'English 2nd Paper', code: '108', practical: false },
+    { name: 'গণিত', englishName: 'Mathematics', code: '109', practical: false },
+    { name: 'ধর্ম ও নৈতিক শিক্ষা', englishName: 'Religion & Moral Education', code: '111', practical: false },
+    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: false },
+    { name: 'সাধারণ বিজ্ঞান', englishName: 'General Science', code: '127', practical: false },
+    { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', englishName: 'Bangladesh & Global Studies', code: '150', practical: false },
+    { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: false },
 ];
 
 const commonSubjectsFor9to10: Subject[] = [
-    { name: 'বাংলা প্রথম', practical: false },
-    { name: 'বাংলা দ্বিতীয়', practical: false },
-    { name: 'ইংরেজি প্রথম', practical: false },
-    { name: 'ইংরেজি দ্বিতীয়', practical: false },
-    { name: 'গণিত', practical: false },
-    { name: 'ধর্ম ও নৈতিক শিক্ষা', practical: false },
-    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', practical: false },
-    { name: 'কৃষি শিক্ষা', practical: true },
+    { name: 'বাংলা প্রথম', englishName: 'Bangla 1st Paper', code: '101', practical: false },
+    { name: 'বাংলা দ্বিতীয়', englishName: 'Bangla 2nd Paper', code: '102', practical: false },
+    { name: 'ইংরেজি প্রথম', englishName: 'English 1st Paper', code: '107', practical: false },
+    { name: 'ইংরেজি দ্বিতীয়', englishName: 'English 2nd Paper', code: '108', practical: false },
+    { name: 'গণিত', englishName: 'Mathematics', code: '109', practical: false },
+    { name: 'ধর্ম ও নৈতিক শিক্ষা', englishName: 'Religion & Moral Education', code: '111', practical: false },
+    { name: 'তথ্য ও যোগাযোগ প্রযুক্তি', englishName: 'ICT', code: '154', practical: true },
 ];
 
 const scienceSubjects: Subject[] = [
-    { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', practical: false },
-    { name: 'পদার্থ', practical: true },
-    { name: 'রসায়ন', practical: true },
-    { name: 'জীব বিজ্ঞান', practical: true },
+    { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', englishName: 'Bangladesh & Global Studies', code: '150', practical: false },
+    { name: 'পদার্থ', englishName: 'Physics', code: '136', practical: true },
+    { name: 'রসায়ন', englishName: 'Chemistry', code: '137', practical: true },
+    { name: 'জীব বিজ্ঞান', englishName: 'Biology', code: '138', practical: true },
+    { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: true },
 ];
 
 const artsSubjects: Subject[] = [
-    { name: 'সাধারণ বিজ্ঞান', practical: false },
-    { name: 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', practical: false },
-    { name: 'ভূগোল ও পরিবেশ', practical: false },
-    { name: 'পৌরনীতি ও নাগরিকতা', practical: false },
+    { name: 'সাধারণ বিজ্ঞান', englishName: 'General Science', code: '127', practical: false },
+    { name: 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা', englishName: 'Bangladesh History & World Civilization', code: '153', practical: false },
+    { name: 'ভূগোল ও পরিবেশ', englishName: 'Geography & Environment', code: '110', practical: false },
+    { name: 'পৌরনীতি ও নাগরিকতা', englishName: 'Civics & Citizenship', code: '140', practical: false },
+    { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: true },
 ];
 
 const commerceSubjects: Subject[] = [
-    { name: 'সাধারণ বিজ্ঞান', practical: false },
-    { name: 'হিসাব বিজ্ঞান', practical: false },
-    { name: 'ফিন্যান্স ও ব্যাংকিং', practical: false },
-    { name: 'ব্যবসায় উদ্যোগ', practical: false },
+    { name: 'সাধারণ বিজ্ঞান', englishName: 'General Science', code: '127', practical: false },
+    { name: 'হিসাব বিজ্ঞান', englishName: 'Accounting', code: '146', practical: false },
+    { name: 'ফিন্যান্স ও ব্যাংকিং', englishName: 'Finance & Banking', code: '152', practical: false },
+    { name: 'ব্যবসায় উদ্যোগ', englishName: 'Business Entrepreneurship', code: '143', practical: false },
+    { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: true },
 ];
 
 export const getSubjects = (className: string, group?: string): Subject[] => {
@@ -54,22 +58,27 @@ export const getSubjects = (className: string, group?: string): Subject[] => {
         return subjectsFor6to8;
     }
     if (['9', '10'].includes(className)) {
-        let subjects = [...commonSubjectsFor9to10];
+        let subjects: Subject[] = [];
+        const uniqueSubjects = new Map<string, Subject>();
+
+        commonSubjectsFor9to10.forEach(s => uniqueSubjects.set(s.name, s));
+
         if (group === 'science') {
-            subjects = [...subjects, ...scienceSubjects];
+            scienceSubjects.forEach(s => uniqueSubjects.set(s.name, s));
         } else if (group === 'arts') {
-            subjects = [...subjects, ...artsSubjects];
+            artsSubjects.forEach(s => uniqueSubjects.set(s.name, s));
         } else if (group === 'commerce') {
-            subjects = [...subjects, ...commerceSubjects];
-        } else if (!group) { // If no group is selected, return all possible subjects for 9-10
-            const allGroupSubjects = new Map<string, Subject>();
+            commerceSubjects.forEach(s => uniqueSubjects.set(s.name, s));
+        } else {
+             // If no group is selected, return all possible subjects for 9-10
             [...scienceSubjects, ...artsSubjects, ...commerceSubjects].forEach(s => {
-                if (!allGroupSubjects.has(s.name)) {
-                    allGroupSubjects.set(s.name, s);
+                if (!uniqueSubjects.has(s.name)) {
+                    uniqueSubjects.set(s.name, s);
                 }
             });
-            subjects = [...subjects, ...Array.from(allGroupSubjects.values())];
         }
+
+        subjects = Array.from(uniqueSubjects.values());
         return subjects;
     }
     return [];
