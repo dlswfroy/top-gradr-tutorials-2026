@@ -10,12 +10,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { getStudents } from '@/lib/student-data';
+import { getStudents, updateStudent } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { getResultsForClass, ClassResult } from '@/lib/results-data';
 import { processStudentResults, StudentProcessedResult } from '@/lib/results-calculation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
@@ -77,6 +88,55 @@ export default function ViewResultsPage() {
         setProcessedResults(finalResults);
 
         setIsLoading(false);
+    };
+
+    const handlePromoteStudents = () => {
+        if (processedResults.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'কোনো ফলাফল নেই',
+                description: 'শিক্ষার্থী উত্তীর্ণ করার জন্য প্রথমে ফলাফল দেখুন।',
+            });
+            return;
+        }
+
+        const nextYear = String(parseInt(selectedYear, 10) + 1);
+        let promotedCount = 0;
+        let failedCount = 0;
+        let graduatedCount = 0;
+
+        processedResults.forEach(result => {
+            if (result.isPass) {
+                if (result.student.className === '10') {
+                    graduatedCount++;
+                } else {
+                    const nextClass = String(parseInt(result.student.className, 10) + 1);
+                    const { id, ...currentData } = result.student;
+                    
+                    const updatedStudentData = {
+                        ...currentData,
+                        academicYear: nextYear,
+                        className: nextClass,
+                        group: (nextClass === '9' || nextClass === '10') ? currentData.group : undefined,
+                    };
+
+                    updateStudent(id, updatedStudentData);
+                    promotedCount++;
+                }
+            } else {
+                failedCount++;
+            }
+        });
+        
+        toast({
+            title: 'শিক্ষার্থী উত্তীর্ণ করা সম্পন্ন',
+            description: `${promotedCount} জন শিক্ষার্থী পরবর্তী শ্রেণিতে উত্তীর্ণ হয়েছে। ${graduatedCount} জন গ্র্যাজুয়েট হয়েছে। ${failedCount} জন ফেল করেছে।`,
+            duration: 8000,
+        });
+
+        // Clear current results view
+        setProcessedResults([]); 
+        setSubjects([]);
     };
 
     const showGroupSelector = className === '9' || className === '10';
@@ -145,9 +205,30 @@ export default function ViewResultsPage() {
                                 <CardTitle>ফলাফল দেখুন</CardTitle>
                                 <CardDescription>শ্রেণিভিত্তিক চূড়ান্ত ফলাফল দেখুন। শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</CardDescription>
                             </div>
-                             <Link href="/results">
-                                <Button variant="outline">নম্বর ইনপুট করুন</Button>
-                            </Link>
+                            <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
+                                <Link href="/results">
+                                    <Button variant="outline">নম্বর ইনপুট করুন</Button>
+                                </Link>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button disabled={isLoading || processedResults.filter(r => r.isPass).length === 0}>
+                                            পরবর্তী সেশনে উত্তীর্ণ করুন
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            এটি উত্তীর্ণ শিক্ষার্থীদের পরবর্তী শিক্ষাবর্ষ ({String(parseInt(selectedYear, 10) + 1)}) এবং পরবর্তী শ্রেণিতে পাঠাবে। এই কাজটি ফিরিয়ে আনা যাবে না।
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handlePromoteStudents}>উত্তীর্ণ করুন</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-8">

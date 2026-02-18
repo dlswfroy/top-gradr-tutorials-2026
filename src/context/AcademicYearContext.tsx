@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import { getStudents } from '@/lib/student-data';
 
 type AcademicYearContextType = {
   selectedYear: string;
@@ -13,28 +12,23 @@ const AcademicYearContext = createContext<AcademicYearContextType | undefined>(u
 
 export function AcademicYearProvider({ children }: { children: ReactNode }) {
   const [selectedYear, setSelectedYear] = useState<string>(() => new Date().getFullYear().toString());
-  const [availableYears, setAvailableYears] = useState<string[]>([]);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
+  
+  const availableYears = useMemo(() => {
+    const startYear = 2020;
+    const endYear = 2050;
+    const years: string[] = [];
+    for (let year = endYear; year >= startYear; year--) {
+      years.push(String(year));
+    }
+    return years;
   }, []);
 
   useEffect(() => {
-      if(isClient) {
-        const allStudents = getStudents();
-        const years = [...new Set(allStudents.map(s => s.academicYear))];
-        const currentYear = new Date().getFullYear().toString();
-        if (!years.includes(currentYear)) {
-            years.push(currentYear);
-        }
-        years.sort((a, b) => parseInt(b) - parseInt(a));
-        setAvailableYears(years);
-        if (!years.includes(selectedYear)) {
-            setSelectedYear(currentYear);
-        }
-      }
-  }, [isClient, selectedYear]);
+    if (!availableYears.includes(selectedYear)) {
+        setSelectedYear(new Date().getFullYear().toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = useMemo(() => ({
     selectedYear,
