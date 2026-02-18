@@ -76,3 +76,20 @@ export const getResultsForClass = (
         r.group === (group || undefined)
     );
 };
+
+export const getAllResults = (): ClassResult[] => getResultsFromStorage();
+
+export const deleteClassResult = (academicYear: string, className: string, subject: string, group?: string): boolean => {
+    const allResults = getResultsFromStorage();
+    const resultsToKeep = allResults.filter(r => 
+        !(r.academicYear === academicYear &&
+        r.className === className &&
+        r.subject === subject &&
+        r.group === (group || undefined))
+    );
+    if (allResults.length > resultsToKeep.length) {
+        saveResultsToStorage(resultsToKeep);
+        return true;
+    }
+    return false;
+}

@@ -42,18 +42,27 @@ const artsSubjects: Subject[] = [
     { name: 'পৌরনীতি ও নাগরিকতা', practical: false },
 ];
 
+const commerceSubjects: Subject[] = [
+    { name: 'সাধারণ বিজ্ঞান', practical: false },
+    { name: 'হিসাব বিজ্ঞান', practical: false },
+    { name: 'ফিন্যান্স ও ব্যাংকিং', practical: false },
+    { name: 'ব্যবসায় উদ্যোগ', practical: false },
+];
+
 export const getSubjects = (className: string, group?: string): Subject[] => {
     if (['6', '7', '8'].includes(className)) {
         return subjectsFor6to8;
     }
     if (['9', '10'].includes(className)) {
+        let subjects = [...commonSubjectsFor9to10];
         if (group === 'science') {
-            return [...commonSubjectsFor9to10, ...scienceSubjects];
+            subjects = [...subjects, ...scienceSubjects];
+        } else if (group === 'arts') {
+            subjects = [...subjects, ...artsSubjects];
+        } else if (group === 'commerce') {
+            subjects = [...subjects, ...commerceSubjects];
         }
-        if (group === 'arts') {
-            return [...commonSubjectsFor9to10, ...artsSubjects];
-        }
-        return commonSubjectsFor9to10; // Return common if no group selected
+        return subjects;
     }
     return [];
 };

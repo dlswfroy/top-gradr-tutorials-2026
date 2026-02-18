@@ -13,7 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { getStudents, Student } from '@/lib/student-data';
 import { getSubjects, Subject as SubjectType } from '@/lib/subjects';
-import { saveClassResults, getResultsForClass, StudentResult } from '@/lib/results-data';
+import { saveClassResults, getResultsForClass, getAllResults, deleteClassResult, ClassResult, StudentResult } from '@/lib/results-data';
+import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 type Marks = {
     written?: number;
@@ -36,11 +39,22 @@ export default function ResultsPage() {
     const [students, setStudents] = useState<Student[]>([]);
     const [marks, setMarks] = useState<Map<number, Marks>>(new Map());
 
+    const [savedResults, setSavedResults] = useState<ClassResult[]>([]);
+
+    const updateSavedResults = () => {
+        const allResults = getAllResults().filter(r => r.academicYear === selectedYear);
+        setSavedResults(allResults);
+    }
+    
+    useEffect(() => {
+        updateSavedResults();
+    }, [selectedYear]);
+
     useEffect(() => {
         if (className) {
             const subjects = getSubjects(className, group);
             setAvailableSubjects(subjects);
-            setSubject(''); // Reset subject when class/group changes
+            setSubject(''); 
             setSelectedSubjectInfo(null);
         } else {
             setAvailableSubjects([]);
@@ -129,6 +143,8 @@ export default function ResultsPage() {
             fullMarks: fullMarks || 100,
             results: resultsData
         });
+        
+        updateSavedResults();
 
         toast({
             title: 'ফলাফল সেভ হয়েছে',
@@ -136,7 +152,19 @@ export default function ResultsPage() {
         });
     };
 
+    const handleDeleteResult = (result: ClassResult) => {
+        deleteClassResult(result.academicYear, result.className, result.subject, result.group);
+        updateSavedResults();
+        toast({
+            title: 'ফলাফল মোছা হয়েছে',
+            description: `${result.subject} বিষয়ের ফলাফল মুছে ফেলা হয়েছে।`
+        });
+    }
+
     const showGroupSelector = className === '9' || className === '10';
+    
+    const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
+    const groupMap: { [key: string]: string } = { 'science': 'বিজ্ঞান', 'arts': 'মানবিক', 'commerce': 'ব্যবসায় শিক্ষা' };
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-background">
@@ -144,12 +172,18 @@ export default function ResultsPage() {
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>ফলাফল ও নম্বর ব্যবস্থাপনা</CardTitle>
-                        <CardDescription>শ্রেণি, বিষয় ও শাখা অনুযায়ী শিক্ষার্থীদের পরীক্ষার নম্বর ইনপুট করুন।</CardDescription>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>ফলাফল ও নম্বর ব্যবস্থাপনা</CardTitle>
+                                <CardDescription>শ্রেণি, বিষয় ও শাখা অনুযায়ী শিক্ষার্থীদের পরীক্ষার নম্বর ইনপুট করুন।</CardDescription>
+                            </div>
+                            <Link href="/view-results">
+                                <Button variant="outline">ফলাফল শিট দেখুন</Button>
+                            </Link>
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end p-4 border rounded-lg">
-                            {/* Class Selector */}
                             <div className="space-y-2">
                                 <Label htmlFor="class">শ্রেণি</Label>
                                 <Select value={className} onValueChange={setClassName}>
@@ -164,7 +198,6 @@ export default function ResultsPage() {
                                 </Select>
                             </div>
 
-                            {/* Group Selector */}
                             {showGroupSelector && (
                                 <div className="space-y-2">
                                     <Label htmlFor="group">শাখা/গ্রুপ</Label>
@@ -173,12 +206,12 @@ export default function ResultsPage() {
                                         <SelectContent>
                                             <SelectItem value="science">বিজ্ঞান</SelectItem>
                                             <SelectItem value="arts">মানবিক</SelectItem>
+                                            <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             )}
                             
-                            {/* Subject Selector */}
                             <div className="space-y-2">
                                 <Label htmlFor="subject">বিষয়</Label>
                                 <Select value={subject} onValueChange={setSubject} disabled={!className}>
@@ -189,7 +222,6 @@ export default function ResultsPage() {
                                 </Select>
                             </div>
 
-                            {/* Full Marks Input */}
                             <div className="space-y-2">
                                 <Label htmlFor="full-marks">পূর্ণমান</Label>
                                 <Input 
@@ -259,6 +291,63 @@ export default function ResultsPage() {
                                 </div>
                             </div>
                         )}
+
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg border-b pb-2">সংরক্ষিত ফলাফল (শিক্ষাবর্ষ {selectedYear.toLocaleString('bn-BD')})</h3>
+                            <div className="border rounded-md">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>শ্রেণি</TableHead>
+                                            <TableHead>শাখা</TableHead>
+                                            <TableHead>বিষয়</TableHead>
+                                            <TableHead className="text-right">কার্যক্রম</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {savedResults.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                                    এই শিক্ষাবর্ষে কোনো ফলাফল সেভ করা হয়নি।
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            savedResults.map((res, i) => (
+                                                <TableRow key={i}>
+                                                    <TableCell>{classNamesMap[res.className] || res.className}</TableCell>
+                                                    <TableCell>{res.group ? groupMap[res.group] : '-'}</TableCell>
+                                                    <TableCell>{res.subject}</TableCell>
+                                                    <TableCell className="text-right">
+                                                         <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive" size="icon">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        এই বিষয়ের ফলাফল স্থায়ীভাবে মুছে যাবে।
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteResult(res)}>
+                                                                        মুছে ফেলুন
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
                     </CardContent>
                 </Card>
             </main>

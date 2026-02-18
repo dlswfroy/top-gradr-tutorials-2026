@@ -117,7 +117,13 @@ export function Header() {
                   href="/results"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
-                  ফলাফল
+                  ফলাফল ইনপুট
+                </Link>
+                 <Link
+                  href="/view-results"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  ফলাফল দেখুন
                 </Link>
                 <Link
                   href="#"
