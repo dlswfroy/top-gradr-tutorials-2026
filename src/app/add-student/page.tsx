@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Calendar as CalendarIcon, Upload, FileUp } from 'lucide-react';
+import { Calendar as CalendarIcon, Upload, FileUp, Download } from 'lucide-react';
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
@@ -28,6 +29,7 @@ export default function AddStudentPage() {
     const [gender, setGender] = useState<string>('');
     const [religion, setReligion] = useState<string>('');
     const [group, setGroup] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -119,6 +121,94 @@ export default function AddStudentPage() {
         }
     }
 
+    const handleDownloadSample = () => {
+        const headers = [
+            ['রোল', 'শ্রেণি', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'অভিভাবকের মোবাইল নম্বর', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(headers);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'নমুনা');
+        XLSX.writeFile(wb, 'student_sample.xlsx');
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    toast({
+                        variant: "destructive",
+                        title: "ফাইল খালি",
+                        description: "আপনার আপলোড করা ফাইলে কোনো তথ্য নেই।",
+                    });
+                    return;
+                }
+
+                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl'> } = {
+                    'রোল': 'roll', 'শ্রেণি': 'className', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'অভিভাবকের মোবাইল নম্বর': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
+                };
+                
+                const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
+
+                const studentsToAdd = json.map((row: any) => {
+                    const student: Partial<Student> = {};
+                    Object.keys(row).forEach(excelHeader => {
+                        const studentKey = headerMapping[excelHeader.trim()];
+                        if (studentKey) {
+                            (student as any)[studentKey] = row[excelHeader];
+                        }
+                    });
+
+                    student.photoUrl = `https://picsum.photos/seed/${student.roll || Math.random()}/96/96`;
+                    
+                    if (student.roll) student.roll = Number(student.roll);
+                    if (student.className) student.className = String(student.className);
+
+                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
+                    const missingFields = requiredFields.filter(field => !student[field]);
+
+                    if (missingFields.length > 0) {
+                        const missingHeaders = missingFields.map(field => englishToBengaliHeaderMap[field as keyof typeof englishToBengaliHeaderMap]).join(', ');
+                        throw new Error(`কিছু আবশ্যকীয় তথ্য অনুপস্থিত: ${missingHeaders}`);
+                    }
+
+                    return student as Omit<Student, 'id'>;
+                });
+                
+                studentsToAdd.forEach(student => addStudent(student));
+                
+                toast({
+                    title: `${studentsToAdd.length} জন শিক্ষার্থী যোগ হয়েছে`,
+                    description: "শিক্ষার্থীদের সফলভাবে তালিকাভুক্ত করা হয়েছে।",
+                });
+
+                router.push('/student-list');
+
+            } catch (error: any) {
+                console.error("File upload error:", error);
+                toast({
+                    variant: "destructive",
+                    title: "ফাইল আপলোড ব্যর্থ হয়েছে",
+                    description: error.message || "দয়া করে ফাইলের ফরম্যাট এবং আবশ্যকীয় তথ্য ঠিক আছে কিনা তা পরীক্ষা করুন।",
+                });
+            } finally {
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
@@ -130,10 +220,17 @@ export default function AddStudentPage() {
                     <CardTitle>নতুন শিক্ষার্থী যোগ করুন</CardTitle>
                     <CardDescription>নতুন শিক্ষার্থীর তথ্য পূরণ করুন।</CardDescription>
                 </div>
-                <Button variant="outline">
-                    <FileUp className="mr-2 h-4 w-4" />
-                    Excel ফাইল আপলোড
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handleDownloadSample}>
+                        <Download className="mr-2 h-4 w-4" />
+                        নমুনা ফাইল
+                    </Button>
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Excel ফাইল আপলোড
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls" />
+                </div>
             </div>
           </CardHeader>
           <CardContent>
