@@ -17,6 +17,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
+import { Label } from "@/components/ui/label";
+
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
@@ -56,49 +58,68 @@ export function Header() {
                 <span className="">বীরগঞ্জ পৌর উচ্চ বিদ্যালয়</span>
               </Link>
             </SheetHeader>
-            <nav className="grid gap-2 p-4 text-base font-medium">
-              <Link
-                href="/"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                ড্যাসবোর্ড
-              </Link>
-              <Link
-                href="/add-student"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                নতুন শিক্ষার্থী যোগ
-              </Link>
-              <Link
-                href="/student-list"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                শিক্ষার্থী তালিকা
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                ডিজিটাল হাজিরা
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                শিক্ষক ও কর্মচারী
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                ফলাফল
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                সেটিং
-              </Link>
+            <div className="p-4 border-b">
+                <Label htmlFor="academic-year-select" className="text-sm font-medium text-muted-foreground">শিক্ষাবর্ষ</Label>
+                 {isClient && availableYears.length > 0 ? (
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger id="academic-year-select" className="mt-1">
+                            <SelectValue placeholder="শিক্ষাবর্ষ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableYears.map(year => (
+                                <SelectItem key={year} value={year}>{year.toLocaleString('bn-BD')}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <div className="mt-1 h-10 w-full animate-pulse rounded-md bg-muted" />
+                )}
+            </div>
+            <nav className="flex-1 overflow-y-auto">
+              <div className="grid gap-2 p-4 text-base font-medium">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  ড্যাসবোর্ড
+                </Link>
+                <Link
+                  href="/add-student"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  নতুন শিক্ষার্থী যোগ
+                </Link>
+                <Link
+                  href="/student-list"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  শিক্ষার্থী তালিকা
+                </Link>
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  ডিজিটাল হাজিরা
+                </Link>
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  শিক্ষক ও কর্মচারী
+                </Link>
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  ফলাফল
+                </Link>
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  সেটিং
+                </Link>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
@@ -110,31 +131,15 @@ export function Header() {
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-            {schoolLogo && (
-              <Image src={schoolLogo.imageUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" data-ai-hint={schoolLogo.imageHint}/>
-            )}
-            <h1 className="text-xl font-bold whitespace-nowrap drop-shadow-md">
-              বীরগঞ্জ পৌর উচ্চ বিদ্যালয়
-            </h1>
-        </div>
-        {isClient && availableYears.length > 0 && (
-            <div className="w-40">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="bg-primary-foreground text-primary">
-                        <SelectValue placeholder="শিক্ষাবর্ষ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableYears.map(year => (
-                            <SelectItem key={year} value={year}>{year.toLocaleString('bn-BD')}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-        )}
-      </div>
-
+      <Link href="/" className="flex items-center gap-2">
+          {schoolLogo && (
+            <Image src={schoolLogo.imageUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" data-ai-hint={schoolLogo.imageHint}/>
+          )}
+          <h1 className="text-xl font-bold whitespace-nowrap drop-shadow-md">
+            বীরগঞ্জ পৌর উচ্চ বিদ্যালয়
+          </h1>
+      </Link>
+      
       <div className="flex items-center gap-4">
         <Avatar className="h-10 w-10 border-2 border-white">
           {profilePhoto && (
