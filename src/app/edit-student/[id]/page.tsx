@@ -42,6 +42,7 @@ export default function EditStudentPage() {
 
     // Form states
     const [roll, setRoll] = useState<number | ''>('');
+    const [academicYear, setAcademicYear] = useState('');
     const [studentClass, setStudentClass] = useState('');
     const [group, setGroup] = useState('');
     const [studentNameBn, setStudentNameBn] = useState('');
@@ -75,6 +76,7 @@ export default function EditStudentPage() {
             const studentData = getStudentById(studentId);
             if (studentData) {
                 setRoll(studentData.roll);
+                setAcademicYear(studentData.academicYear || '');
                 setStudentClass(studentData.className);
                 setGroup(studentData.group || '');
                 setStudentNameBn(studentData.studentNameBn);
@@ -139,6 +141,7 @@ export default function EditStudentPage() {
 
         const updatedStudentData: Omit<Student, 'id'> = {
             roll: Number(roll),
+            academicYear,
             className: studentClass,
             group,
             studentNameBn,
@@ -233,10 +236,23 @@ export default function EditStudentPage() {
               
               <div className="space-y-4">
                   <h3 className="font-semibold text-lg border-b pb-2">প্রাতিষ্ঠানিক তথ্য</h3>
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                       <div className="space-y-2">
                           <Label htmlFor="roll">রোল নম্বর</Label>
                           <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর" required value={roll} onChange={e => setRoll(e.target.value === '' ? '' : parseInt(e.target.value, 10))} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="academic-year">শিক্ষাবর্ষ</Label>
+                          <Select required value={academicYear} onValueChange={setAcademicYear}>
+                              <SelectTrigger id="academic-year" name="academic-year">
+                                  <SelectValue placeholder="শিক্ষাবর্ষ নির্বাচন করুন" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                                      <SelectItem key={year} value={String(year)}>{String(year).toLocaleString('bn-BD')}</SelectItem>
+                                  ))}
+                              </SelectContent>
+                          </Select>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="class">শ্রেণি</Label>

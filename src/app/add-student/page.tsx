@@ -25,6 +25,7 @@ export default function AddStudentPage() {
     const { toast } = useToast();
     const [date, setDate] = useState<Date>()
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [academicYear, setAcademicYear] = useState<string>('');
     const [studentClass, setStudentClass] = useState<string>('');
     const [gender, setGender] = useState<string>('');
     const [religion, setReligion] = useState<string>('');
@@ -55,6 +56,15 @@ export default function AddStudentPage() {
             return;
         }
 
+        if (!academicYear) {
+            toast({
+                variant: "destructive",
+                title: "শিক্ষাবর্ষ আবশ্যক",
+                description: "অনুগ্রহ করে একটি শিক্ষাবর্ষ নির্বাচন করুন।",
+            });
+            return;
+        }
+
         if (!studentClass) {
             toast({
                 variant: "destructive",
@@ -67,6 +77,7 @@ export default function AddStudentPage() {
         const newStudentData: Omit<Student, 'id'> = {
             roll: parseInt((form.elements.namedItem('roll') as HTMLInputElement).value, 10),
             className: studentClass,
+            academicYear: academicYear,
             group,
             studentNameBn: (form.elements.namedItem('student-name-bn') as HTMLInputElement).value,
             studentNameEn: (form.elements.namedItem('student-name-en') as HTMLInputElement).value,
@@ -123,7 +134,7 @@ export default function AddStudentPage() {
 
     const handleDownloadSample = () => {
         const headers = [
-            ['রোল', 'শ্রেণি', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'অভিভাবকের মোবাইল নম্বর', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
+            ['রোল', 'শ্রেণি', 'শিক্ষাবর্ষ', 'গ্রুপ', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'অভিভাবকের মোবাইল নম্বর', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
         ];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         const wb = XLSX.utils.book_new();
@@ -154,7 +165,7 @@ export default function AddStudentPage() {
                 }
 
                 const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl'> } = {
-                    'রোল': 'roll', 'শ্রেণি': 'className', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'অভিভাবকের মোবাইল নম্বর': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
+                    'রোল': 'roll', 'শ্রেণি': 'className', 'শিক্ষাবর্ষ': 'academicYear', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'অভিভাবকের মোবাইল নম্বর': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
                 };
                 
                 const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
@@ -172,8 +183,10 @@ export default function AddStudentPage() {
                     
                     if (student.roll) student.roll = Number(student.roll);
                     if (student.className) student.className = String(student.className);
+                    if (student.academicYear) student.academicYear = String(student.academicYear);
 
-                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
+
+                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'academicYear', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
                     const missingFields = requiredFields.filter(field => !student[field]);
 
                     if (missingFields.length > 0) {
@@ -238,10 +251,23 @@ export default function AddStudentPage() {
               
               <div className="space-y-4">
                   <h3 className="font-semibold text-lg border-b pb-2">প্রাতিষ্ঠানিক তথ্য</h3>
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                       <div className="space-y-2">
                           <Label htmlFor="roll">রোল নম্বর</Label>
                           <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর" required />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="academic-year">শিক্ষাবর্ষ</Label>
+                          <Select required onValueChange={setAcademicYear}>
+                              <SelectTrigger id="academic-year" name="academic-year">
+                                  <SelectValue placeholder="শিক্ষাবর্ষ নির্বাচন করুন" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                                      <SelectItem key={year} value={String(year)}>{String(year).toLocaleString('bn-BD')}</SelectItem>
+                                  ))}
+                              </SelectContent>
+                          </Select>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="class">শ্রেণি</Label>

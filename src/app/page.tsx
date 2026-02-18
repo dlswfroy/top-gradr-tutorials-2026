@@ -1,12 +1,24 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, UserX, GraduationCap } from 'lucide-react';
+import { getStudents } from '@/lib/student-data';
 
 export default function Home() {
-  const totalStudents = 0;
+  const [totalStudents, setTotalStudents] = useState(0);
+  
+  // For now, let's keep these as static until attendance is implemented
   const presentStudents = 0;
   const absentStudents = 0;
   const totalTeachers = 0;
+
+  useEffect(() => {
+      // getStudents now reads from localStorage, so it must be called on the client.
+      setTotalStudents(getStudents().length);
+  }, []);
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
