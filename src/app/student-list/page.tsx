@@ -6,11 +6,40 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { students, Student } from '@/lib/student-data';
+import { getStudents, deleteStudent, Student } from '@/lib/student-data';
 import { Eye, FilePen, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 export default function StudentListPage() {
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setAllStudents(getStudents());
+  }, []);
+
+  const handleDeleteStudent = (studentId: number) => {
+    deleteStudent(studentId);
+    setAllStudents(getStudents()); // Refresh the list
+    toast({
+        title: "শিক্ষার্থী ডিলিট হয়েছে",
+        description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
+    });
+  };
+
   const classes = ['6', '7', '8', '9', '10'];
   const classNamesMap: { [key: string]: string } = {
     '6': '৬ষ্ঠ',
@@ -21,7 +50,7 @@ export default function StudentListPage() {
   };
 
   const getStudentsByClass = (className: string): Student[] => {
-    return students.filter((student) => student.className === className);
+    return allStudents.filter((student) => student.className === className);
   };
 
   return (
@@ -62,7 +91,14 @@ export default function StudentListPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {getStudentsByClass(className).map((student) => (
+                          {getStudentsByClass(className).length === 0 ? (
+                             <TableRow>
+                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                    এই শ্রেণিতে কোনো শিক্ষার্থী নেই।
+                                </TableCell>
+                             </TableRow>
+                          ) : (
+                            getStudentsByClass(className).map((student) => (
                             <TableRow key={student.id}>
                               <TableCell>
                                 <Image
@@ -70,7 +106,7 @@ export default function StudentListPage() {
                                   alt={student.studentNameBn}
                                   width={40}
                                   height={40}
-                                  className="rounded-full"
+                                  className="rounded-full object-cover"
                                 />
                               </TableCell>
                               <TableCell>{student.roll.toLocaleString('bn-BD')}</TableCell>
@@ -82,16 +118,39 @@ export default function StudentListPage() {
                                   <Button variant="outline" size="icon">
                                     <Eye className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="outline" size="icon">
-                                    <FilePen className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="destructive" size="icon">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <Link href={`/edit-student/${student.id}`}>
+                                    <Button variant="outline" size="icon" asChild>
+                                      <span className="cursor-pointer">
+                                        <FilePen className="h-4 w-4" />
+                                      </span>
+                                    </Button>
+                                  </Link>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="icon">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          এই কাজটি ফিরিয়ে আনা যাবে না। এটি তালিকা থেকে স্থায়ীভাবে শিক্ষার্থীকে মুছে ফেলবে।
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteStudent(student.id)}>
+                                          ডিলিট করুন
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                           ))
+                          )}
                         </TableBody>
                       </Table>
                     </CardContent>

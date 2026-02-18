@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,15 +16,68 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from "@/hooks/use-toast"
-import { addStudent, Student } from '@/lib/student-data';
+import { getStudentById, updateStudent, deleteStudent, Student } from '@/lib/student-data';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
-export default function AddStudentPage() {
+export default function EditStudentPage() {
     const router = useRouter();
+    const params = useParams();
     const { toast } = useToast();
-    const [date, setDate] = useState<Date>()
+    
+    const studentId = parseInt(params.id as string, 10);
+
+    const [studentNameBn, setStudentNameBn] = useState('');
+    const [studentNameEn, setStudentNameEn] = useState('');
+    const [fatherNameBn, setFatherNameBn] = useState('');
+    const [fatherNameEn, setFatherNameEn] = useState('');
+    const [motherNameBn, setMotherNameBn] = useState('');
+    const [motherNameEn, setMotherNameEn] = useState('');
+    const [date, setDate] = useState<Date | undefined>();
+    const [studentClass, setStudentClass] = useState('');
+    const [roll, setRoll] = useState<number | ''>('');
+    const [mobile, setMobile] = useState('');
+    const [address, setAddress] = useState('');
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-    const [studentClass, setStudentClass] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (studentId) {
+            const studentData = getStudentById(studentId);
+            if (studentData) {
+                setStudentNameBn(studentData.studentNameBn);
+                setStudentNameEn(studentData.studentNameEn || '');
+                setFatherNameBn(studentData.fatherNameBn);
+                setFatherNameEn(studentData.fatherNameEn || '');
+                setMotherNameBn(studentData.motherNameBn || '');
+                setMotherNameEn(studentData.motherNameEn || '');
+                setDate(studentData.dob);
+                setStudentClass(studentData.className);
+                setRoll(studentData.roll);
+                setMobile(studentData.mobile || '');
+                setAddress(studentData.address || '');
+                setPhotoPreview(studentData.photoUrl);
+                setIsLoading(false);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "ছাত্র পাওয়া যায়নি",
+                    description: "শিক্ষার্থীর তথ্য খুঁজে পাওয়া যায়নি।",
+                });
+                router.push('/student-list');
+            }
+        }
+    }, [studentId, router, toast]);
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -39,8 +92,7 @@ export default function AddStudentPage() {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const form = event.currentTarget;
-
+        
         if (!photoPreview) {
             toast({
                 variant: "destructive",
@@ -50,39 +102,47 @@ export default function AddStudentPage() {
             return;
         }
 
-        if (!studentClass) {
-            toast({
-                variant: "destructive",
-                title: "শ্রেণি আবশ্যক",
-                description: "অনুগ্রহ করে একটি শ্রেণি নির্বাচন করুন।",
-            });
-            return;
-        }
-        
-        const newStudentData: Omit<Student, 'id'> = {
-            studentNameBn: (form.elements.namedItem('student-name-bn') as HTMLInputElement).value,
-            studentNameEn: (form.elements.namedItem('student-name-en') as HTMLInputElement).value,
-            fatherNameBn: (form.elements.namedItem('father-name-bn') as HTMLInputElement).value,
-            fatherNameEn: (form.elements.namedItem('father-name-en') as HTMLInputElement).value,
-            motherNameBn: (form.elements.namedItem('mother-name-bn') as HTMLInputElement).value,
-            motherNameEn: (form.elements.namedItem('mother-name-en') as HTMLInputElement).value,
+        const updatedStudentData: Omit<Student, 'id'> = {
+            studentNameBn,
+            studentNameEn,
+            fatherNameBn,
+            fatherNameEn,
+            motherNameBn,
+            motherNameEn,
             dob: date,
             className: studentClass,
-            roll: parseInt((form.elements.namedItem('roll') as HTMLInputElement).value, 10),
-            mobile: (form.elements.namedItem('mobile') as HTMLInputElement).value,
-            address: (form.elements.namedItem('address') as HTMLTextAreaElement).value,
+            roll: Number(roll),
+            mobile,
+            address,
             photoUrl: photoPreview,
         };
 
-        addStudent(newStudentData);
+        updateStudent(studentId, updatedStudentData);
 
         toast({
-            title: "শিক্ষার্থী যোগ হয়েছে",
-            description: "নতুন শিক্ষার্থী সফলভাবে তালিকায় যোগ করা হয়েছে।",
+            title: "তথ্য আপডেট হয়েছে",
+            description: "শিক্ষার্থীর তথ্য সফলভাবে আপডেট করা হয়েছে।",
         });
 
         router.push('/student-list');
     };
+
+    const handleDelete = () => {
+        deleteStudent(studentId);
+        toast({
+            title: "ছাত্র ডিলিট করা হয়েছে",
+            description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
+        });
+        router.push('/student-list');
+    }
+
+  if (isLoading) {
+    return (
+        <div className="flex min-h-screen w-full flex-col bg-background items-center justify-center">
+            <p>লোড হচ্ছে...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -90,34 +150,34 @@ export default function AddStudentPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
           <CardHeader>
-            <CardTitle>নতুন শিক্ষার্থী যোগ করুন</CardTitle>
-            <CardDescription>নতুন শিক্ষার্থীর তথ্য পূরণ করুন।</CardDescription>
+            <CardTitle>শিক্ষার্থীর তথ্য এডিট করুন</CardTitle>
+            <CardDescription>শিক্ষার্থীর তথ্য পরিবর্তন করুন।</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="grid grid-cols-1 gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="student-name-bn">শিক্ষার্থীর নাম (বাংলা)</Label>
-                <Input id="student-name-bn" name="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায় লিখুন" required />
+                <Input id="student-name-bn" name="student-name-bn" value={studentNameBn} onChange={(e) => setStudentNameBn(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="student-name-en">Student's Name (English)</Label>
-                <Input id="student-name-en" name="student-name-en" placeholder="Enter student's name in English" />
+                <Input id="student-name-en" name="student-name-en" value={studentNameEn} onChange={(e) => setStudentNameEn(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-bn">পিতার নাম (বাংলা)</Label>
-                <Input id="father-name-bn" name="father-name-bn" placeholder="পিতার নাম বাংলায় লিখুন" required />
+                <Input id="father-name-bn" name="father-name-bn" value={fatherNameBn} onChange={(e) => setFatherNameBn(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-en">Father's Name (English)</Label>
-                <Input id="father-name-en" name="father-name-en" placeholder="Enter father's name in English" />
+                <Input id="father-name-en" name="father-name-en" value={fatherNameEn} onChange={(e) => setFatherNameEn(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mother-name-bn">মাতার নাম (বাংলা)</Label>
-                <Input id="mother-name-bn" name="mother-name-bn" placeholder="মাতার নাম বাংলায় লিখুন" />
+                <Input id="mother-name-bn" name="mother-name-bn" value={motherNameBn} onChange={(e) => setMotherNameBn(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mother-name-en">Mother's Name (English)</Label>
-                <Input id="mother-name-en" name="mother-name-en" placeholder="Enter mother's name in English" />
+                <Input id="mother-name-en" name="mother-name-en" value={motherNameEn} onChange={(e) => setMotherNameEn(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dob">জন্ম তারিখ</Label>
@@ -146,7 +206,7 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="class">শ্রেণি</Label>
-                <Select required onValueChange={setStudentClass}>
+                <Select required value={studentClass} onValueChange={setStudentClass}>
                   <SelectTrigger id="class" name="class">
                     <SelectValue placeholder="শ্রেণি নির্বাচন করুন" />
                   </SelectTrigger>
@@ -161,15 +221,15 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="roll">রোল নম্বর</Label>
-                <Input id="roll" name="roll" type="number" placeholder="রোল নম্বর লিখুন" required />
+                <Input id="roll" name="roll" type="number" value={roll} onChange={(e) => setRoll(e.target.value === '' ? '' : parseInt(e.target.value, 10))} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mobile">মোবাইল নম্বর</Label>
-                <Input id="mobile" name="mobile" placeholder="মোবাইল নম্বর লিখুন" />
+                <Input id="mobile" name="mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">ঠিকানা</Label>
-                <Textarea id="address" name="address" placeholder="ঠিকানা লিখুন" />
+                <Textarea id="address" name="address" value={address} onChange={(e) => setAddress(e.target.value)} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>ছবি</Label>
@@ -186,13 +246,30 @@ export default function AddStudentPage() {
                     </div>
                     <Input id="photo" name="photo" type="file" className="hidden" onChange={handlePhotoChange} accept="image/*" />
                     <Button type="button" variant="outline" onClick={() => document.getElementById('photo')?.click()}>
-                        ছবি আপলোড করুন
+                        ছবি পরিবর্তন করুন
                     </Button>
                 </div>
               </div>
 
-              <div className="md:col-span-2 flex justify-end pt-4 border-t mt-4">
-                <Button type="submit">সেভ</Button>
+              <div className="md:col-span-2 flex justify-between items-center pt-4 border-t mt-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button type="button" variant="destructive">ডিলিট</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        এই কাজটি ফিরিয়ে আনা যাবে না। এটি তালিকা থেকে স্থায়ীভাবে শিক্ষার্থীকে মুছে ফেলবে।
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>ডিলিট করুন</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button type="submit">আপডেট</Button>
               </div>
             </form>
           </CardContent>
