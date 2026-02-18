@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,9 +15,12 @@ import { Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from "@/hooks/use-toast"
 
 
 export default function AddStudentPage() {
+    const router = useRouter();
+    const { toast } = useToast();
     const [date, setDate] = useState<Date>()
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -31,6 +35,20 @@ export default function AddStudentPage() {
         }
     };
 
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        // Here you would typically handle form data submission to a server/database
+        console.log("Form submitted");
+
+        toast({
+            title: "শিক্ষার্থী যোগ হয়েছে",
+            description: "নতুন শিক্ষার্থী সফলভাবে তালিকায় যোগ করা হয়েছে।",
+        });
+
+        // Redirect to the student list page
+        router.push('/student-list');
+    };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
@@ -41,10 +59,10 @@ export default function AddStudentPage() {
             <CardDescription>নতুন শিক্ষার্থীর তথ্য পূরণ করুন।</CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <form className="grid grid-cols-1 gap-6 md:grid-cols-2" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="student-name-bn">শিক্ষার্থীর নাম (বাংলা)</Label>
-                <Input id="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায় লিখুন" />
+                <Input id="student-name-bn" placeholder="শিক্ষার্থীর নাম বাংলায় লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="student-name-en">Student's Name (English)</Label>
@@ -52,7 +70,7 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-bn">পিতার নাম (বাংলা)</Label>
-                <Input id="father-name-bn" placeholder="পিতার নাম বাংলায় লিখুন" />
+                <Input id="father-name-bn" placeholder="পিতার নাম বাংলায় লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="father-name-en">Father's Name (English)</Label>
@@ -93,7 +111,7 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="class">শ্রেণি</Label>
-                <Select>
+                <Select required>
                   <SelectTrigger id="class">
                     <SelectValue placeholder="শ্রেণি নির্বাচন করুন" />
                   </SelectTrigger>
@@ -108,7 +126,7 @@ export default function AddStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="roll">রোল নম্বর</Label>
-                <Input id="roll" type="number" placeholder="রোল নম্বর লিখুন" />
+                <Input id="roll" type="number" placeholder="রোল নম্বর লিখুন" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mobile">মোবাইল নম্বর</Label>

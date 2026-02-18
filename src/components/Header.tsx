@@ -29,7 +29,7 @@ export function Header() {
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="flex flex-col">
+          <SheetContent side="left" className="flex flex-col p-0">
             <SheetHeader className="p-4 border-b">
                 <SheetTitle className="sr-only">নেভিগেশন মেনু</SheetTitle>
                 <SheetDescription className="sr-only">
@@ -56,7 +56,13 @@ export function Header() {
                 href="/add-student"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
-                নতুন শিক্ষাথী যোগ
+                নতুন শিক্ষার্থী যোগ
+              </Link>
+              <Link
+                href="/student-list"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                শিক্ষার্থী তালিকা
               </Link>
               <Link
                 href="#"
