@@ -184,9 +184,9 @@ export default function AddStudentPage() {
                 
                 const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
                 
-                const genderMap: { [key: string]: string } = { 'পুরুষ': 'male', 'মহিলা': 'female', 'অন্যান্য': 'other' };
-                const religionMap: { [key: string]: string } = { 'ইসলাম': 'islam', 'হিন্দু': 'hinduism', 'বৌদ্ধ': 'buddhism', 'খ্রিস্টান': 'christianity', 'অন্যান্য': 'other' };
-                const groupMap: { [key:string]: string } = { 'বিজ্ঞান': 'science', 'মানবিক': 'arts', 'ব্যবসায় শিক্ষা': 'commerce' };
+                const genderMap: { [key: string]: string } = { 'পুরুষ': 'male', 'male': 'male', 'মহিলা': 'female', 'female': 'female', 'অন্যান্য': 'other', 'other': 'other' };
+                const religionMap: { [key: string]: string } = { 'ইসলাম': 'islam', 'islam': 'islam', 'হিন্দু': 'hinduism', 'hinduism': 'hinduism', 'বৌদ্ধ': 'buddhism', 'buddhism': 'buddhism', 'খ্রিস্টান': 'christianity', 'christianity': 'christianity', 'অন্যান্য': 'other', 'other': 'other' };
+                const groupMap: { [key:string]: string } = { 'বিজ্ঞান': 'science', 'science': 'science', 'মানবিক': 'arts', 'arts': 'arts', 'ব্যবসায় শিক্ষা': 'commerce', 'commerce': 'commerce' };
 
 
                 const allStudents = getStudents();
@@ -204,34 +204,55 @@ export default function AddStudentPage() {
                                 
                                 if (value && typeof value === 'string') {
                                     value = value.trim();
-                                } else if (value && typeof value === 'number') {
-                                    value = String(value);
                                 }
 
-                                if (studentKey === 'gender' && value) {
-                                    (newStudentData as any)[studentKey] = genderMap[value] || value;
-                                } else if (studentKey === 'religion' && value) {
-                                    (newStudentData as any)[studentKey] = religionMap[value] || value;
-                                } else if (studentKey === 'group' && value) {
-                                    (newStudentData as any)[studentKey] = groupMap[value] || value;
-                                } else if (studentKey === 'dob' && value && !(value instanceof Date)) {
-                                    // Handle string or number dates from excel if cellDates:true fails
-                                    const date = new Date(value);
-                                    if (!isNaN(date.getTime())) {
-                                        newStudentData.dob = date;
-                                    } else {
-                                        (newStudentData as any)[studentKey] = value;
-                                    }
+                                if (!value) {
+                                    (newStudentData as any)[studentKey] = undefined;
+                                    return;
                                 }
-                                else {
+
+                                const valueStr = String(value).toLowerCase();
+
+                                if (studentKey === 'gender') {
+                                    (newStudentData as any)[studentKey] = genderMap[valueStr] || 'other';
+                                } else if (studentKey === 'religion') {
+                                    (newStudentData as any)[studentKey] = religionMap[valueStr] || 'other';
+                                } else if (studentKey === 'group') {
+                                    (newStudentData as any)[studentKey] = groupMap[valueStr] || undefined;
+                                } else if (studentKey === 'dob') {
+                                    let parsedDate: Date | undefined;
+                                    if (value instanceof Date && !isNaN(value.getTime())) {
+                                        parsedDate = value;
+                                    } else if (typeof value === 'number' && value > 1) {
+                                        parsedDate = new Date((value - 25569) * 86400 * 1000);
+                                    } else if (typeof value === 'string') {
+                                        let date: Date | undefined;
+                                        const potentialDate = new Date(value);
+                                        if (!isNaN(potentialDate.getTime())) {
+                                            date = potentialDate;
+                                        } else {
+                                            const parts = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+                                            if (parts) {
+                                                date = new Date(Number(parts[3]), Number(parts[2]) - 1, Number(parts[1]));
+                                            }
+                                        }
+                                        if (date && !isNaN(date.getTime())) {
+                                          parsedDate = date;
+                                        }
+                                    }
+                                    newStudentData.dob = parsedDate;
+
+                                } else if (studentKey === 'roll') {
+                                    newStudentData.roll = Number(value);
+                                } else if (studentKey === 'className') {
+                                    newStudentData.className = String(value);
+                                } else {
                                     (newStudentData as any)[studentKey] = value;
                                 }
                             }
                         });
 
                         newStudentData.academicYear = selectedYear;
-                        if (newStudentData.roll) newStudentData.roll = Number(newStudentData.roll);
-                        if (newStudentData.className) newStudentData.className = String(newStudentData.className);
 
                         const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn', 'academicYear'];
                         const missingFields = requiredFields.filter(field => !newStudentData[field]);
