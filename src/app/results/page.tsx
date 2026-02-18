@@ -577,13 +577,14 @@ export default function ResultsPage() {
                                             <TableHead>শ্রেণি</TableHead>
                                             <TableHead>শাখা</TableHead>
                                             <TableHead>বিষয়</TableHead>
+                                            <TableHead>পূর্ণমান</TableHead>
                                             <TableHead className="text-right">কার্যক্রম</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {savedResults.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                                     এই শিক্ষাবর্ষে কোনো ফলাফল সেভ করা হয়নি।
                                                 </TableCell>
                                             </TableRow>
@@ -593,6 +594,7 @@ export default function ResultsPage() {
                                                     <TableCell>{classNamesMap[res.className] || res.className}</TableCell>
                                                     <TableCell>{res.group ? groupMap[res.group] : '-'}</TableCell>
                                                     <TableCell>{res.subject}</TableCell>
+                                                    <TableCell>{res.fullMarks.toLocaleString('bn-BD')}</TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-2">
                                                             <Button variant="outline" size="icon" onClick={() => handleEditClick(res)}>
