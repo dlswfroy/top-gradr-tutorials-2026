@@ -51,12 +51,6 @@ export default function MarksheetPage() {
             .map(subject => getResultsForClass(academicYear, className, subject.name, group || undefined))
             .filter((result): result is ClassResult => !!result);
         
-        if (resultsBySubject.length < subjectsForClass.length) {
-            console.error("Incomplete results data");
-            setIsLoading(false);
-            return;
-        }
-        
         const [finalResult] = processStudentResults([studentData], resultsBySubject, subjectsForClass, optionalSubject || undefined);
         setProcessedResult(finalResult);
         setIsLoading(false);
