@@ -210,7 +210,9 @@ export default function ViewResultsPage() {
                                                 <TableCell className="text-center font-bold">{res.totalMarks.toLocaleString('bn-BD')}</TableCell>
                                                 <TableCell className="text-center font-bold">{res.gpa.toFixed(2).toLocaleString('bn-BD')}</TableCell>
                                                 <TableCell className="text-center font-bold">{res.finalGrade}</TableCell>
-                                                <TableCell className={cn("text-center font-bold", {"text-destructive": !res.isPass})}>{res.isPass ? renderMeritPosition(res.meritPosition) : 'ফেল'}</TableCell>
+                                                <TableCell className={cn("text-center font-bold", {"text-destructive": !res.isPass})}>
+                                                    {res.isPass ? renderMeritPosition(res.meritPosition) : `ফেল (${res.failedSubjectsCount.toLocaleString('bn-BD')})`}
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
