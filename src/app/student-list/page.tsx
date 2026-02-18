@@ -112,7 +112,7 @@ export default function StudentListPage() {
                               <TableCell>{student.roll.toLocaleString('bn-BD')}</TableCell>
                               <TableCell>{student.studentNameBn}</TableCell>
                               <TableCell>{student.fatherNameBn}</TableCell>
-                              <TableCell>{student.mobile}</TableCell>
+                              <TableCell>{student.guardianMobile}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
                                   <Button variant="outline" size="icon">

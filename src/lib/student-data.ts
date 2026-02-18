@@ -1,16 +1,32 @@
 export type Student = {
   id: number;
+  roll: number;
+  className: string;
   studentNameBn: string;
   studentNameEn?: string;
   fatherNameBn: string;
   fatherNameEn?: string;
-  motherNameBn?: string;
+  motherNameBn: string;
   motherNameEn?: string;
   dob?: Date;
-  className: string;
-  roll: number;
-  mobile?: string;
-  address?: string;
+  birthRegNo?: string;
+  guardianMobile?: string;
+  studentMobile?: string;
+  fatherNid?: string;
+  motherNid?: string;
+  gender?: string;
+  religion?: string;
+  group?: string;
+  presentVillage?: string;
+  presentUnion?: string;
+  presentPostOffice?: string;
+  presentUpazila?: string;
+  presentDistrict?: string;
+  permanentVillage?: string;
+  permanentUnion?: string;
+  permanentPostOffice?: string;
+  permanentUpazila?: string;
+  permanentDistrict?: string;
   photoUrl: string;
 };
 
