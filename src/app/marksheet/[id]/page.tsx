@@ -27,12 +27,9 @@ export default function MarksheetPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     const academicYear = searchParams.get('academicYear');
-    const className = searchParams.get('className');
-    const group = searchParams.get('group');
-    const optionalSubject = searchParams.get('optionalSubject');
 
     useEffect(() => {
-        if (!studentId || !academicYear || !className) {
+        if (!studentId || !academicYear) {
             setIsLoading(false);
             return;
         }
@@ -44,30 +41,32 @@ export default function MarksheetPage() {
         }
         setStudent(studentData);
 
-        const allSubjectsForGroup = getSubjects(className, group || undefined);
-        let subjectsForThisStudent = allSubjectsForGroup;
+        // Use studentData as the source of truth
+        const studentClassName = studentData.className;
+        const studentGroup = studentData.group || undefined;
 
-        // The optionalSubject is for the specific student, passed from the view-results page
-        if (group === 'science' && optionalSubject) {
-            if (optionalSubject === 'উচ্চতর গণিত') {
-                subjectsForThisStudent = allSubjectsForGroup.filter(s => s.name !== 'কৃষি শিক্ষা');
-            } else if (optionalSubject === 'কৃষি শিক্ষা') {
-                subjectsForThisStudent = allSubjectsForGroup.filter(s => s.name !== 'উচ্চতর গণিত');
-            }
-        }
-        setSubjects(subjectsForThisStudent);
-
-        // Fetch results for all possible subjects in the group, let processStudentResults handle logic
+        const allSubjectsForGroup = getSubjects(studentClassName, studentGroup);
+        
         const resultsBySubject: ClassResult[] = allSubjectsForGroup
-            .map(subject => getResultsForClass(academicYear, className, subject.name, group || undefined))
+            .map(subject => getResultsForClass(academicYear, studentClassName, subject.name, studentGroup))
             .filter((result): result is ClassResult => !!result);
         
-        // Use the new processStudentResults which correctly handles per-student optional subjects
         const [finalResult] = processStudentResults([studentData], resultsBySubject, allSubjectsForGroup);
+        
+        if (!finalResult) {
+            setIsLoading(false);
+            return;
+        }
+
+        // Get the actual subjects that were processed for this student
+        const subjectsForThisStudent = allSubjectsForGroup.filter(s => finalResult.subjectResults.has(s.name));
+        
+        setSubjects(subjectsForThisStudent);
         setProcessedResult(finalResult);
         setIsLoading(false);
 
-    }, [studentId, academicYear, className, group, optionalSubject]);
+    }, [studentId, academicYear]);
+
 
     const schoolLogo = PlaceHolderImages.find(p => p.id === 'school-logo');
     
@@ -175,6 +174,7 @@ export default function MarksheetPage() {
                             <tbody>
                                 {sortedSubjects.map((subject, index) => {
                                     const result = processedResult.subjectResults.get(subject.name);
+                                    const fullMarks = getResultsForClass(academicYear!, student.className, subject.name, student.group)?.fullMarks || 100;
                                     return (
                                         <tr key={subject.code} className="border-b border-black">
                                             <td className="border-r border-black p-1 text-center">{index + 1}</td>
@@ -183,7 +183,7 @@ export default function MarksheetPage() {
                                                 {studentOptionalSubject === subject.name && <span className="font-bold"> (Optional)</span>}
                                             </td>
                                             <td className="border-r border-black p-1 text-center">{subject.code}</td>
-                                            <td className="border-r border-black p-1 text-center">100</td>
+                                            <td className="border-r border-black p-1 text-center">{fullMarks}</td>
                                             <td className="border-r border-black p-1 text-center">{result?.marks ?? '-'}</td>
                                             <td className="border-r border-black p-1 text-center">{result?.grade ?? '-'}</td>
                                             <td className="p-1 text-center">{result?.point !== undefined ? result.point.toFixed(2) : '-'}</td>
