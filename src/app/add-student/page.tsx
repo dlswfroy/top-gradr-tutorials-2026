@@ -16,7 +16,7 @@ import { Calendar as CalendarIcon, Upload, FileUp, Download } from 'lucide-react
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { addStudent, Student } from '@/lib/student-data';
+import { addStudent, getStudents, updateStudent, Student } from '@/lib/student-data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 
@@ -178,7 +178,7 @@ export default function AddStudentPage() {
                     return;
                 }
 
-                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl' | 'academicYear'> } = {
+                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl' > } = {
                     'রোল': 'roll', 'শ্রেণি': 'className', 'গ্রুপ': 'group', 'নাম (বাংলা)': 'studentNameBn', 'নাম (ইংরেজি)': 'studentNameEn', 'জন্ম তারিখ': 'dob', 'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'লিঙ্গ': 'gender', 'ধর্ম': 'religion', 'পিতার নাম (বাংলা)': 'fatherNameBn', 'পিতার নাম (ইংরেজি)': 'fatherNameEn', 'পিতার NID': 'fatherNid', 'মাতার নাম (বাংলা)': 'motherNameBn', 'মাতার নাম (ইংরেজি)': 'motherNameEn', 'মাতার NID': 'motherNid', 'মোবাইল': 'guardianMobile', 'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'বর্তমান গ্রাম': 'presentVillage', 'বর্তমান ইউনিয়ন': 'presentUnion', 'বর্তমান ডাকঘর': 'presentPostOffice', 'বর্তমান উপজেলা': 'presentUpazila', 'বর্তমান জেলা': 'presentDistrict', 'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
                 };
                 
@@ -189,54 +189,85 @@ export default function AddStudentPage() {
                 const groupMap: { [key:string]: string } = { 'বিজ্ঞান': 'science', 'মানবিক': 'arts', 'ব্যবসায় শিক্ষা': 'commerce' };
 
 
-                const studentsToAdd = json.map((row: any) => {
-                    const newStudent: Partial<Student> = {};
-                    Object.keys(row).forEach(excelHeader => {
-                        const studentKey = headerMapping[excelHeader.trim()];
-                        if (studentKey) {
-                            let value = row[excelHeader];
-                            
-                            if (value && typeof value === 'string') {
-                                value = value.trim();
-                            } else if (typeof value === 'number') {
-                                value = String(value);
-                            }
+                const allStudents = getStudents();
+                let addedCount = 0;
+                let updatedCount = 0;
+                const processingErrors: string[] = [];
 
-                            if (studentKey === 'gender' && value) {
-                                (newStudent as any)[studentKey] = genderMap[value] || value;
-                            } else if (studentKey === 'religion' && value) {
-                                (newStudent as any)[studentKey] = religionMap[value] || value;
-                            } else if (studentKey === 'group' && value) {
-                                (newStudent as any)[studentKey] = groupMap[value] || value;
-                            } else {
-                                (newStudent as any)[studentKey] = value;
+                json.forEach((row: any, index: number) => {
+                    try {
+                        const newStudentData: Partial<Student> = {};
+                        Object.keys(row).forEach(excelHeader => {
+                            const studentKey = headerMapping[excelHeader.trim()];
+                            if (studentKey) {
+                                let value = row[excelHeader];
+                                
+                                if (value && typeof value === 'string') {
+                                    value = value.trim();
+                                } else if (value && typeof value === 'number') {
+                                    value = String(value);
+                                }
+
+                                if (studentKey === 'gender' && value) {
+                                    (newStudentData as any)[studentKey] = genderMap[value] || value;
+                                } else if (studentKey === 'religion' && value) {
+                                    (newStudentData as any)[studentKey] = religionMap[value] || value;
+                                } else if (studentKey === 'group' && value) {
+                                    (newStudentData as any)[studentKey] = groupMap[value] || value;
+                                } else if (studentKey === 'dob' && value && !(value instanceof Date)) {
+                                    // Handle string or number dates from excel if cellDates:true fails
+                                    const date = new Date(value);
+                                    if (!isNaN(date.getTime())) {
+                                        newStudentData.dob = date;
+                                    } else {
+                                        (newStudentData as any)[studentKey] = value;
+                                    }
+                                }
+                                else {
+                                    (newStudentData as any)[studentKey] = value;
+                                }
                             }
+                        });
+
+                        newStudentData.academicYear = selectedYear;
+                        if (newStudentData.roll) newStudentData.roll = Number(newStudentData.roll);
+                        if (newStudentData.className) newStudentData.className = String(newStudentData.className);
+
+                        const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn', 'academicYear'];
+                        const missingFields = requiredFields.filter(field => !newStudentData[field]);
+
+                        if (missingFields.length > 0) {
+                            const missingHeaders = missingFields.map(field => englishToBengaliHeaderMap[field as keyof typeof englishToBengaliHeaderMap]).join(', ');
+                            throw new Error(`সারি ${index + 2}: আবশ্যকীয় তথ্য অনুপস্থিত: ${missingHeaders}`);
                         }
-                    });
 
-                    newStudent.academicYear = selectedYear;
-                    newStudent.photoUrl = `https://picsum.photos/seed/${newStudent.roll || Math.random()}/96/96`;
-                    
-                    if (newStudent.roll) newStudent.roll = Number(newStudent.roll);
-                    if (newStudent.className) newStudent.className = String(newStudent.className);
+                        const existingStudent = allStudents.find(
+                            s => s.roll === newStudentData.roll &&
+                                 s.className === newStudentData.className &&
+                                 s.academicYear === newStudentData.academicYear
+                        );
 
-
-                    const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn'];
-                    const missingFields = requiredFields.filter(field => !newStudent[field]);
-
-                    if (missingFields.length > 0) {
-                        const missingHeaders = missingFields.map(field => englishToBengaliHeaderMap[field as keyof typeof englishToBengaliHeaderMap]).join(', ');
-                        throw new Error(`কিছু আবশ্যকীয় তথ্য অনুপস্থিত: ${missingHeaders}`);
+                        if (existingStudent) {
+                            const dataToUpdate = { ...existingStudent, ...newStudentData };
+                            updateStudent(existingStudent.id, dataToUpdate);
+                            updatedCount++;
+                        } else {
+                            newStudentData.photoUrl = `https://picsum.photos/seed/${newStudentData.roll || Math.random()}/96/96`;
+                            addStudent(newStudentData as Omit<Student, 'id'>);
+                            addedCount++;
+                        }
+                    } catch (rowError: any) {
+                        processingErrors.push(rowError.message);
                     }
-
-                    return newStudent as Omit<Student, 'id'>;
                 });
-                
-                studentsToAdd.forEach(s => addStudent(s));
+
+                if (processingErrors.length > 0) {
+                    throw new Error(processingErrors.join('\n'));
+                }
                 
                 toast({
-                    title: `${studentsToAdd.length} জন শিক্ষার্থী যোগ হয়েছে`,
-                    description: "শিক্ষার্থীদের সফলভাবে তালিকাভুক্ত করা হয়েছে।",
+                    title: "প্রসেসিং সম্পন্ন",
+                    description: `${addedCount} জন নতুন শিক্ষার্থী যোগ হয়েছে এবং ${updatedCount} জনের তথ্য আপডেট হয়েছে।`,
                 });
 
                 router.push('/student-list');
@@ -247,6 +278,7 @@ export default function AddStudentPage() {
                     variant: "destructive",
                     title: "ফাইল আপলোড ব্যর্থ হয়েছে",
                     description: error.message || "দয়া করে ফাইলের ফরম্যাট এবং আবশ্যকীয় তথ্য ঠিক আছে কিনা তা পরীক্ষা করুন।",
+                    duration: 10000, // Show error for longer
                 });
             } finally {
                 if (fileInputRef.current) {
