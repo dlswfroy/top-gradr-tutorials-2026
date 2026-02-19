@@ -68,12 +68,13 @@ export const getFeeCollectionsForStudent = async (db: Firestore, studentId: stri
   const q = query(
     collection(db, FEE_COLLECTION_PATH),
     where("studentId", "==", studentId),
-    where("academicYear", "==", academicYear),
-    orderBy("collectionDate", "desc")
+    where("academicYear", "==", academicYear)
   );
   try {
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(feeCollectionFromDoc);
+    const collections = querySnapshot.docs.map(feeCollectionFromDoc);
+    // Sort on the client-side to maintain order without requiring a composite index
+    return collections.sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime());
   } catch (e) {
     console.error("Error getting fee collections:", e);
     return [];
