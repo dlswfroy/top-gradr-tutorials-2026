@@ -339,13 +339,13 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                              <DialogTitle className="text-2xl">
                                 {isLoading || !student ? <Skeleton className="h-8 w-3/4" /> : `ছাত্র/ ছাত্রীর বেতন আদায় তথ্য`}
                             </DialogTitle>
-                            <DialogDescription>
-                                {isLoading || !student ? <Skeleton className="h-4 w-1/2" /> : (
-                                    <>
-                                        <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
-                                    </>
-                                )}
-                            </DialogDescription>
+                            {isLoading || !student ? (
+                                <Skeleton className="h-4 w-1/2" />
+                            ) : (
+                                <DialogDescription>
+                                    <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
+                                </DialogDescription>
+                            )}
                         </div>
                     </div>
                 </DialogHeader>
