@@ -8,7 +8,7 @@ import { getAttendanceFromStorage, DailyAttendance } from '@/lib/attendance-data
 import { useEffect, useState, useMemo } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, orderBy, FirestoreError } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -24,12 +24,11 @@ interface StudentReport {
 const ReportSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const [reportData, setReportData] = useState<StudentReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!db || !user || userLoading) return;
+        if (!db) return;
 
         const fetchAttendance = async () => {
             const allAttendance = (await getAttendanceFromStorage(db)).filter(
@@ -65,7 +64,7 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
 
         fetchAttendance();
 
-    }, [classId, students, selectedYear, db, user, userLoading]);
+    }, [classId, students, selectedYear, db]);
 
      if (isLoading) {
         return <p className="text-center p-8">লোড হচ্ছে...</p>
@@ -122,10 +121,9 @@ export default function AttendanceReportPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const db = useFirestore();
-  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
-    if (!db || !user || userLoading) return;
+    if (!db) return;
     setIsLoading(true);
     const studentsQuery = query(
         collection(db, "students"),
@@ -150,7 +148,7 @@ export default function AttendanceReportPage() {
     });
 
     return () => unsubscribe();
-  }, [db, toast, user, userLoading]);
+  }, [db, toast]);
 
 
   const studentsForYear = useMemo(() => {

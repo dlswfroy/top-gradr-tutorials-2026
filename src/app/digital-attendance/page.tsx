@@ -15,7 +15,7 @@ import { saveDailyAttendance, getAttendanceForClassAndDate, StudentAttendance, D
 import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, orderBy, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -26,7 +26,6 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay(); // 0 for Sunday, 5 for Friday, 6 for Saturday
@@ -39,7 +38,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
     useEffect(() => {
-        if (!db || !user || userLoading) return;
+        if (!db) return;
         
         const initialAttendance = new Map<string, AttendanceStatus>();
         students.forEach(student => {
@@ -59,7 +58,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
         checkExistingData();
 
-    }, [students, todayStr, classId, selectedYear, db, user, userLoading]);
+    }, [students, todayStr, classId, selectedYear, db]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => new Map(prev).set(studentId, status));
@@ -200,10 +199,9 @@ export default function DigitalAttendancePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const db = useFirestore();
-  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
-    if (!db || !user || userLoading) return;
+    if (!db) return;
     setIsLoading(true);
 
     const studentsQuery = query(
@@ -229,7 +227,7 @@ export default function DigitalAttendancePage() {
     });
 
     return () => unsubscribe();
-  }, [db, toast, user, userLoading]);
+  }, [db, toast]);
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);

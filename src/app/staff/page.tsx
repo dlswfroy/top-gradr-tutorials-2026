@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, orderBy, FirestoreError } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,6 @@ export default function StaffListPage() {
   const { toast } = useToast();
   const [staffToView, setStaffToView] = useState<Staff | null>(null);
   const db = useFirestore();
-  const { user, loading: userLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -51,7 +50,7 @@ export default function StaffListPage() {
   }, []);
 
   useEffect(() => {
-    if (!db || !user || userLoading) return;
+    if (!db) return;
     setIsLoading(true);
 
     const staffQuery = query(collection(db, "staff"), orderBy("nameBn"));
@@ -74,7 +73,7 @@ export default function StaffListPage() {
     });
 
     return () => unsubscribe();
-  }, [db, user, userLoading]);
+  }, [db]);
 
   const handleDeleteStaff = (staffId: string) => {
     if (!db) return;

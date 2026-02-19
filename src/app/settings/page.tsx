@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, orderBy, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -161,7 +161,6 @@ function SchoolInfoSettings() {
 
 function HolidaySettings() {
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const { toast } = useToast();
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -169,7 +168,7 @@ function HolidaySettings() {
     const [newHolidayDescription, setNewHolidayDescription] = useState('');
 
     useEffect(() => {
-        if (!db || !user || userLoading) return;
+        if (!db) return;
         setIsLoading(true);
         const holidaysQuery = query(collection(db, 'holidays'), orderBy('date'));
         const unsubscribe = onSnapshot(holidaysQuery, (snapshot) => {
@@ -185,7 +184,7 @@ function HolidaySettings() {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [db, user, userLoading]);
+    }, [db]);
 
     const handleAddHoliday = () => {
         if (!db) return;

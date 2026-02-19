@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Student } from '@/lib/student-data';
 import { getFeeCollectionsForStudent, FeeCollection, FeeBreakdown } from '@/lib/fees-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { NewTransactionData } from '@/lib/transactions-data';
 import { collection, doc, writeBatch, serverTimestamp, Timestamp, WithFieldValue, DocumentData } from 'firebase/firestore';
@@ -254,7 +254,6 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
 
 export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }: { student: Student | null, open: boolean, onOpenChange: (open: boolean) => void, onFeeCollected: () => void }) {
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
 
@@ -267,18 +266,18 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
     const studentId = student?.id;
 
     const fetchFeeData = useCallback(async () => {
-        if (!db || !studentId || !user) return;
+        if (!db || !studentId) return;
         setIsLoading(true);
         const collections = await getFeeCollectionsForStudent(db, studentId, selectedYear);
         setFeeCollections(collections);
         setIsLoading(false);
-    }, [db, studentId, selectedYear, user]);
+    }, [db, studentId, selectedYear]);
 
     useEffect(() => {
-        if (open && studentId && !userLoading) {
+        if (open && studentId) {
             fetchFeeData();
         }
-    }, [open, studentId, fetchFeeData, userLoading]);
+    }, [open, studentId, fetchFeeData]);
 
     const handleEdit = (collection: FeeCollection) => {
         setEditingCollection(collection);
@@ -331,15 +330,13 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                                 <Skeleton className="h-8 w-3/4" />
                                 : <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য</DialogTitle>
                             }
-                            <DialogDescription>
-                                {isLoading || !student ? (
-                                    <Skeleton className="h-4 w-1/2" />
-                                ) : (
-                                    <>
-                                        <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
-                                    </>
-                                )}
-                            </DialogDescription>
+                            {isLoading || !student ? (
+                                <Skeleton className="h-4 w-1/2" />
+                            ) : (
+                                <DialogDescription>
+                                    <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
+                                </DialogDescription>
+                            )}
                         </div>
                     </div>
                 </DialogHeader>

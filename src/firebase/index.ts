@@ -3,7 +3,6 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-import { useUser } from './auth/use-user';
 import { firebaseConfig } from './config';
 import { useCollection } from './firestore/use-collection';
 import { useDoc } from './firestore/use-doc';
@@ -29,7 +28,6 @@ export {
   FirebaseClientProvider,
   useCollection,
   useDoc,
-  useUser,
   useFirebase,
   useFirebaseApp,
   useFirestore,

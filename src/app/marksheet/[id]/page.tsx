@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Image from 'next/image';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -24,7 +24,6 @@ export default function MarksheetPage() {
     const searchParams = useSearchParams();
     const studentId = params.id as string;
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const { schoolInfo } = useSchoolInfo();
 
     const [student, setStudent] = useState<Student | null>(null);
@@ -36,7 +35,7 @@ export default function MarksheetPage() {
     const academicYear = searchParams.get('academicYear');
 
     useEffect(() => {
-      if (!db || !user || userLoading) return;
+      if (!db) return;
       const studentsQuery = query(collection(db, "students"));
       const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -53,12 +52,12 @@ export default function MarksheetPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
-    }, [db, user, userLoading]);
+    }, [db]);
 
 
     useEffect(() => {
         const processMarks = async () => {
-            if (!studentId || !academicYear || !db || allStudents.length === 0 || !user || userLoading) {
+            if (!studentId || !academicYear || !db || allStudents.length === 0) {
                 return;
             }
 
@@ -119,7 +118,7 @@ export default function MarksheetPage() {
         setIsLoading(true);
         processMarks();
 
-    }, [studentId, academicYear, db, allStudents, user, userLoading]);
+    }, [studentId, academicYear, db, allStudents]);
 
     
     const renderMeritPosition = (position?: number) => {

@@ -10,7 +10,7 @@ import { Student } from '@/lib/student-data';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, orderBy, FirestoreError } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -37,11 +37,10 @@ const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) =>
     const [isLoading, setIsLoading] = useState(true);
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user, loading: userLoading } = useUser();
     const [feeStudent, setFeeStudent] = useState<Student | null>(null);
 
     useEffect(() => {
-        if (!db || !user || userLoading) return;
+        if (!db) return;
         setIsLoading(true);
 
         const studentsQuery = query(
@@ -67,7 +66,7 @@ const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) =>
         });
 
         return () => unsubscribe();
-    }, [db, user, userLoading]);
+    }, [db]);
 
     const studentsForYear = useMemo(() => {
         return allStudents.filter(student => student.academicYear === selectedYear);
@@ -417,25 +416,22 @@ const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], i
 export default function AccountsPage() {
   const [isClient, setIsClient] = useState(false);
   const db = useFirestore();
-  const { user, loading: userLoading } = useUser();
   const { selectedYear } = useAcademicYear();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchTransactions = useCallback(async () => {
-    if (!db || !user) return;
+    if (!db) return;
     setIsLoading(true);
     const fetchedTransactions = await getTransactions(db, selectedYear);
     setTransactions(fetchedTransactions);
     setIsLoading(false);
-  }, [db, selectedYear, user]);
+  }, [db, selectedYear]);
 
   useEffect(() => {
     setIsClient(true);
-    if (!userLoading) {
-      fetchTransactions();
-    }
-  }, [fetchTransactions, userLoading]);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
