@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Student } from '@/lib/student-data';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, orderBy, FirestoreError } from 'firebase/firestore';
@@ -28,14 +28,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Transaction, NewTransactionData, addTransaction, getTransactions, deleteTransaction, TransactionType } from '@/lib/transactions-data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { StudentFeeDialog } from '@/components/StudentFeeDialog';
 
 
 // Fee Collection Component
-const FeeCollectionTab = () => {
+const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) => {
     const [allStudents, setAllStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const [feeStudent, setFeeStudent] = useState<Student | null>(null);
 
     useEffect(() => {
         if (!db) return;
@@ -80,6 +82,7 @@ const FeeCollectionTab = () => {
     };
 
     return (
+        <>
         <Tabs defaultValue="6">
             <TabsList className="grid w-full grid-cols-5">
             {classes.map((className) => (
@@ -122,9 +125,7 @@ const FeeCollectionTab = () => {
                                 <TableCell className="whitespace-nowrap">{student.studentNameBn}</TableCell>
                                 <TableCell className="whitespace-nowrap">{student.fatherNameBn}</TableCell>
                                 <TableCell className="text-right">
-                                <Link href={`/collect-fee/${student.id}`}>
-                                    <Button>বেতন আদায় করুন</Button>
-                                </Link>
+                                <Button onClick={() => setFeeStudent(student)}>বেতন আদায় করুন</Button>
                                 </TableCell>
                             </TableRow>
                             ))
@@ -137,6 +138,8 @@ const FeeCollectionTab = () => {
             </TabsContent>
             ))}
         </Tabs>
+        <StudentFeeDialog student={feeStudent} open={!!feeStudent} onOpenChange={() => setFeeStudent(null)} onFeeCollected={onFeeCollected} />
+        </>
     )
 }
 
@@ -157,8 +160,8 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!db || !date || !type || !accountHead || !amount) {
-            toast({ variant: 'destructive', title: 'অনুগ্রহ করে সকল তথ্য পূরণ করুন।' });
+        if (!db || !date || !type || !accountHead || !amount || amount <= 0) {
+            toast({ variant: 'destructive', title: 'অনুগ্রহ করে সকল তথ্য পূরণ করুন এবং টাকার পরিমাণ শূন্যের বেশি রাখুন।' });
             return;
         }
 
@@ -318,7 +321,7 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                                    <Button variant="destructive" size="icon" disabled={!!tx.feeCollectionId}><Trash2 className="h-4 w-4" /></Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
@@ -425,19 +428,18 @@ export default function AccountsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!db) return;
     setIsLoading(true);
     const fetchedTransactions = await getTransactions(db, selectedYear);
     setTransactions(fetchedTransactions);
     setIsLoading(false);
-  }
+  }, [db, selectedYear]);
 
   useEffect(() => {
     setIsClient(true);
     fetchTransactions();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db, selectedYear]);
+  }, [db, selectedYear, fetchTransactions]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -458,7 +460,7 @@ export default function AccountsPage() {
                     <TabsTrigger value="new-transaction">নতুন লেনদেন</TabsTrigger>
                   </TabsList>
                   <TabsContent value="fee-collection" className="mt-4">
-                    <FeeCollectionTab />
+                    <FeeCollectionTab onFeeCollected={fetchTransactions} />
                   </TabsContent>
                    <TabsContent value="cashbook" className="mt-4">
                     <CashbookTab transactions={transactions} isLoading={isLoading} refetch={fetchTransactions} />

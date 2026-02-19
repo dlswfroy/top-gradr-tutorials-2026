@@ -1,0 +1,384 @@
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Student } from '@/lib/student-data';
+import { getFeeCollectionsForStudent, FeeCollection, FeeBreakdown } from '@/lib/fees-data';
+import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useFirestore } from '@/firebase';
+import { useToast } from "@/hooks/use-toast";
+import { NewTransactionData } from '@/lib/transactions-data';
+import { collection, doc, writeBatch, serverTimestamp, Timestamp, WithFieldValue, DocumentData } from 'firebase/firestore';
+import { Calendar as CalendarIcon, FilePen, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { bn } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { Skeleton } from './ui/skeleton';
+
+const feeFields: { key: keyof FeeBreakdown; label: string }[] = [
+    { key: 'tuitionCurrent', label: 'চলতি' },
+    { key: 'tuitionAdvance', label: 'অগ্রিম' },
+    { key: 'tuitionDue', label: 'বকেয়া' },
+    { key: 'tuitionFine', label: 'জরিমানা' },
+    { key: 'examFeeHalfYearly', label: 'অর্ধ-বার্ষিক' },
+    { key: 'examFeeAnnual', label: 'বার্ষিক' },
+    { key: 'examFeePreNirbachoni', label: 'প্রাক-নির্বাচনী' },
+    { key: 'examFeeNirbachoni', label: 'নির্বাচনী' },
+    { key: 'sessionFee', label: 'সেশন ফি' },
+    { key: 'admissionFee', label: 'ভর্তি ফি' },
+    { key: 'scoutFee', label: 'স্কাউট ফি' },
+    { key: 'developmentFee', label: 'উন্নয়ন ফি' },
+    { key: 'libraryFee', label: 'লাইব্রেরি ফি' },
+    { key: 'tiffinFee', label: 'টিফিন ফি' },
+];
+
+const feeHeadMapping: { [key in keyof FeeBreakdown]?: string } = {
+    tuitionCurrent: 'Tuition Fee',
+    tuitionAdvance: 'Tuition Fee',
+    tuitionDue: 'Tuition Fee',
+    tuitionFine: 'Tuition Fee',
+    examFeeHalfYearly: 'Exam Fee',
+    examFeeAnnual: 'Exam Fee',
+    examFeePreNirbachoni: 'Exam Fee',
+    examFeeNirbachoni: 'Exam Fee',
+    sessionFee: 'Session Fee',
+    admissionFee: 'Admission Fee',
+    scoutFee: 'Other',
+    developmentFee: 'Other',
+    libraryFee: 'Other',
+    tiffinFee: 'Other'
+};
+
+const emptyBreakdown: FeeBreakdown = {};
+
+function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenChange }: { student: Student, onSave: () => void, existingCollection: FeeCollection | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const db = useFirestore();
+    const { toast } = useToast();
+    const { selectedYear } = useAcademicYear();
+    const [collectionDate, setCollectionDate] = useState<Date>(new Date());
+    const [description, setDescription] = useState('');
+    const [breakdown, setBreakdown] = useState<FeeBreakdown>(emptyBreakdown);
+
+    useEffect(() => {
+        if (open) {
+            if (existingCollection) {
+                setCollectionDate(new Date(existingCollection.collectionDate));
+                setDescription(existingCollection.description);
+                setBreakdown(existingCollection.breakdown || {});
+            } else {
+                setCollectionDate(new Date());
+                setDescription('');
+                setBreakdown(emptyBreakdown);
+            }
+        }
+    }, [existingCollection, open]);
+
+    const handleFeeChange = (field: keyof FeeBreakdown, value: string) => {
+        const numValue = value === '' ? undefined : parseInt(value, 10);
+        setBreakdown(prev => ({ ...prev, [field]: isNaN(numValue!) ? undefined : numValue }));
+    };
+
+    const totalAmount = useMemo(() => {
+        return Object.values(breakdown).reduce((acc, val) => acc + (val || 0), 0);
+    }, [breakdown]);
+
+     const handleSave = async () => {
+        if (!db || !student || !collectionDate) {
+            toast({ variant: 'destructive', title: 'প্রয়োজনীয় তথ্য পূরণ করুন' });
+            return;
+        }
+        if (totalAmount <= 0) {
+            toast({ variant: 'destructive', title: 'টাকার পরিমাণ লিখুন', description: 'মোট আদায় অবশ্যই শূন্যের বেশি হতে হবে।' });
+            return;
+        }
+
+        const batch = writeBatch(db);
+
+        if (existingCollection && existingCollection.transactionIds) {
+            existingCollection.transactionIds.forEach(id => {
+                const transRef = doc(db, 'transactions', id);
+                batch.delete(transRef);
+            });
+        }
+
+        const feeCollectionId = existingCollection?.id || doc(collection(db, 'feeCollections')).id;
+        
+        const transactionsToCreate: { [head: string]: NewTransactionData } = {};
+        const newTransactionIds: string[] = [];
+
+        for (const key in breakdown) {
+            const feeKey = key as keyof FeeBreakdown;
+            const amount = breakdown[feeKey];
+            if (!amount || amount <= 0) continue;
+
+            const accountHead = feeHeadMapping[feeKey] || 'Other';
+            if (!transactionsToCreate[accountHead]) {
+                transactionsToCreate[accountHead] = {
+                    date: collectionDate,
+                    type: 'income',
+                    accountHead: accountHead,
+                    description: `Fee from ${student.studentNameBn}, Roll: ${student.roll.toLocaleString('bn-BD')}`,
+                    amount: 0,
+                    academicYear: selectedYear,
+                    feeCollectionId: feeCollectionId
+                };
+            }
+            transactionsToCreate[accountHead].amount += amount;
+        }
+        
+        for (const head in transactionsToCreate) {
+            const txRef = doc(collection(db, 'transactions'));
+            newTransactionIds.push(txRef.id);
+            const data = { ...transactionsToCreate[head], date: Timestamp.fromDate(transactionsToCreate[head].date) };
+            batch.set(txRef, data);
+        }
+        
+        const feeCollectionRef = doc(db, 'feeCollections', feeCollectionId);
+
+        const feeCollectionData: WithFieldValue<DocumentData> = {
+            studentId: student.id,
+            academicYear: selectedYear,
+            collectionDate: Timestamp.fromDate(collectionDate),
+            description,
+            totalAmount,
+            breakdown,
+            transactionIds: newTransactionIds,
+            updatedAt: serverTimestamp(),
+        };
+
+        if (existingCollection) {
+            batch.update(feeCollectionRef, feeCollectionData);
+        } else {
+            feeCollectionData.createdAt = serverTimestamp();
+            batch.set(feeCollectionRef, feeCollectionData);
+        }
+
+        try {
+            await batch.commit();
+            toast({ title: "ফি আদায় সফল হয়েছে", description: `শিক্ষার্থীর ফি এবং ক্যাশবুক সফলভাবে আপডেট করা হয়েছে।` });
+            onSave();
+            onOpenChange(false);
+        } catch (error) {
+            console.error(error);
+            const permissionError = new FirestorePermissionError({
+                path: 'feeCollections/ or transactions/',
+                operation: 'write',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>{existingCollection ? 'ফি আদায় এডিট করুন' : 'নতুন ফি আদায়'}</DialogTitle>
+                    <DialogDescription>
+                        {student.studentNameBn} (রোল: {student.roll.toLocaleString('bn-BD')}) এর জন্য ফি আদায় করুন।
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="date">আদায়ের তারিখ</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !collectionDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {collectionDate ? format(collectionDate, "PPP", { locale: bn }) : <span>একটি তারিখ নির্বাচন করুন</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={collectionDate} onSelect={(d) => d && setCollectionDate(d)} initialFocus /></PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">বিবরণ</Label>
+                        <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                    </div>
+                </div>
+                <div className="border-t pt-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {feeFields.map(field => (
+                            <div key={field.key} className="space-y-2">
+                                <Label htmlFor={field.key}>{field.label}</Label>
+                                <Input
+                                    id={field.key}
+                                    type="number"
+                                    placeholder="0"
+                                    value={breakdown[field.key] || ''}
+                                    onChange={(e) => handleFeeChange(field.key, e.target.value)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <DialogFooter className="pt-4 border-t">
+                    <div className="flex justify-between w-full items-center">
+                        <p className="font-semibold">মোট আদায়: {totalAmount.toLocaleString('bn-BD')} টাকা</p>
+                        <div>
+                             <DialogClose asChild><Button variant="ghost">বাতিল</Button></DialogClose>
+                            <Button onClick={handleSave}>সেভ করুন</Button>
+                        </div>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }: { student: Student | null, open: boolean, onOpenChange: (open: boolean) => void, onFeeCollected: () => void }) {
+    const db = useFirestore();
+    const { selectedYear } = useAcademicYear();
+    const { toast } = useToast();
+
+    const [feeCollections, setFeeCollections] = useState<FeeCollection[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingCollection, setEditingCollection] = useState<FeeCollection | null>(null);
+    
+    const studentId = student?.id;
+
+    const fetchFeeData = useCallback(async () => {
+        if (!db || !studentId) return;
+        setIsLoading(true);
+        const collections = await getFeeCollectionsForStudent(db, studentId, selectedYear);
+        setFeeCollections(collections);
+        setIsLoading(false);
+    }, [db, studentId, selectedYear]);
+
+    useEffect(() => {
+        if (open && studentId) {
+            fetchFeeData();
+        }
+    }, [open, studentId, fetchFeeData]);
+
+    const handleEdit = (collection: FeeCollection) => {
+        setEditingCollection(collection);
+        setIsFormOpen(true);
+    };
+
+    const handleAddNew = () => {
+        setEditingCollection(null);
+        setIsFormOpen(true);
+    };
+
+    const handleDelete = async (collection: FeeCollection) => {
+        if(!db) return;
+
+        const batch = writeBatch(db);
+        const feeCollectionRef = doc(db, 'feeCollections', collection.id);
+        batch.delete(feeCollectionRef);
+
+        if (collection.transactionIds) {
+            collection.transactionIds.forEach(id => {
+                const transRef = doc(db, 'transactions', id);
+                batch.delete(transRef);
+            });
+        }
+        
+        try {
+            await batch.commit();
+            toast({title: "লেনদেন মুছে ফেলা হয়েছে।"});
+            fetchFeeData();
+            onFeeCollected();
+        } catch(error) {
+             console.error(error);
+             const permissionError = new FirestorePermissionError({ path: 'feeCollections/', operation: 'delete' });
+             errorEmitter.emit('permission-error', permissionError);
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl">
+                 {isLoading && (
+                    <div className="p-8 text-center">
+                        <p>Loading...</p>
+                    </div>
+                 )}
+                {!isLoading && student && (
+                <>
+                    <DialogHeader>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            {student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />}
+                            <div className="flex-1 text-center md:text-left">
+                                <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য - {selectedYear.toLocaleString('bn-BD')}</DialogTitle>
+                                <DialogDescription className="mt-2">
+                                    <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <div className="border rounded-md max-h-[40vh] overflow-y-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>আদায়ের তারিখ</TableHead>
+                                        <TableHead>বিবরণ</TableHead>
+                                        <TableHead className="text-right">মোট টাকা</TableHead>
+                                        <TableHead className="text-right">কার্যক্রম</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {feeCollections.length === 0 ? (
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">কোনো ফি আদায় করা হয়নি।</TableCell></TableRow>
+                                    ) : (
+                                        feeCollections.map(collection => (
+                                            <TableRow key={collection.id}>
+                                                <TableCell>{format(collection.collectionDate, "PP", { locale: bn })}</TableCell>
+                                                <TableCell>{collection.description || 'N/A'}</TableCell>
+                                                <TableCell className="text-right font-medium">{collection.totalAmount.toLocaleString('bn-BD')} ৳</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Button variant="outline" size="icon" onClick={() => handleEdit(collection)}>
+                                                            <FilePen className="h-4 w-4" />
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>এই লেনদেনটি স্থায়ীভাবে মুছে যাবে। এটি ক্যাশবুক থেকেও মুছে যাবে।</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(collection)}>মুছে ফেলুন</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleAddNew}>নতুন ফি আদায় করুন</Button>
+                    </DialogFooter>
+
+                    <FeeCollectionForm 
+                        student={student} 
+                        onSave={() => { fetchFeeData(); onFeeCollected(); }} 
+                        existingCollection={editingCollection}
+                        open={isFormOpen}
+                        onOpenChange={setIsFormOpen}
+                    />
+                </>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}

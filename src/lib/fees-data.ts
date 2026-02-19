@@ -55,10 +55,17 @@ export type UpdateFeeCollectionData = Partial<Omit<FeeCollection, 'id'| 'created
 
 const FEE_COLLECTION_PATH = 'feeCollections';
 
-const feeCollectionFromDoc = (doc: DocumentData): FeeCollection => {
-    const data = doc.data();
+const feeCollectionFromDoc = (docSnap: DocumentData): FeeCollection | null => {
+    const data = docSnap.data();
+    if (!data) return null;
+
+    if (!data.collectionDate || typeof data.collectionDate.toDate !== 'function') {
+        console.error(`Invalid or missing collectionDate for feeCollection document: ${docSnap.id}`);
+        return null;
+    }
+
     return {
-        id: doc.id,
+        id: docSnap.id,
         ...data,
         collectionDate: data.collectionDate.toDate(),
     } as FeeCollection;
@@ -72,8 +79,10 @@ export const getFeeCollectionsForStudent = async (db: Firestore, studentId: stri
   );
   try {
     const querySnapshot = await getDocs(q);
-    const collections = querySnapshot.docs.map(feeCollectionFromDoc);
-    // Sort on the client-side to maintain order without requiring a composite index
+    const collections = querySnapshot.docs
+        .map(feeCollectionFromDoc)
+        .filter((item): item is FeeCollection => item !== null);
+
     return collections.sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime());
   } catch (e) {
     console.error("Error getting fee collections:", e);
