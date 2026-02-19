@@ -81,8 +81,9 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
                 setDescription(existingCollection.description);
                 setBreakdown(existingCollection.breakdown || {});
             } else {
-                setCollectionDate(new Date());
-                const currentMonthIndex = new Date().getMonth();
+                const today = new Date();
+                setCollectionDate(today);
+                const currentMonthIndex = today.getMonth();
                 const currentMonthName = bengaliMonths[currentMonthIndex];
                 setDescription(currentMonthName ? `${currentMonthName} মাসের বেতন` : '');
                 setBreakdown(emptyBreakdown);
@@ -187,60 +188,67 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl">
+            <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>{existingCollection ? 'ফি আদায় এডিট করুন' : 'নতুন ফি আদায়'}</DialogTitle>
                     <DialogDescription>
                         {student.studentNameBn} (রোল: {student.roll.toLocaleString('bn-BD')}) এর জন্য ফি আদায় করুন।
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="date">আদায়ের তারিখ</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !collectionDate && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {collectionDate ? format(collectionDate, "PPP", { locale: bn }) : <span>একটি তারিখ নির্বাচন করুন</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={collectionDate} onSelect={(d) => d && setCollectionDate(d)} initialFocus /></PopoverContent>
-                        </Popover>
+
+                <div className="flex-grow overflow-y-auto -mx-6 px-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="date">আদায়ের তারিখ</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !collectionDate && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {collectionDate ? format(collectionDate, "PPP", { locale: bn }) : <span>একটি তারিখ নির্বাচন করুন</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={collectionDate} onSelect={(d) => d && setCollectionDate(d)} initialFocus /></PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">বিবরণ</Label>
+                            <div className="flex gap-2">
+                                <Select 
+                                    onValueChange={(month) => month && setDescription(`${month} মাসের বেতন`)}
+                                    defaultValue={bengaliMonths[new Date().getMonth()]}
+                                >
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="মাস নির্বাচন" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {bengaliMonths.map(month => (
+                                            <SelectItem key={month} value={month}>{month}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">বিবরণ</Label>
-                        <div className="flex gap-2">
-                            <Select onValueChange={(month) => setDescription(month ? `${month} মাসের বেতন` : '')}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="মাস নির্বাচন" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {bengaliMonths.map(month => (
-                                        <SelectItem key={month} value={month}>{month}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                    <div className="border-t pt-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {feeFields.map(field => (
+                                <div key={field.key} className="space-y-2">
+                                    <Label htmlFor={field.key}>{field.label}</Label>
+                                    <Input
+                                        id={field.key}
+                                        type="number"
+                                        placeholder="0"
+                                        value={breakdown[field.key] || ''}
+                                        onChange={(e) => handleFeeChange(field.key, e.target.value)}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
-                <div className="border-t pt-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {feeFields.map(field => (
-                            <div key={field.key} className="space-y-2">
-                                <Label htmlFor={field.key}>{field.label}</Label>
-                                <Input
-                                    id={field.key}
-                                    type="number"
-                                    placeholder="0"
-                                    value={breakdown[field.key] || ''}
-                                    onChange={(e) => handleFeeChange(field.key, e.target.value)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <DialogFooter className="pt-4 border-t">
+
+                <DialogFooter className="pt-4 border-t -mx-6 px-6 pb-6 mt-auto">
                     <div className="flex justify-between w-full items-center">
                         <p className="font-semibold">মোট আদায়: {totalAmount.toLocaleString('bn-BD')} টাকা</p>
                         <div>
@@ -329,15 +337,15 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                         )}
                         <div className="flex-1 text-center md:text-left space-y-2">
                              <DialogTitle className="text-2xl">
-                                {isLoading || !student ? <Skeleton className="h-8 w-3/4" /> : `ছাত্র/ ছাত্রীর বেতন আদায় তথ্য - ${selectedYear.toLocaleString('bn-BD')}`}
+                                {isLoading || !student ? <Skeleton className="h-8 w-3/4" /> : `ছাত্র/ ছাত্রীর বেতন আদায় তথ্য`}
                             </DialogTitle>
-                            <div className="text-sm text-muted-foreground">
+                            <DialogDescription>
                                 {isLoading || !student ? <Skeleton className="h-4 w-1/2" /> : (
                                     <>
                                         <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
                                     </>
                                 )}
-                            </div>
+                            </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
