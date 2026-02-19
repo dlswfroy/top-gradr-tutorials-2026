@@ -63,24 +63,25 @@ const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | n
     let collectionDate: Date | null = null;
 
     if (data.collectionDate) {
-        // Handle Firestore Timestamp
+        // 1. Handle Firestore Timestamp
         if (typeof data.collectionDate.toDate === 'function') {
             collectionDate = data.collectionDate.toDate();
         } 
-        // Handle ISO date string
-        else if (typeof data.collectionDate === 'string') {
+        // 2. Handle object with seconds/nanoseconds (serialized Timestamp)
+        else if (typeof data.collectionDate.seconds === 'number' && typeof data.collectionDate.nanoseconds === 'number') {
+            collectionDate = new Timestamp(data.collectionDate.seconds, data.collectionDate.nanoseconds).toDate();
+        }
+        // 3. Handle ISO date string or number (milliseconds)
+        else if (typeof data.collectionDate === 'string' || typeof data.collectionDate === 'number') {
             const parsed = new Date(data.collectionDate);
             if (!isNaN(parsed.getTime())) {
                 collectionDate = parsed;
             }
-        } 
-        // Handle plain object with seconds/nanoseconds (can happen when data is serialized/deserialized)
-        else if (typeof data.collectionDate.seconds === 'number' && typeof data.collectionDate.nanoseconds === 'number') {
-            collectionDate = new Timestamp(data.collectionDate.seconds, data.collectionDate.nanoseconds).toDate();
         }
     }
     
     if (!collectionDate) {
+        // Don't crash, just log and skip this doc
         console.error(`Invalid or missing collectionDate for feeCollection document: ${docSnap.id}`);
         return null;
     }
