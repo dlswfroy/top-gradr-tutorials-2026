@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from './ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const feeFields: { key: keyof FeeBreakdown; label: string }[] = [
     { key: 'tuitionCurrent', label: 'চলতি' },
@@ -68,6 +69,11 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
     const [description, setDescription] = useState('');
     const [breakdown, setBreakdown] = useState<FeeBreakdown>(emptyBreakdown);
 
+    const bengaliMonths = useMemo(() => [
+        'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
+        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+    ], []);
+
     useEffect(() => {
         if (open) {
             if (existingCollection) {
@@ -76,11 +82,13 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
                 setBreakdown(existingCollection.breakdown || {});
             } else {
                 setCollectionDate(new Date());
-                setDescription('');
+                const currentMonthIndex = new Date().getMonth();
+                const currentMonthName = bengaliMonths[currentMonthIndex];
+                setDescription(currentMonthName ? `${currentMonthName} মাসের বেতন` : '');
                 setBreakdown(emptyBreakdown);
             }
         }
-    }, [existingCollection, open]);
+    }, [existingCollection, open, bengaliMonths]);
 
     const handleFeeChange = (field: keyof FeeBreakdown, value: string) => {
         const numValue = value === '' ? undefined : parseInt(value, 10);
@@ -201,7 +209,19 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">বিবরণ</Label>
-                        <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                        <div className="flex gap-2">
+                            <Select onValueChange={(month) => setDescription(month ? `${month} মাসের বেতন` : '')}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="মাস নির্বাচন" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {bengaliMonths.map(month => (
+                                        <SelectItem key={month} value={month}>{month}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                        </div>
                     </div>
                 </div>
                 <div className="border-t pt-4">
@@ -300,14 +320,8 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl">
-                 {isLoading && (
-                    <div className="p-8 text-center">
-                        <p>Loading...</p>
-                    </div>
-                 )}
-                {!isLoading && student && (
-                <>
-                    <DialogHeader>
+                <DialogHeader>
+                    {!isLoading && student ? (
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />}
                             <div className="flex-1 text-center md:text-left">
@@ -317,7 +331,23 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                                 </DialogDescription>
                             </div>
                         </div>
-                    </DialogHeader>
+                    ) : (
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            <Skeleton className="h-24 w-24 rounded-lg" />
+                            <div className="flex-1 space-y-2">
+                                <DialogTitle><Skeleton className="h-8 w-3/4" /></DialogTitle>
+                                <DialogDescription><Skeleton className="h-4 w-1/2" /></DialogDescription>
+                            </div>
+                        </div>
+                    )}
+                </DialogHeader>
+
+                 {isLoading ? (
+                    <div className="p-8 text-center">
+                        <p>Loading...</p>
+                    </div>
+                 ) : (
+                <>
                     <div className="py-4">
                         <div className="border rounded-md max-h-[40vh] overflow-y-auto">
                             <Table>
@@ -369,13 +399,15 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                         <Button onClick={handleAddNew}>নতুন ফি আদায় করুন</Button>
                     </DialogFooter>
 
-                    <FeeCollectionForm 
-                        student={student} 
-                        onSave={() => { fetchFeeData(); onFeeCollected(); }} 
-                        existingCollection={editingCollection}
-                        open={isFormOpen}
-                        onOpenChange={setIsFormOpen}
-                    />
+                    {student && (
+                        <FeeCollectionForm 
+                            student={student} 
+                            onSave={() => { fetchFeeData(); onFeeCollected(); }} 
+                            existingCollection={editingCollection}
+                            open={isFormOpen}
+                            onOpenChange={setIsFormOpen}
+                        />
+                    )}
                 </>
                 )}
             </DialogContent>
