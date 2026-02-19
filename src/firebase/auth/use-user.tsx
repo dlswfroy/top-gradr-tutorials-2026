@@ -17,11 +17,9 @@ export function useUser() {
 
     const unsubscribe = onAuthStateChanged(auth, (userState) => {
       setUser(userState);
-      // Since our app requires a user (anonymous or otherwise), we are not
-      // truly 'done' loading until the user object is populated.
-      if (userState) {
-        setLoading(false);
-      }
+      // We are only done loading once we have a definitive user state.
+      // Since anonymous auth is used, we should always get a user.
+      setLoading(!userState);
     });
 
     return () => unsubscribe();
