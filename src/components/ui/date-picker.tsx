@@ -27,11 +27,17 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "à
   const [open, setOpen] = React.useState(false)
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value)
   const [displayMonth, setDisplayMonth] = React.useState<Date>(value || new Date());
-  const [view, setView] = React.useState<'days' | 'years'>('days');
+  const [view, setView] = React.useState<'days' | 'months' | 'years'>('days');
 
   const startYear = 1950;
   const endYear = new Date().getFullYear() + 5;
   const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => endYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const monthDate = new Date(displayMonth);
+    monthDate.setMonth(i);
+    return format(monthDate, "MMMM", { locale: bn });
+  });
+
 
   React.useEffect(() => {
     setSelectedDate(value)
@@ -85,7 +91,10 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "à
           >
             {format(headerDate, "yyyy", { locale: bn })}
           </div>
-          <div className="text-2xl font-bold">
+          <div 
+            className="text-2xl font-bold cursor-pointer hover:underline"
+            onClick={() => setView(view === 'months' ? 'days' : 'months')}
+          >
             {format(headerDate, "eeee, d MMMM", { locale: bn })}
           </div>
         </div>
@@ -158,6 +167,26 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "à
                     },
                 }}
               />
+            ) : view === 'months' ? (
+              <ScrollArea className="h-[258px]">
+                <div className="grid grid-cols-3 gap-2">
+                  {months.map((monthName, index) => (
+                    <Button
+                      key={monthName}
+                      variant={displayMonth.getMonth() === index ? "default" : "ghost"}
+                      className="w-full"
+                      onClick={() => {
+                        const newDate = new Date(displayMonth);
+                        newDate.setMonth(index);
+                        setDisplayMonth(newDate);
+                        setView('days');
+                      }}
+                    >
+                      {monthName}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
             ) : (
               <ScrollArea className="h-[258px]">
                 <div className="grid grid-cols-3 gap-2">
