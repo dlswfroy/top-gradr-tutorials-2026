@@ -65,6 +65,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
+        "nameEn": { "type": "string" },
         "eiin": { "type": "string" },
         "code": { "type": "string" },
         "address": { "type": "string" },
@@ -128,6 +129,10 @@
     "/attendance/{attendanceId}": {
       "schema": { "$ref": "#/entities/attendanceRecord" },
       "description": "Stores daily attendance records."
+    },
+    "/results/{resultId}": {
+      "schema": { "$ref": "#/entities/result" },
+      "description": "Stores results for a class in a particular subject."
     }
   }
 }

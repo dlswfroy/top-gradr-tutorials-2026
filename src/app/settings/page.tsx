@@ -108,8 +108,12 @@ function SchoolInfoSettings() {
                  <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="schoolName">প্রতিষ্ঠানের নাম</Label>
+                            <Label htmlFor="schoolName">প্রতিষ্ঠানের নাম (বাংলা)</Label>
                             <Input id="schoolName" value={info.name} onChange={(e) => handleInputChange('name', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="schoolNameEn">School Name (English)</Label>
+                            <Input id="schoolNameEn" value={info.nameEn || ''} onChange={(e) => handleInputChange('nameEn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="eiin">EIIN</Label>
@@ -119,7 +123,7 @@ function SchoolInfoSettings() {
                             <Label htmlFor="schoolCode">স্কুল কোড</Label>
                             <Input id="schoolCode" value={info.code} onChange={(e) => handleInputChange('code', e.target.value)} />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="address">ঠিকানা</Label>
                             <Textarea id="address" value={info.address} onChange={(e) => handleInputChange('address', e.target.value)} />
                         </div>

@@ -6,6 +6,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 export interface SchoolInfo {
   id?: string;
   name: string;
+  nameEn?: string;
   eiin: string;
   code: string;
   address: string;
@@ -14,6 +15,7 @@ export interface SchoolInfo {
 
 export const defaultSchoolInfo: SchoolInfo = {
     name: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়',
+    nameEn: 'Birganj Pouro High School',
     eiin: '123456',
     code: '7890',
     address: 'Upazila: Birganj, Post: Birganj, Zila: Dinajpur',

@@ -128,6 +128,12 @@ export function Header() {
                   ফলাফল আপলোড
                 </Link>
                 <Link
+                  href="/accounts"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  হিসাব শাখা
+                </Link>
+                <Link
                   href="/staff"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -172,7 +171,7 @@ export default function MarksheetPage() {
                             <div className="flex items-center gap-4">
                                 {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="School Logo" width={80} height={80} />}
                                 <div className="text-left">
-                                    <h1 className="text-3xl font-bold">{schoolInfo.name}</h1>
+                                    <h1 className="text-3xl font-bold">{schoolInfo.nameEn || ''}</h1>
                                     <p className="text-sm">{schoolInfo.address}</p>
                                     <p className="mt-1"><b>Academic Session:</b> {academicYear}</p>
                                 </div>
