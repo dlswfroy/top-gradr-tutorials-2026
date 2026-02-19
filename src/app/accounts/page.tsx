@@ -226,11 +226,11 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="amount">টাকার পরিমাণ</Label>
-                            <Input id="amount" type="number" placeholder="টাকার পরিমাণ" value={amount} onChange={e => setAmount(e.target.value === '' ? '' : Number(e.target.value))} required />
+                            <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value === '' ? '' : Number(e.target.value))} required />
                         </div>
                         <div className="md:col-span-2 space-y-2">
                             <Label htmlFor="description">বিবরণ</Label>
-                            <Input id="description" placeholder="লেনদেনের সংক্ষিপ্ত বিবরণ" value={description} onChange={e => setDescription(e.target.value)} />
+                            <Input id="description" value={description} onChange={e => setDescription(e.target.value)} />
                         </div>
                     </div>
                      <div className="flex justify-end">
@@ -437,7 +437,6 @@ export default function AccountsPage() {
         <Card>
           <CardHeader>
              <CardTitle>হিসাব শাখা</CardTitle>
-             <CardDescription>শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</CardDescription>
           </CardHeader>
           <CardContent>
              {isClient ? (

@@ -158,19 +158,19 @@ export default function EditStaffPage() {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
                           <Label htmlFor="employeeId">কর্মচারী আইডি</Label>
-                          <Input id="employeeId" name="employeeId" placeholder="কর্মচারী আইডি" required value={staff.employeeId} onChange={e => handleInputChange('employeeId', e.target.value)} />
+                          <Input id="employeeId" name="employeeId" required value={staff.employeeId} onChange={e => handleInputChange('employeeId', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="nameBn">নাম (বাংলা)</Label>
-                          <Input id="nameBn" name="nameBn" placeholder="নাম বাংলায়" required value={staff.nameBn} onChange={e => handleInputChange('nameBn', e.target.value)} />
+                          <Input id="nameBn" name="nameBn" required value={staff.nameBn} onChange={e => handleInputChange('nameBn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="nameEn">Name (English)</Label>
-                          <Input id="nameEn" name="nameEn" placeholder="Name in English" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
+                          <Input id="nameEn" name="nameEn" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="designation">পদবি</Label>
-                          <Input id="designation" name="designation" placeholder="পদবি" required value={staff.designation} onChange={e => handleInputChange('designation', e.target.value)} />
+                          <Input id="designation" name="designation" required value={staff.designation} onChange={e => handleInputChange('designation', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="staffType">ধরণ</Label>
@@ -184,7 +184,7 @@ export default function EditStaffPage() {
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="subject">বিষয়</Label>
-                          <Input id="subject" name="subject" placeholder="বিষয় (যদি প্রযোজ্য হয়)" value={staff.subject} onChange={e => handleInputChange('subject', e.target.value)} />
+                          <Input id="subject" name="subject" value={staff.subject} onChange={e => handleInputChange('subject', e.target.value)} />
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="joinDate">যোগদানের তারিখ</Label>
@@ -192,7 +192,7 @@ export default function EditStaffPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="education">শিক্ষাগত যোগ্যতা</Label>
-                          <Input id="education" name="education" placeholder="সর্বোচ্চ শিক্ষাগত যোগ্যতা" value={staff.education} onChange={e => handleInputChange('education', e.target.value)} />
+                          <Input id="education" name="education" value={staff.education} onChange={e => handleInputChange('education', e.target.value)} />
                       </div>
                       <div className="flex items-center space-x-2">
                             <Switch id="isActive" checked={staff.isActive} onCheckedChange={checked => handleInputChange('isActive', checked)} />
@@ -206,15 +206,15 @@ export default function EditStaffPage() {
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="space-y-2">
                           <Label htmlFor="mobile">মোবাইল নম্বর</Label>
-                          <Input id="mobile" name="mobile" placeholder="মোবাইল নম্বর" required value={staff.mobile} onChange={e => handleInputChange('mobile', e.target.value)} />
+                          <Input id="mobile" name="mobile" required value={staff.mobile} onChange={e => handleInputChange('mobile', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="email">ইমেইল</Label>
-                          <Input id="email" name="email" type="email" placeholder="ইমেইল" value={staff.email} onChange={e => handleInputChange('email', e.target.value)} />
+                          <Input id="email" name="email" type="email" value={staff.email} onChange={e => handleInputChange('email', e.target.value)} />
                       </div>
                       <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="address">ঠিকানা</Label>
-                          <Textarea id="address" name="address" placeholder="বর্তমান ঠিকানা" value={staff.address} onChange={e => handleInputChange('address', e.target.value)} />
+                          <Textarea id="address" name="address" value={staff.address} onChange={e => handleInputChange('address', e.target.value)} />
                       </div>
                    </div>
                </div>

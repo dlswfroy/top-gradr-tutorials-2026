@@ -248,7 +248,6 @@ function HolidaySettings() {
                         <Label htmlFor="holiday-description">ছুটির কারণ</Label>
                         <Input
                             id="holiday-description"
-                            placeholder="যেমন: বিশেষ উৎসব"
                             value={newHolidayDescription}
                             onChange={(e) => setNewHolidayDescription(e.target.value)}
                         />

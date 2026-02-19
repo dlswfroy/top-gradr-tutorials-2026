@@ -216,7 +216,7 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Input id="description" placeholder="যেমন: জানুয়ারি মাসের বেতন" value={description} onChange={e => setDescription(e.target.value)} />
+                                <Input id="description" value={description} onChange={e => setDescription(e.target.value)} />
                             </div>
                         </div>
                     </div>
@@ -228,7 +228,6 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
                                     <Input
                                         id={field.key}
                                         type="number"
-                                        placeholder="0"
                                         value={breakdown[field.key] || ''}
                                         onChange={(e) => handleFeeChange(field.key, e.target.value)}
                                     />

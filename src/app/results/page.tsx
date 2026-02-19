@@ -398,7 +398,6 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                     <Input 
                         id="full-marks" 
                         type="number" 
-                        placeholder="পূর্ণমান"
                         value={fullMarks || ''}
                         onChange={(e) => setFullMarks(e.target.value === '' ? undefined : parseInt(e.target.value))} 
                     />
@@ -440,7 +439,6 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                     <TableCell>
                                         <Input
                                             type="number"
-                                            placeholder="নম্বর"
                                             value={marks.get(student.id)?.written || ''}
                                             onChange={(e) => handleMarkChange(student.id, 'written', e.target.value)}
                                             className="w-24"
@@ -449,7 +447,6 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                      <TableCell>
                                         <Input
                                             type="number"
-                                            placeholder="নম্বর"
                                             value={marks.get(student.id)?.mcq || ''}
                                             onChange={(e) => handleMarkChange(student.id, 'mcq', e.target.value)}
                                             className="w-24"
@@ -459,7 +456,6 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                         <TableCell>
                                             <Input
                                                 type="number"
-                                                placeholder="নম্বর"
                                                 value={marks.get(student.id)?.practical || ''}
                                                 onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
                                                 className="w-24"

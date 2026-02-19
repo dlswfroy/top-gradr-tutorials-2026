@@ -23,7 +23,7 @@ type DatePickerProps = {
   placeholder?: string;
 }
 
-export function DatePicker({ value, onChange, triggerClassName, placeholder = "একটি তারিখ নির্বাচন করুন" }: DatePickerProps) {
+export function DatePicker({ value, onChange, triggerClassName, placeholder = "" }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value)
   const [displayMonth, setDisplayMonth] = React.useState<Date>(value || new Date());
