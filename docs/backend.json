@@ -37,6 +37,27 @@
         "photoUrl": { "type": "string" }
       },
       "required": ["roll", "className", "academicYear", "studentNameBn", "fatherNameBn", "motherNameBn", "photoUrl"]
+    },
+    "staff": {
+      "title": "Staff",
+      "description": "A teacher or staff member of the school.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "nameBn": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "designation": { "type": "string" },
+        "subject": { "type": "string" },
+        "mobile": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "joinDate": { "type": "string", "format": "date-time" },
+        "education": { "type": "string" },
+        "address": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "staffType": { "type": "string", "enum": ["teacher", "staff"] }
+      },
+      "required": ["employeeId", "nameBn", "designation", "mobile", "joinDate", "photoUrl", "staffType", "isActive"]
     }
   },
   "auth": {
@@ -46,6 +67,10 @@
     "/students/{studentId}": {
       "schema": { "$ref": "#/entities/student" },
       "description": "Stores individual student records."
+    },
+    "/staff/{staffId}": {
+      "schema": { "$ref": "#/entities/staff" },
+      "description": "Stores individual teacher and staff records."
     }
   }
 }

@@ -133,7 +133,7 @@ export function Header() {
                   ফলাফল আপলোড
                 </Link>
                 <Link
-                  href="#"
+                  href="/staff"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                   শিক্ষক ও কর্মচারী
