@@ -55,57 +55,32 @@ export default function ResultsBulkUploadPage() {
         }
     
         const headers: string[] = ['রোল', 'নাম'];
-        const addedHeaders = new Set<string>();
+        const allPossibleSubjects = getSubjects(className);
     
         const addHeader = (header: string, sub: SubjectType) => {
-            if (!addedHeaders.has(header)) {
-                headers.push(`${header} (লিখিত)`);
-                headers.push(`${header} (বহুনির্বাচনী)`);
-                if (sub.practical) {
-                    headers.push(`${header} (ব্যবহারিক)`);
-                }
-                addedHeaders.add(header);
+            headers.push(`${header} (লিখিত)`);
+            headers.push(`${header} (বহুনির্বাচনী)`);
+            if (sub.practical) {
+                headers.push(`${header} (ব্যবহারিক)`);
             }
         };
     
         if (className === '9' || className === '10') {
             const common = ['বাংলা প্রথম', 'বাংলা দ্বিতীয়', 'ইংরেজি প্রথম', 'ইংরেজি দ্বিতীয়', 'গণিত', 'ধর্ম ও নৈতিক শিক্ষা', 'তথ্য ও যোগাযোগ প্রযুক্তি'];
-            const scienceSubs = getSubjects(className, 'science').filter(s => !common.includes(s.name));
-            const artsSubs = getSubjects(className, 'arts').filter(s => !common.includes(s.name));
-            const commerceSubs = getSubjects(className, 'commerce').filter(s => !common.includes(s.name));
-            const allPossibleSubjects = getSubjects(className);
-
-            const commonSubjects = allPossibleSubjects.filter(s => common.includes(s.name));
-            commonSubjects.forEach(sub => addHeader(sub.name, sub));
-
+            
+            const addedHeaders = new Set<string>();
+            const addHeaderOnce = (name: string, subject: SubjectType) => {
+                if(!addedHeaders.has(name)){
+                    addHeader(name, subject);
+                    addedHeaders.add(name);
+                }
+            }
+            
             if (!group) { // Master template for all groups
-                const combinedHeadersMap: { [key: string]: string } = {
-                    'পদার্থ': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা',
-                    'রসায়ন': 'ভূগোল ও পরিবেশ',
-                    'জীব বিজ্ঞান': 'পৌরনীতি ও নাগরিকতা',
-                    'উচ্চতর গণিত': 'কৃষি শিক্ষা', // This pair is tricky, handle carefully
-                    'বাংলাদেশ ও বিশ্ব পরিচয়': 'সাধারণ বিজ্ঞান',
-                };
-    
-                const scienceOnly = scienceSubs.filter(s => !Object.keys(combinedHeadersMap).includes(s.name) && !Object.values(combinedHeadersMap).includes(s.name));
-                const artsOnly = artsSubs.filter(s => !Object.keys(combinedHeadersMap).includes(s.name) && !Object.values(combinedHeadersMap).includes(s.name));
-                const commerceOnly = commerceSubs.filter(s => !Object.keys(combinedHeadersMap).includes(s.name) && !Object.values(combinedHeadersMap).includes(s.name));
-                
-                // Add combined headers
-                Object.entries(combinedHeadersMap).forEach(([sciSubName, artSubName]) => {
-                     const sciSub = allPossibleSubjects.find(s => s.name === sciSubName);
-                     const artSub = allPossibleSubjects.find(s => s.name === artSubName);
-                     if (sciSub && artSub) {
-                        const header = `${artSub.name}/${sciSub.name}`;
-                        addHeader(header, sciSub.practical ? sciSub : artSub);
-                     }
-                });
-
-                // Add commerce-only subjects
-                commerceOnly.forEach(sub => addHeader(sub.name, sub));
-
+                 const allGroupSubjects = getSubjects(className);
+                 allGroupSubjects.forEach(sub => addHeaderOnce(sub.name, sub));
             } else { // Template for a specific group
-                const groupSubjects = getSubjects(className, group).filter(s => !common.includes(s.name));
+                const groupSubjects = getSubjects(className, group);
                 groupSubjects.forEach(sub => addHeader(sub.name, sub));
             }
         } else { // For class 6-8
@@ -328,10 +303,10 @@ export default function ResultsBulkUploadPage() {
 
                                 <div className={`space-y-2 ${showGroupSelector ? '' : 'lg:hidden'}`}>
                                     <Label htmlFor="group">শাখা/গ্রুপ</Label>
-                                    <Select value={group} onValueChange={setGroup} disabled={!showGroupSelector}>
+                                     <Select value={group || 'all'} onValueChange={(val) => setGroup(val === 'all' ? '' : val)} disabled={!showGroupSelector}>
                                         <SelectTrigger id="group"><SelectValue placeholder="সকল গ্রুপ" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">সকল গ্রুপ</SelectItem>
+                                            <SelectItem value="all">সকল গ্রুপ</SelectItem>
                                             <SelectItem value="science">বিজ্ঞান</SelectItem>
                                             <SelectItem value="arts">মানবিক</SelectItem>
                                             <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
