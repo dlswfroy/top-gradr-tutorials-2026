@@ -26,6 +26,7 @@ export interface Transaction {
   description: string;
   amount: number;
   academicYear: string;
+  feeCollectionId?: string;
   createdAt?: Timestamp;
 }
 

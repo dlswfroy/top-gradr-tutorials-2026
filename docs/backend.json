@@ -105,31 +105,43 @@
       },
       "required": ["date", "academicYear", "className", "attendance"]
     },
-     "feeCollection": {
+    "feeCollection": {
       "title": "Fee Collection",
-      "description": "Fee collection record for a student for a specific month and year.",
+      "description": "A single fee collection transaction for a student.",
       "type": "object",
       "properties": {
         "studentId": { "type": "string" },
         "academicYear": { "type": "string" },
-        "month": { "type": "string" },
         "collectionDate": { "type": "string", "format": "date" },
-        "tuitionCurrent": { "type": "number" },
-        "tuitionAdvance": { "type": "number" },
-        "tuitionDue": { "type": "number" },
-        "tuitionFine": { "type": "number" },
-        "examFeeHalfYearly": { "type": "number" },
-        "examFeeAnnual": { "type": "number" },
-        "examFeePreNirbachoni": { "type": "number" },
-        "examFeeNirbachoni": { "type": "number" },
-        "sessionFee": { "type": "number" },
-        "admissionFee": { "type": "number" },
-        "scoutFee": { "type": "number" },
-        "developmentFee": { "type": "number" },
-        "libraryFee": { "type": "number" },
-        "tiffinFee": { "type": "number" }
+        "description": { "type": "string", "description": "A brief description of the collection, e.g., 'Tuition Fee for January & February'" },
+        "totalAmount": { "type": "number" },
+        "transactionIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "IDs of the associated entries in the main transactions/cashbook collection."
+        },
+        "breakdown": {
+          "type": "object",
+          "description": "A detailed breakdown of the fees collected in this transaction.",
+          "properties": {
+            "tuitionCurrent": { "type": "number" },
+            "tuitionAdvance": { "type": "number" },
+            "tuitionDue": { "type": "number" },
+            "tuitionFine": { "type": "number" },
+            "examFeeHalfYearly": { "type": "number" },
+            "examFeeAnnual": { "type": "number" },
+            "examFeePreNirbachoni": { "type": "number" },
+            "examFeeNirbachoni": { "type": "number" },
+            "sessionFee": { "type": "number" },
+            "admissionFee": { "type": "number" },
+            "scoutFee": { "type": "number" },
+            "developmentFee": { "type": "number" },
+            "libraryFee": { "type": "number" },
+            "tiffinFee": { "type": "number" }
+          }
+        }
       },
-      "required": ["studentId", "academicYear", "month"]
+      "required": ["studentId", "academicYear", "collectionDate", "totalAmount"]
     },
     "result": {
       "title": "Result",
@@ -184,6 +196,10 @@
         },
         "academicYear": {
           "type": "string"
+        },
+        "feeCollectionId": {
+          "type": "string",
+          "description": "Optional ID linking this transaction to a specific fee collection event."
         }
       },
       "required": [
