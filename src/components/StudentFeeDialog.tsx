@@ -321,25 +321,25 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                    {!isLoading && student ? (
-                        <div className="flex flex-col md:flex-row items-center gap-4">
-                            {student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />}
-                            <div className="flex-1 text-center md:text-left">
-                                <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য - {selectedYear.toLocaleString('bn-BD')}</DialogTitle>
-                                <DialogDescription className="mt-2">
-                                    <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                        {isLoading || !student ? (
                             <Skeleton className="h-24 w-24 rounded-lg" />
-                            <div className="flex-1 space-y-2">
-                                <DialogTitle><Skeleton className="h-8 w-3/4" /></DialogTitle>
-                                <DialogDescription><Skeleton className="h-4 w-1/2" /></DialogDescription>
+                        ) : (
+                             student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />
+                        )}
+                        <div className="flex-1 text-center md:text-left space-y-2">
+                             <DialogTitle className="text-2xl">
+                                {isLoading || !student ? <Skeleton className="h-8 w-3/4" /> : `ছাত্র/ ছাত্রীর বেতন আদায় তথ্য - ${selectedYear.toLocaleString('bn-BD')}`}
+                            </DialogTitle>
+                            <div className="text-sm text-muted-foreground">
+                                {isLoading || !student ? <Skeleton className="h-4 w-1/2" /> : (
+                                    <>
+                                        <span className="font-semibold">{student.studentNameBn}</span> (রোল: {student.roll.toLocaleString('bn-BD')}, শ্রেণি: {student.className}-য়)
+                                    </>
+                                )}
                             </div>
                         </div>
-                    )}
+                    </div>
                 </DialogHeader>
 
                  {isLoading ? (
