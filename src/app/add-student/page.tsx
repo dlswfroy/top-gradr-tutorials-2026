@@ -187,7 +187,7 @@ export default function AddStudentPage() {
 
     const handleDownloadSample = () => {
         const headers = [
-            ['রোল', 'শ্রেণি', 'গ্রুপ', 'ঐচ্ছিক বিষয়', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'মোবাইল', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
+            ['রোল', 'শ্রেণি', 'নাম (বাংলা)', 'নাম (ইংরেজি)', 'জন্ম তারিখ', 'জন্ম নিবন্ধন নম্বর', 'লিঙ্গ', 'ধর্ম', 'পিতার নাম (বাংলা)', 'পিতার নাম (ইংরেজি)', 'পিতার NID', 'মাতার নাম (বাংলা)', 'মাতার নাম (ইংরেজি)', 'মাতার NID', 'মোবাইল', 'শিক্ষার্থীর মোবাইল নম্বর', 'বর্তমান গ্রাম', 'বর্তমান ইউনিয়ন', 'বর্তমান ডাকঘর', 'বর্তমান উপজেলা', 'বর্তমান জেলা', 'স্থায়ী গ্রাম', 'স্থায়ী ইউনিয়ন', 'স্থায়ী ডাকঘর', 'স্থায়ী উপজেলা', 'স্থায়ী জেলা']
         ];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         const wb = XLSX.utils.book_new();
@@ -219,35 +219,34 @@ export default function AddStudentPage() {
                 }
 
                 const headerMapping: { [key: string]: keyof NewStudentData } = {
-                    // Bengali and English keys, all in lowercase where applicable
                     'রোল': 'roll', 'roll': 'roll',
                     'শ্রেণি': 'className', 'শ্রেণী': 'className', 'class': 'className',
                     'গ্রুপ': 'group', 'group': 'group', 'শাখা': 'group', 'বিভাগ': 'group',
                     'ঐচ্ছিক বিষয়': 'optionalSubject', 'optional subject': 'optionalSubject',
-                    'নাম (বাংলা)': 'studentNameBn', 'student name (bangla)': 'studentNameBn',
-                    'নাম (ইংরেজি)': 'studentNameEn', 'student name (english)': 'studentNameEn',
+                    'নাম (বাংলা)': 'studentNameBn', 'student name (bangla)': 'studentNameBn', 'name (bangla)': 'studentNameBn',
+                    'নাম (ইংরেজি)': 'studentNameEn', 'student name (english)': 'studentNameEn', 'name (english)': 'studentNameEn',
                     'জন্ম তারিখ': 'dob', 'date of birth': 'dob',
-                    'জন্ম নিবন্ধন নম্বর': 'birthRegNo',
+                    'জন্ম নিবন্ধন নম্বর': 'birthRegNo', 'birth registration no': 'birthRegNo',
                     'লিঙ্গ': 'gender', 'gender': 'gender',
                     'ধর্ম': 'religion', 'religion': 'religion',
                     'পিতার নাম (বাংলা)': 'fatherNameBn', "father's name (bangla)": 'fatherNameBn',
                     'পিতার নাম (ইংরেজি)': 'fatherNameEn', "father's name (english)": 'fatherNameEn',
-                    'পিতার nid': 'fatherNid',
+                    'পিতার nid': 'fatherNid', 'father nid': 'fatherNid',
                     'মাতার নাম (বাংলা)': 'motherNameBn', "mother's name (bangla)": 'motherNameBn',
                     'মাতার নাম (ইংরেজি)': 'motherNameEn', "mother's name (english)": 'motherNameEn',
-                    'মাতার nid': 'motherNid',
+                    'মাতার nid': 'motherNid', 'mother nid': 'motherNid',
                     'মোবাইল': 'guardianMobile', 'guardian mobile': 'guardianMobile',
                     'শিক্ষার্থীর মোবাইল নম্বর': 'studentMobile', 'student mobile': 'studentMobile',
-                    'বর্তমান গ্রাম': 'presentVillage',
-                    'বর্তমান ইউনিয়ন': 'presentUnion',
-                    'বর্তমান ডাকঘর': 'presentPostOffice',
-                    'বর্তমান উপজেলা': 'presentUpazila',
-                    'বর্তমান জেলা': 'presentDistrict',
-                    'স্থায়ী গ্রাম': 'permanentVillage',
-                    'স্থায়ী ইউনিয়ন': 'permanentUnion',
-                    'স্থায়ী ডাকঘর': 'permanentPostOffice',
-                    'স্থায়ী উপজেলা': 'permanentUpazila',
-                    'স্থায়ী জেলা': 'permanentDistrict',
+                    'বর্তমান গ্রাম': 'presentVillage', 'present village': 'presentVillage',
+                    'বর্তমান ইউনিয়ন': 'presentUnion', 'present union': 'presentUnion',
+                    'বর্তমান ডাকঘর': 'presentPostOffice', 'present post office': 'presentPostOffice',
+                    'বর্তমান উপজেলা': 'presentUpazila', 'present upazila': 'presentUpazila',
+                    'বর্তমান জেলা': 'presentDistrict', 'present district': 'presentDistrict',
+                    'স্থায়ী গ্রাম': 'permanentVillage', 'permanent village': 'permanentVillage',
+                    'স্থায়ী ইউনিয়ন': 'permanentUnion', 'permanent union': 'permanentUnion',
+                    'স্থায়ী ডাকঘর': 'permanentPostOffice', 'permanent post office': 'permanentPostOffice',
+                    'স্থায়ী উপজেলা': 'permanentUpazila', 'permanent upazila': 'permanentUpazila',
+                    'স্থায়ী জেলা': 'permanentDistrict', 'permanent district': 'permanentDistrict',
                 };
                 
                 const genderMap: { [key: string]: string } = { 'পুরুষ': 'male', 'male': 'male', 'মহিলা': 'female', 'female': 'female', 'অন্যান্য': 'other', 'other': 'other' };
@@ -433,20 +432,21 @@ export default function AddStudentPage() {
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="group">গ্রুপ</Label>
-                          <Select value={student.group || ''} onValueChange={value => handleInputChange('group', value)}>
-                              <SelectTrigger id="group" name="group">
-                                  <SelectValue placeholder="গ্রুপ নির্বাচন করুন (যদি থাকে)" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                  <SelectItem value="science">বিজ্ঞান</SelectItem>
-                                  <SelectItem value="arts">মানবিক</SelectItem>
-                                  <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
-                              </SelectContent>
-                          </Select>
-                      </div>
-                       {(student.className === '9' || student.className === '10') && (
+                      {(student.className === '9' || student.className === '10') && (
+                        <>
+                          <div className="space-y-2">
+                              <Label htmlFor="group">গ্রুপ</Label>
+                              <Select value={student.group || ''} onValueChange={value => handleInputChange('group', value)}>
+                                  <SelectTrigger id="group" name="group">
+                                      <SelectValue placeholder="গ্রুপ নির্বাচন করুন (যদি থাকে)" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      <SelectItem value="science">বিজ্ঞান</SelectItem>
+                                      <SelectItem value="arts">মানবিক</SelectItem>
+                                      <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
+                                  </SelectContent>
+                              </Select>
+                          </div>
                           <div className="space-y-2">
                               <Label htmlFor="optional-subject">ঐচ্ছিক বিষয় (৪র্থ)</Label>
                               <Select value={student.optionalSubject || ''} onValueChange={value => handleInputChange('optionalSubject', value)} disabled={optionalSubjects.length === 0}>
@@ -460,6 +460,7 @@ export default function AddStudentPage() {
                                   </SelectContent>
                               </Select>
                           </div>
+                        </>
                       )}
                   </div>
               </div>
