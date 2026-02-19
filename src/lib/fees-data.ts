@@ -14,7 +14,8 @@ import {
   query,
   where,
   orderBy,
-  writeBatch
+  writeBatch,
+  QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -55,11 +56,31 @@ export type UpdateFeeCollectionData = Partial<Omit<FeeCollection, 'id'| 'created
 
 const FEE_COLLECTION_PATH = 'feeCollections';
 
-const feeCollectionFromDoc = (docSnap: DocumentData): FeeCollection | null => {
+const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | null => {
     const data = docSnap.data();
     if (!data) return null;
 
-    if (!data.collectionDate || typeof data.collectionDate.toDate !== 'function') {
+    let collectionDate: Date | null = null;
+
+    if (data.collectionDate) {
+        // Handle Firestore Timestamp
+        if (typeof data.collectionDate.toDate === 'function') {
+            collectionDate = data.collectionDate.toDate();
+        } 
+        // Handle ISO date string
+        else if (typeof data.collectionDate === 'string') {
+            const parsed = new Date(data.collectionDate);
+            if (!isNaN(parsed.getTime())) {
+                collectionDate = parsed;
+            }
+        } 
+        // Handle plain object with seconds/nanoseconds (can happen when data is serialized/deserialized)
+        else if (typeof data.collectionDate.seconds === 'number' && typeof data.collectionDate.nanoseconds === 'number') {
+            collectionDate = new Timestamp(data.collectionDate.seconds, data.collectionDate.nanoseconds).toDate();
+        }
+    }
+    
+    if (!collectionDate) {
         console.error(`Invalid or missing collectionDate for feeCollection document: ${docSnap.id}`);
         return null;
     }
@@ -67,7 +88,7 @@ const feeCollectionFromDoc = (docSnap: DocumentData): FeeCollection | null => {
     return {
         id: docSnap.id,
         ...data,
-        collectionDate: data.collectionDate.toDate(),
+        collectionDate: collectionDate,
     } as FeeCollection;
 }
 
