@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getStudentById, Student } from '@/lib/student-data';
-import { getFeeCollectionForStudent, saveFeeCollection, FeeCollection, MonthlyFee } from '@/lib/fees-data';
+import { getFeeCollectionForStudent, saveFeeCollection, FeeCollection, MonthlyFee, NewFeeCollectionData } from '@/lib/fees-data';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore } from '@/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
+import { addTransaction, NewTransactionData } from '@/lib/transactions-data';
 
 const months = ['জানুয়ারী', 'ফেব্রুয়ারী', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
 
@@ -26,8 +27,8 @@ const feeFields: { key: keyof Omit<MonthlyFee, 'month' | 'collectionDate'>; labe
     { key: 'tuitionFine', label: 'জরিমানা' },
     { key: 'examFeeHalfYearly', label: 'অর্ধ-বার্ষিক' },
     { key: 'examFeeAnnual', label: 'বার্ষিক' },
-    { key: 'examFeePre নির্বাচনী', label: 'প্রাক-নির্বাচনী' },
-    { key: 'examFee নির্বাচনী', label: 'নির্বাচনী' },
+    { key: 'examFeePreNirbachoni', label: 'প্রাক-নির্বাচনী' },
+    { key: 'examFeeNirbachoni', label: 'নির্বাচনী' },
     { key: 'sessionFee', label: 'সেশন ফি' },
     { key: 'admissionFee', label: 'ভর্তি ফি' },
     { key: 'scoutFee', label: 'স্কাউট ফি' },
@@ -65,12 +66,13 @@ export default function CollectFeePage() {
             if (studentData) {
                 setStudent(studentData);
                 const feeData = await getFeeCollectionForStudent(db, studentId, selectedYear);
+                setFeeCollection(feeData);
                 if (feeData) {
-                    setFeeCollection(feeData);
                     const mergedFees = { ...initialMonthlyFees };
-                    for (const monthKey in feeData.monthlyFees) {
+                    const feeDataMonthlyFees = feeData.monthlyFees || {};
+                    for (const monthKey in feeDataMonthlyFees) {
                         if (mergedFees[monthKey]) {
-                            mergedFees[monthKey] = { ...mergedFees[monthKey], ...feeData.monthlyFees[monthKey] };
+                            mergedFees[monthKey] = { ...mergedFees[monthKey], ...feeDataMonthlyFees[monthKey] };
                         }
                     }
                     setMonthlyFees(mergedFees);
@@ -118,6 +120,65 @@ export default function CollectFeePage() {
     const handleSaveFees = async () => {
         if (!db || !student) return;
 
+        const oldFees = feeCollection?.monthlyFees || {};
+        const newFees = monthlyFees;
+
+        // Calculate deltas for each fee head
+        const deltas: { [key: string]: number } = {};
+        const allFeeKeys: (keyof Omit<MonthlyFee, 'month' | 'collectionDate'>)[] = [
+            'tuitionCurrent', 'tuitionAdvance', 'tuitionDue', 'tuitionFine',
+            'examFeeHalfYearly', 'examFeeAnnual', 'examFeePreNirbachoni', 'examFeeNirbachoni',
+            'sessionFee', 'admissionFee', 'scoutFee', 'developmentFee', 'libraryFee', 'tiffinFee'
+        ];
+
+        allFeeKeys.forEach(key => {
+            const oldTotal = Object.values(oldFees).reduce((sum, month) => sum + (month[key] || 0), 0);
+            const newTotal = Object.values(newFees).reduce((sum, month) => sum + (month[key] || 0), 0);
+            if (newTotal > oldTotal) {
+                deltas[key] = newTotal - oldTotal;
+            }
+        });
+        
+        const feeHeadMapping: { [key in keyof Omit<MonthlyFee, 'month' | 'collectionDate'>]?: string } = {
+            tuitionCurrent: 'Tuition Fee',
+            tuitionAdvance: 'Tuition Fee',
+            tuitionDue: 'Tuition Fee',
+            tuitionFine: 'Tuition Fee',
+            examFeeHalfYearly: 'Exam Fee',
+            examFeeAnnual: 'Exam Fee',
+            examFeePreNirbachoni: 'Exam Fee',
+            examFeeNirbachoni: 'Exam Fee',
+            sessionFee: 'Session Fee',
+            admissionFee: 'Admission Fee',
+            scoutFee: 'Other',
+            developmentFee: 'Other',
+            libraryFee: 'Other',
+            tiffinFee: 'Other'
+        };
+
+        const transactionsToCreate: { [head: string]: NewTransactionData } = {};
+
+        for (const key in deltas) {
+            const feeKey = key as keyof typeof feeHeadMapping;
+            const amount = deltas[feeKey];
+            if(!amount) continue;
+
+            const accountHead = feeHeadMapping[feeKey] || 'Other';
+
+            if (!transactionsToCreate[accountHead]) {
+                transactionsToCreate[accountHead] = {
+                    date: new Date(),
+                    type: 'income',
+                    accountHead: accountHead,
+                    description: `Fee from ${student.studentNameBn}, Roll: ${student.roll.toLocaleString('bn-BD')}`,
+                    amount: 0,
+                    academicYear: selectedYear
+                };
+            }
+            transactionsToCreate[accountHead].amount += amount;
+        }
+        
+        // Save fee collection first
         const dataToSave: NewFeeCollectionData = {
             studentId: student.id,
             academicYear: selectedYear,
@@ -126,9 +187,23 @@ export default function CollectFeePage() {
         
         try {
             await saveFeeCollection(db, dataToSave);
-            toast({ title: "ফি আদায় সফল হয়েছে", description: "শিক্ষার্থীর ফি সফলভাবে সেভ করা হয়েছে।" });
+            
+            // Then create all transactions
+            const transactionPromises = Object.values(transactionsToCreate).map(tx => addTransaction(db, tx));
+            await Promise.all(transactionPromises);
+
+            if (Object.keys(transactionsToCreate).length > 0) {
+                 toast({ title: "ফি আদায় সফল হয়েছে", description: `শিক্ষার্থীর ফি এবং ক্যাশবুক সফলভাবে আপডেট করা হয়েছে।` });
+            } else {
+                 toast({ title: "ফি আদায় সফল হয়েছে", description: "শিক্ষার্থীর ফি সফলভাবে সেভ করা হয়েছে।" });
+            }
+            
+            // After successful save, update the initial state for the next calculation
+            const updatedFeeData = await getFeeCollectionForStudent(db, student.id, selectedYear);
+            setFeeCollection(updatedFeeData || null);
+
         } catch (error) {
-            // error is handled by the global listener, no need for a toast here
+            // error is handled by the global listener
         }
     };
     
@@ -198,7 +273,7 @@ export default function CollectFeePage() {
                                         <TableHead rowSpan={2} className="border text-center align-middle">মোট আদায়</TableHead>
                                     </TableRow>
                                     <TableRow>
-                                        {feeFields.slice(0, 14).map(field => (
+                                        {feeFields.map(field => (
                                              <TableHead key={field.key} className="border text-center text-xs p-1">{field.label}</TableHead>
                                         ))}
                                     </TableRow>
@@ -250,3 +325,5 @@ export default function CollectFeePage() {
         </div>
     );
 }
+
+    
