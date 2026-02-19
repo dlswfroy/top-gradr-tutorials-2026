@@ -203,7 +203,6 @@ export default function EditStudentPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
                 <div>
                     <CardTitle>শিক্ষার্থীর তথ্য এডিট করুন</CardTitle>
-                    <CardDescription>শিক্ষার্থীর তথ্য পরিবর্তন করুন।</CardDescription>
                 </div>
                  <Button variant="outline" disabled>
                     <FileUp className="mr-2 h-4 w-4" />

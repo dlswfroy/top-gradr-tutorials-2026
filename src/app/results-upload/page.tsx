@@ -300,10 +300,6 @@ export default function ResultsBulkUploadPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>ফলাফল বাল্ক আপলোড</CardTitle>
-                        <CardDescription>
-                            এক্সেল ফাইল ব্যবহার করে একসাথে একাধিক বিষয়ের ও শিক্ষার্থীর ফলাফল আপলোড করুন। 
-                            প্রথমে শ্রেণি ও গ্রুপ (প্রযোজ্য ক্ষেত্রে) নির্বাচন করে নমুনা ফাইল ডাউনলোড করুন।
-                        </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         {isClient ? (

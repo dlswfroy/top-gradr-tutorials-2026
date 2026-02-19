@@ -100,7 +100,6 @@ function SchoolInfoSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>প্রতিষ্ঠানের সাধারণ তথ্য</CardTitle>
-                <CardDescription>স্কুলের নাম, ঠিকানা, লোগো এবং অন্যান্য তথ্য এখানে পরিবর্তন করুন।</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
                  <div className="space-y-4">
@@ -238,7 +237,6 @@ function HolidaySettings() {
         <Card>
             <CardHeader>
                 <CardTitle>অতিরিক্ত ছুটির দিন</CardTitle>
-                <CardDescription>বিশেষ কারণে স্কুল বন্ধ থাকলে সেই দিনগুলো এখানে যোগ করুন।</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="flex flex-col sm:flex-row items-end gap-4 p-4 border rounded-lg">
@@ -334,7 +332,6 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>সেটিংস</CardTitle>
-                        <CardDescription>অ্যাপ্লিকেশনের বিভিন্ন সেটিংস এখানে পরিচালনা করুন।</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isClient ? (

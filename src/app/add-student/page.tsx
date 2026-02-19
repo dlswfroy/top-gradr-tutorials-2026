@@ -189,7 +189,7 @@ export default function AddStudentPage() {
         const headers = [baseHeaders];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'নমুনা');
+        XLSX.utils.book_append_sheet(wb, ws, 'student_sample.xlsx');
         XLSX.writeFile(wb, 'student_sample.xlsx');
     };
 
@@ -416,7 +416,6 @@ export default function AddStudentPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
                 <div>
                     <CardTitle>নতুন শিক্ষার্থী যোগ করুন</CardTitle>
-                    <CardDescription>নতুন শিক্ষার্থীর তথ্য পূরণ করুন।</CardDescription>
                 </div>
                 <div className="flex items-center flex-wrap gap-2 justify-start sm:justify-end">
                     <Button variant="outline" onClick={handleDownloadSample}>

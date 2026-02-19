@@ -384,7 +384,6 @@ export default function ResultsPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div>
                                 <CardTitle>ফলাফল ও নম্বর ব্যবস্থাপনা</CardTitle>
-                                <CardDescription>শ্রেণি, বিষয় ও শাখা অনুযায়ী শিক্ষার্থীদের পরীক্ষার নম্বর ইনপুট করুন।</CardDescription>
                             </div>
                             <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
                                 <Button variant="outline" onClick={handleDownloadSample}>

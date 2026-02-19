@@ -95,7 +95,6 @@ export default function AddStaffPage() {
         <Card>
           <CardHeader>
             <CardTitle>নতুন শিক্ষক/কর্মচারী যোগ করুন</CardTitle>
-            <CardDescription>নতুন শিক্ষক বা কর্মচারীর তথ্য পূরণ করুন।</CardDescription>
           </CardHeader>
           <CardContent>
             {isClient ? (

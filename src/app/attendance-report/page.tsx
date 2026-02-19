@@ -174,7 +174,7 @@ export default function AttendanceReportPage() {
               <div>
                 <CardTitle>হাজিরার রিপোর্ট</CardTitle>
                 <CardDescription>
-                    শিক্ষাবর্ষ {selectedYear.toLocaleString('bn-BD')} এর শ্রেণিভিত্তিক উপস্থিতির সারসংক্ষেপ।
+                    শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}
                 </CardDescription>
               </div>
             </div>

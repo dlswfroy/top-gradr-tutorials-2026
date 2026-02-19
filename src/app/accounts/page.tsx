@@ -192,7 +192,6 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
         <Card>
             <CardHeader>
                 <CardTitle>নতুন আয়/ব্যয় যোগ করুন</CardTitle>
-                <CardDescription>আপনার প্রতিষ্ঠানের আয় ও ব্যয়ের হিসাব এখানে যোগ করুন।</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -279,7 +278,6 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
         <Card>
              <CardHeader>
                 <CardTitle>ক্যাশবুক</CardTitle>
-                <CardDescription>প্রতিষ্ঠানের সকল আয় ও ব্যয়ের কালানুক্রমিক তালিকা।</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto">
@@ -361,7 +359,6 @@ const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], i
          <Card>
              <CardHeader>
                 <CardTitle>খতিয়ান (লেজার)</CardTitle>
-                <CardDescription>খাত অনুযায়ী আয়-ব্যয়ের বিস্তারিত হিসাব।</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -440,7 +437,7 @@ export default function AccountsPage() {
         <Card>
           <CardHeader>
              <CardTitle>হিসাব শাখা</CardTitle>
-             <CardDescription>শিক্ষার্থীদের বেতন ও অন্যান্য ফি আদায় এবং প্রতিষ্ঠানের আয়-ব্যয় পরিচালনা করুন। শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</CardDescription>
+             <CardDescription>শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</CardDescription>
           </CardHeader>
           <CardContent>
              {isClient ? (

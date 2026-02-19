@@ -150,7 +150,6 @@ export default function EditStaffPage() {
         <Card>
           <CardHeader>
             <CardTitle>শিক্ষক/কর্মচারীর তথ্য এডিট করুন</CardTitle>
-            <CardDescription>প্রয়োজনীয় তথ্য পরিবর্তন করুন।</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-8" onSubmit={handleSubmit}>
