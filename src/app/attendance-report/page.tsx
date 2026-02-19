@@ -3,11 +3,14 @@
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getStudents, Student } from '@/lib/student-data';
+import { Student } from '@/lib/student-data';
 import { getAttendanceFromStorage } from '@/lib/attendance-data';
 import { useEffect, useState, useMemo } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useFirestore } from '@/firebase';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { useToast } from "@/hooks/use-toast";
 
 interface StudentReport {
     student: Student;
@@ -22,6 +25,7 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Note: Attendance data still comes from localStorage
         const allAttendance = getAttendanceFromStorage().filter(
             att => att.academicYear === selectedYear && att.className === classId
         );
@@ -106,10 +110,35 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
 export default function AttendanceReportPage() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const { selectedYear } = useAcademicYear();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const db = useFirestore();
 
   useEffect(() => {
-    setAllStudents(getStudents());
-  }, []);
+    if (!db) return;
+    setIsLoading(true);
+    const studentsQuery = query(
+        collection(db, "students"),
+        orderBy("roll")
+    );
+
+    const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+        const studentsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            dob: doc.data().dob?.toDate(),
+        })) as Student[];
+        setAllStudents(studentsData);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching students: ", error);
+        toast({ variant: "destructive", title: "শিক্ষার্থীদের তথ্য আনতে সমস্যা হয়েছে" });
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, toast]);
+
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);
@@ -140,6 +169,9 @@ export default function AttendanceReportPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {isLoading ? (
+                <p className="text-center text-muted-foreground p-8">লোড হচ্ছে...</p>
+            ) : (
             <Tabs defaultValue="6">
               <TabsList className="grid w-full grid-cols-5">
                 {classes.map((className) => (
@@ -158,6 +190,7 @@ export default function AttendanceReportPage() {
                 </TabsContent>
               ))}
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </main>

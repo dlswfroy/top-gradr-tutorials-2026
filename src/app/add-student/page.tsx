@@ -17,12 +17,14 @@ import { Calendar as CalendarIcon, Upload, FileUp, Download } from 'lucide-react
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { addStudent, getStudents, updateStudent, Student } from '@/lib/student-data';
+import { addStudent, getStudents, updateStudent, NewStudentData } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useFirestore } from '@/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
-const initialStudentState: Partial<Omit<Student, 'id'>> = {
+const initialStudentState: NewStudentData = {
   roll: undefined,
   className: '',
   academicYear: '',
@@ -59,8 +61,9 @@ export default function AddStudentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { selectedYear, availableYears } = useAcademicYear();
+    const db = useFirestore();
     
-    const [student, setStudent] = useState(initialStudentState);
+    const [student, setStudent] = useState<NewStudentData>(initialStudentState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [optionalSubjects, setOptionalSubjects] = useState<Subject[]>([]);
@@ -90,7 +93,7 @@ export default function AddStudentPage() {
     }, [student.className, student.group]);
 
 
-    const handleInputChange = (field: keyof Omit<Student, 'id'>, value: string | number | Date | undefined) => {
+    const handleInputChange = (field: keyof NewStudentData, value: string | number | Date | undefined) => {
         setStudent(prev => ({...prev, [field]: value}));
     };
 
@@ -107,8 +110,9 @@ export default function AddStudentPage() {
         }
     };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if(!db) return;
 
         if (!student.photoUrl) {
             toast({
@@ -137,14 +141,20 @@ export default function AddStudentPage() {
             return;
         }
         
-        addStudent(student as Omit<Student, 'id'>);
-
-        toast({
-            title: "শিক্ষার্থী যোগ হয়েছে",
-            description: "নতুন শিক্ষার্থী সফলভাবে তালিকায় যোগ করা হয়েছে।",
-        });
-
-        router.push('/student-list');
+        try {
+            await addStudent(db, student);
+            toast({
+                title: "শিক্ষার্থী যোগ হয়েছে",
+                description: "নতুন শিক্ষার্থী সফলভাবে তালিকায় যোগ করা হয়েছে।",
+            });
+            router.push('/student-list');
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "শিক্ষার্থী যোগ করা সম্ভব হয়নি",
+                description: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+            });
+        }
     };
 
     const handleSameAddress = (checked: boolean | string) => {
@@ -179,12 +189,13 @@ export default function AddStudentPage() {
         XLSX.writeFile(wb, 'student_sample.xlsx');
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!db) return;
         const file = event.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const data = e.target?.result;
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
@@ -201,7 +212,7 @@ export default function AddStudentPage() {
                     return;
                 }
 
-                const headerMapping: { [key: string]: keyof Omit<Student, 'id' | 'photoUrl' > } = {
+                const headerMapping: { [key: string]: keyof NewStudentData } = {
                     'রোল': 'roll', 'roll': 'roll', 
                     'শ্রেণি': 'className', 'class': 'className', 
                     'গ্রুপ': 'group', 'group': 'group', 'শাখা': 'group', 'বিভাগ': 'group',
@@ -224,8 +235,6 @@ export default function AddStudentPage() {
                     'স্থায়ী গ্রাম': 'permanentVillage', 'স্থায়ী ইউনিয়ন': 'permanentUnion', 'স্থায়ী ডাকঘর': 'permanentPostOffice', 'স্থায়ী উপজেলা': 'permanentUpazila', 'স্থায়ী জেলা': 'permanentDistrict',
                 };
                 
-                const englishToBengaliHeaderMap = Object.fromEntries(Object.entries(headerMapping).map(([k, v]) => [v, k]));
-                
                 const genderMap: { [key: string]: string } = { 'পুরুষ': 'male', 'male': 'male', 'মহিলা': 'female', 'female': 'female', 'অন্যান্য': 'other', 'other': 'other' };
                 const religionMap: { [key: string]: string } = { 'ইসলাম': 'islam', 'islam': 'islam', 'হিন্দু': 'hinduism', 'hinduism': 'hinduism', 'বৌদ্ধ': 'buddhism', 'buddhism': 'buddhism', 'খ্রিস্টান': 'christianity', 'christianity': 'christianity', 'অন্যান্য': 'other', 'other': 'other' };
                 const groupMap: { [key:string]: string } = { 
@@ -237,92 +246,70 @@ export default function AddStudentPage() {
                     'উচ্চতর গণিত': 'উচ্চতর গণিত', 'higher math': 'উচ্চতর গণিত',
                     'কৃষি শিক্ষা': 'কৃষি শিক্ষা', 'agriculture': 'কৃষি শিক্ষা'
                 };
-
                 const bengaliToEnglishDigit: { [key: string]: string } = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+
                 const convertToNumber = (value: any): number | undefined => {
-                  if (value === undefined || value === null || String(value).trim() === '') return undefined;
-                  let strValue = String(value).trim();
-                  strValue = strValue.replace(/[০-৯]/g, d => bengaliToEnglishDigit[d]);
-                  const num = parseInt(strValue, 10);
-                  return isNaN(num) ? undefined : num;
+                    if (value === undefined || value === null || String(value).trim() === '') return undefined;
+                    let strValue = String(value).trim();
+                    strValue = strValue.replace(/[০-৯]/g, d => bengaliToEnglishDigit[d]);
+                    const num = parseInt(strValue, 10);
+                    return isNaN(num) ? undefined : num;
                 };
 
-                const allStudents = getStudents();
+                const studentsQuery = query(collection(db, "students"), where("academicYear", "==", selectedYear));
+                const querySnapshot = await getDocs(studentsQuery);
+                const allStudents = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
                 let addedCount = 0;
                 let updatedCount = 0;
                 const processingErrors: string[] = [];
+                const promises: Promise<any>[] = [];
 
-                json.forEach((row: any, index: number) => {
+                for (const [index, row] of json.entries()) {
                     try {
-                        const newStudentData: Partial<Student> = {};
-                        Object.keys(row).forEach(excelHeader => {
+                        const newStudentData: any = {};
+                        for (const excelHeader of Object.keys(row)) {
                             const studentKey = headerMapping[excelHeader.trim().toLowerCase()];
                             if (studentKey) {
                                 let value = row[excelHeader];
-                                
-                                if (value && typeof value === 'string') {
-                                    value = value.trim();
-                                }
+                                if (value && typeof value === 'string') value = value.trim();
 
                                 if (value === undefined || value === null || value === '') {
-                                    (newStudentData as any)[studentKey] = undefined;
-                                    return;
+                                    newStudentData[studentKey] = undefined;
+                                    continue;
                                 }
 
                                 const valueStr = String(value);
                                 const valueStrLower = valueStr.toLowerCase();
 
-                                if (studentKey === 'gender') {
-                                    (newStudentData as any)[studentKey] = genderMap[valueStr] || genderMap[valueStrLower] || 'other';
-                                } else if (studentKey === 'religion') {
-                                    (newStudentData as any)[studentKey] = religionMap[valueStr] || religionMap[valueStrLower] || 'other';
-                                } else if (studentKey === 'group') {
-                                    (newStudentData as any)[studentKey] = groupMap[valueStr] || groupMap[valueStrLower] || undefined;
-                                } else if (studentKey === 'optionalSubject') {
-                                    (newStudentData as any)[studentKey] = optionalSubjectMap[valueStr] || optionalSubjectMap[valueStrLower] || undefined;
-                                } else if (studentKey === 'dob') {
-                                    let parsedDate: Date | undefined;
-                                    if (value instanceof Date && !isNaN(value.getTime())) {
-                                        parsedDate = value;
-                                    } else if (typeof value === 'number' && value > 1) {
-                                        parsedDate = new Date((value - 25569) * 86400 * 1000);
-                                    } else if (typeof value === 'string') {
-                                        let date: Date | undefined;
-                                        const potentialDate = new Date(value);
-                                        if (!isNaN(potentialDate.getTime())) {
-                                            date = potentialDate;
-                                        } else {
-                                            const parts = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-                                            if (parts) {
-                                                date = new Date(Number(parts[3]), Number(parts[2]) - 1, Number(parts[1]));
-                                            }
-                                        }
-                                        if (date && !isNaN(date.getTime())) {
-                                          parsedDate = date;
-                                        }
+                                if (studentKey === 'gender') newStudentData[studentKey] = genderMap[valueStr] || genderMap[valueStrLower] || 'other';
+                                else if (studentKey === 'religion') newStudentData[studentKey] = religionMap[valueStr] || religionMap[valueStrLower] || 'other';
+                                else if (studentKey === 'group') newStudentData[studentKey] = groupMap[valueStr] || groupMap[valueStrLower] || undefined;
+                                else if (studentKey === 'optionalSubject') newStudentData[studentKey] = optionalSubjectMap[valueStr] || optionalSubjectMap[valueStrLower] || undefined;
+                                else if (studentKey === 'dob') {
+                                     let parsedDate: Date | undefined;
+                                    if (value instanceof Date && !isNaN(value.getTime())) parsedDate = value;
+                                    else if (typeof value === 'number' && value > 1) parsedDate = new Date((value - 25569) * 86400 * 1000);
+                                    else if (typeof value === 'string') {
+                                         const date = new Date(value);
+                                        if (date && !isNaN(date.getTime())) parsedDate = date;
                                     }
                                     newStudentData.dob = parsedDate;
-
-                                } else if (studentKey === 'roll') {
-                                    newStudentData.roll = convertToNumber(value);
-                                } else if (studentKey === 'className') {
-                                    newStudentData.className = String(value);
-                                } else {
-                                    (newStudentData as any)[studentKey] = value;
-                                }
+                                } else if (studentKey === 'roll') newStudentData.roll = convertToNumber(value);
+                                else if (studentKey === 'className') newStudentData.className = String(value);
+                                else newStudentData[studentKey] = value;
                             }
-                        });
+                        }
 
                         newStudentData.academicYear = selectedYear;
 
-                        const requiredFields: (keyof Student)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn', 'academicYear'];
+                        const requiredFields: (keyof NewStudentData)[] = ['roll', 'className', 'studentNameBn', 'fatherNameBn', 'motherNameBn', 'academicYear'];
                         const missingFields = requiredFields.filter(field => newStudentData[field] === undefined || newStudentData[field] === null || newStudentData[field] === '');
 
                         if (missingFields.length > 0) {
-                            const missingHeaders = missingFields.map(field => englishToBengaliHeaderMap[field as keyof typeof englishToBengaliHeaderMap]).join(', ');
-                            throw new Error(`সারি ${index + 2}: আবশ্যকীয় তথ্য অনুপস্থিত: ${missingHeaders}`);
+                            throw new Error(`সারি ${index + 2}: আবশ্যকীয় তথ্য অনুপস্থিত: ${missingFields.join(', ')}`);
                         }
-
+                        
                         const existingStudent = allStudents.find(
                             s => s.roll === newStudentData.roll &&
                                  s.className === newStudentData.className &&
@@ -330,23 +317,22 @@ export default function AddStudentPage() {
                         );
 
                         if (existingStudent) {
-                            const dataToUpdate = { ...existingStudent, ...newStudentData };
-                            updateStudent(existingStudent.id, dataToUpdate);
+                            promises.push(updateStudent(db, existingStudent.id, newStudentData));
                             updatedCount++;
                         } else {
                             newStudentData.photoUrl = `https://picsum.photos/seed/${newStudentData.roll || Math.random()}/96/96`;
-                            addStudent(newStudentData as Omit<Student, 'id'>);
+                            promises.push(addStudent(db, newStudentData as NewStudentData));
                             addedCount++;
                         }
                     } catch (rowError: any) {
                         processingErrors.push(rowError.message);
                     }
-                });
-
-                if (processingErrors.length > 0) {
-                    throw new Error(processingErrors.join('\n'));
                 }
+
+                if (processingErrors.length > 0) throw new Error(processingErrors.join('\n'));
                 
+                await Promise.all(promises);
+
                 toast({
                     title: "প্রসেসিং সম্পন্ন",
                     description: `${addedCount} জন নতুন শিক্ষার্থী যোগ হয়েছে এবং ${updatedCount} জনের তথ্য আপডেট হয়েছে।`,
@@ -360,12 +346,10 @@ export default function AddStudentPage() {
                     variant: "destructive",
                     title: "ফাইল আপলোড ব্যর্থ হয়েছে",
                     description: error.message || "দয়া করে ফাইলের ফরম্যাট এবং আবশ্যকীয় তথ্য ঠিক আছে কিনা তা পরীক্ষা করুন।",
-                    duration: 10000, // Show error for longer
+                    duration: 10000,
                 });
             } finally {
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
+                if (fileInputRef.current) fileInputRef.current.value = '';
             }
         };
         reader.readAsArrayBuffer(file);

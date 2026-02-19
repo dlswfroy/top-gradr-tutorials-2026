@@ -3,7 +3,7 @@
 export type AttendanceStatus = 'present' | 'absent';
 
 export interface StudentAttendance {
-  studentId: number;
+  studentId: string;
   status: AttendanceStatus;
 }
 

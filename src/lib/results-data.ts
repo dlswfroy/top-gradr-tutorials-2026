@@ -1,7 +1,7 @@
 'use client';
 
 export interface StudentResult {
-  studentId: number;
+  studentId: string;
   written?: number;
   mcq?: number;
   practical?: number;

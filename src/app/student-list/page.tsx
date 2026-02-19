@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getStudents, deleteStudent, Student } from '@/lib/student-data';
+import { deleteStudent, Student } from '@/lib/student-data';
 import { Eye, FilePen, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
@@ -31,28 +32,66 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { Separator } from '@/components/ui/separator';
+import { useFirestore } from '@/firebase';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 
 export default function StudentListPage() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { selectedYear } = useAcademicYear();
   const [studentToView, setStudentToView] = useState<Student | null>(null);
+  const db = useFirestore();
 
   useEffect(() => {
-    setAllStudents(getStudents());
-  }, []);
+    if (!db) return;
+    setIsLoading(true);
+
+    const studentsQuery = query(
+      collection(db, "students"), 
+      orderBy("roll")
+    );
+
+    const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+      const studentsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        dob: doc.data().dob?.toDate(),
+      })) as Student[];
+      setAllStudents(studentsData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching students: ", error);
+      toast({
+        variant: "destructive",
+        title: "শিক্ষার্থীদের তথ্য আনতে সমস্যা হয়েছে",
+        description: "দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।",
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, toast]);
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);
   }, [allStudents, selectedYear]);
 
-  const handleDeleteStudent = (studentId: number) => {
-    deleteStudent(studentId);
-    setAllStudents(getStudents()); // Refresh the list
-    toast({
-        title: "শিক্ষার্থী ডিলিট হয়েছে",
-        description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
-    });
+  const handleDeleteStudent = async (studentId: string) => {
+    if (!db) return;
+    try {
+        await deleteStudent(db, studentId);
+        toast({
+            title: "শিক্ষার্থী ডিলিট হয়েছে",
+            description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
+        });
+    } catch(error) {
+        toast({
+            variant: "destructive",
+            title: "ডিলিট করা সম্ভব হয়নি",
+            description: "শিক্ষার্থীর তথ্য ডিলিট করার সময় একটি সমস্যা হয়েছে।",
+        });
+    }
   };
 
   const classes = ['6', '7', '8', '9', '10'];
@@ -115,7 +154,13 @@ export default function StudentListPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {getStudentsByClass(className).length === 0 ? (
+                            {isLoading ? (
+                               <TableRow>
+                                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                      লোড হচ্ছে...
+                                  </TableCell>
+                               </TableRow>
+                            ) : getStudentsByClass(className).length === 0 ? (
                                <TableRow>
                                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                                       এই শ্রেণিতে কোনো শিক্ষার্থী নেই।

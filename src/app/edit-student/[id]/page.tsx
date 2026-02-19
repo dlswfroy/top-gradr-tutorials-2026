@@ -31,15 +31,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useAcademicYear } from '@/context/AcademicYearContext';
-
+import { useFirestore } from '@/firebase';
 
 export default function EditStudentPage() {
     const router = useRouter();
     const params = useParams();
     const { toast } = useToast();
     const { availableYears } = useAcademicYear();
+    const db = useFirestore();
     
-    const studentId = parseInt(params.id as string, 10);
+    const studentId = params.id as string;
 
     const [student, setStudent] = useState<Student | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -47,12 +48,14 @@ export default function EditStudentPage() {
     const [optionalSubjects, setOptionalSubjects] = useState<Subject[]>([]);
 
     useEffect(() => {
-        if (studentId) {
-            const studentData = getStudentById(studentId);
+        if (!studentId || !db) return;
+
+        const fetchStudent = async () => {
+            setIsLoading(true);
+            const studentData = await getStudentById(db, studentId);
             if (studentData) {
                 setStudent(studentData);
                 setPhotoPreview(studentData.photoUrl);
-                setIsLoading(false);
             } else {
                 toast({
                     variant: "destructive",
@@ -61,8 +64,10 @@ export default function EditStudentPage() {
                 });
                 router.push('/student-list');
             }
+            setIsLoading(false);
         }
-    }, [studentId, router, toast]);
+        fetchStudent();
+    }, [studentId, router, toast, db]);
 
      useEffect(() => {
         if (!student) return;
@@ -109,10 +114,10 @@ export default function EditStudentPage() {
         }
     };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         
-        if (!student) {
+        if (!student || !db) {
             toast({
                 variant: "destructive",
                 title: "ত্রুটি",
@@ -132,23 +137,38 @@ export default function EditStudentPage() {
 
         const { id, ...updatedData } = student;
         
-        updateStudent(studentId, updatedData);
-
-        toast({
-            title: "তথ্য আপডেট হয়েছে",
-            description: "শিক্ষার্থীর তথ্য সফলভাবে আপডেট করা হয়েছে।",
-        });
-
-        router.push('/student-list');
+        try {
+            await updateStudent(db, studentId, updatedData);
+            toast({
+                title: "তথ্য আপডেট হয়েছে",
+                description: "শিক্ষার্থীর তথ্য সফলভাবে আপডেট করা হয়েছে।",
+            });
+            router.push('/student-list');
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "আপডেট ব্যর্থ হয়েছে",
+                description: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+            });
+        }
     };
 
-    const handleDelete = () => {
-        deleteStudent(studentId);
-        toast({
-            title: "ছাত্র ডিলিট করা হয়েছে",
-            description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
-        });
-        router.push('/student-list');
+    const handleDelete = async () => {
+        if (!db) return;
+        try {
+            await deleteStudent(db, studentId);
+            toast({
+                title: "ছাত্র ডিলিট করা হয়েছে",
+                description: "শিক্ষার্থীর তথ্য তালিকা থেকে মুছে ফেলা হয়েছে।",
+            });
+            router.push('/student-list');
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "ডিলিট ব্যর্থ হয়েছে",
+                description: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+            });
+        }
     }
     
     const handleSameAddress = (checked: boolean | string) => {

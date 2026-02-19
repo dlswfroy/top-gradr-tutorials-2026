@@ -1,5 +1,25 @@
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  Timestamp,
+  Firestore,
+  DocumentData,
+  WithFieldValue,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 export type Student = {
-  id: number;
+  id: string; // Firestore IDs are strings
   roll: number;
   className: string;
   academicYear: string;
@@ -9,7 +29,7 @@ export type Student = {
   fatherNameEn?: string;
   motherNameBn: string;
   motherNameEn?: string;
-  dob?: Date;
+  dob?: Date; // Form uses Date
   birthRegNo?: string;
   guardianMobile?: string;
   studentMobile?: string;
@@ -30,91 +50,111 @@ export type Student = {
   permanentUpazila?: string;
   permanentDistrict?: string;
   photoUrl: string;
+  // Firestore specific fields
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 };
 
-const STUDENTS_STORAGE_KEY = 'studentsData';
+// Data from form won't have id or timestamps
+export type NewStudentData = Omit<Student, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateStudentData = Partial<NewStudentData>;
 
-// Function to get students from localStorage
-const getStudentsFromStorage = (): Student[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-  try {
-    const data = window.localStorage.getItem(STUDENTS_STORAGE_KEY);
-    if (data) {
-        const students: Student[] = JSON.parse(data);
-        // Dates are stored as strings in JSON, so we need to convert them back to Date objects.
-        return students.map(s => ({
-            ...s,
-            dob: s.dob ? new Date(s.dob) : undefined,
-        }));
+// To handle data from Firestore
+export const studentFromDoc = (doc: DocumentData): Student => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        dob: data.dob instanceof Timestamp ? data.dob.toDate() : data.dob,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+    } as Student;
+}
+
+export const getStudents = async (db: Firestore): Promise<Student[]> => {
+    const studentsQuery = query(collection(db, "students"), orderBy("roll"));
+    try {
+        const querySnapshot = await getDocs(studentsQuery);
+        return querySnapshot.docs.map(doc => studentFromDoc(doc));
+    } catch (e) {
+        console.error("Error getting students:", e);
+        return [];
     }
-    return [];
-  } catch (error) {
-    console.error("Error reading students from localStorage", error);
-    return [];
-  }
 };
 
-// Function to save students to localStorage
-const saveStudentsToStorage = (students: Student[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  try {
-    window.localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(students));
-  } catch (error) {
-    console.error("Error saving students to localStorage", error);
-  }
+export const getStudentById = async (db: Firestore, id: string): Promise<Student | undefined> => {
+    const docRef = doc(db, 'students', id);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return studentFromDoc(docSnap);
+        }
+        return undefined;
+    } catch(e) {
+        console.error("Error getting student by ID:", e);
+        return undefined;
+    }
 };
 
-
-// Function to get a copy of all students
-export const getStudents = (): Student[] => {
-  const students = getStudentsFromStorage();
-  return [...students].sort((a, b) => a.roll - b.roll);
-};
-
-// Function to get a single student by ID
-export const getStudentById = (id: number): Student | undefined => {
-  const students = getStudentsFromStorage();
-  return students.find((student) => student.id === id);
-};
-
-
-// Function to add a new student
-export const addStudent = (studentData: Omit<Student, 'id'>) => {
-  const students = getStudentsFromStorage();
-  const maxId = students.reduce((max, student) => (student.id > max ? student.id : max), 0);
-  const newStudent: Student = {
+export const addStudent = async (db: Firestore, studentData: NewStudentData) => {
+  const dataToSave: WithFieldValue<DocumentData> = {
     ...studentData,
-    id: maxId + 1,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
-  const newStudents = [...students, newStudent];
-  saveStudentsToStorage(newStudents);
-  return newStudent;
+  if (studentData.dob) {
+    dataToSave.dob = Timestamp.fromDate(studentData.dob);
+  }
+
+  return addDoc(collection(db, 'students'), dataToSave)
+    .catch(async (serverError) => {
+      console.error("Error adding student:", serverError);
+      const permissionError = new FirestorePermissionError({
+        path: 'students',
+        operation: 'create',
+        requestResourceData: studentData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw serverError; // re-throw to be caught in the UI
+    });
 };
 
-// Function to update an existing student
-export const updateStudent = (id: number, updatedData: Omit<Student, 'id'>) => {
-  const students = getStudentsFromStorage();
-  const studentIndex = students.findIndex((s) => s.id === id);
-  if (studentIndex !== -1) {
-    const updatedStudent = { id, ...updatedData };
-    students[studentIndex] = updatedStudent;
-    saveStudentsToStorage(students);
-    return updatedStudent;
+export const updateStudent = async (db: Firestore, id: string, studentData: UpdateStudentData) => {
+  const docRef = doc(db, 'students', id);
+  const dataToUpdate: WithFieldValue<DocumentData> = {
+    ...studentData,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (studentData.dob) {
+    dataToUpdate.dob = Timestamp.fromDate(studentData.dob);
+  } else if (studentData.hasOwnProperty('dob') && studentData.dob === undefined) {
+    dataToUpdate.dob = null;
   }
-  return null;
+
+  return updateDoc(docRef, dataToUpdate)
+    .catch(async (serverError) => {
+        console.error("Error updating student:", serverError);
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
 };
 
-// Function to delete a student
-export const deleteStudent = (id: number) => {
-  const students = getStudentsFromStorage();
-  const updatedStudents = students.filter((student) => student.id !== id);
-  if (students.length !== updatedStudents.length) {
-    saveStudentsToStorage(updatedStudents);
-    return true;
-  }
-  return false;
+export const deleteStudent = async (db: Firestore, id: string) => {
+  const docRef = doc(db, 'students', id);
+  return deleteDoc(docRef)
+    .catch(async (serverError) => {
+        console.error("Error deleting student:", serverError);
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
 };

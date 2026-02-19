@@ -3,7 +3,7 @@
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getStudents, Student } from '@/lib/student-data';
+import { Student } from '@/lib/student-data';
 import { useEffect, useState, useMemo } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ import { saveDailyAttendance, getAttendanceForClassAndDate, StudentAttendance, D
 import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
+import { useFirestore } from '@/firebase';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+
 
 // Helper component for taking/viewing attendance for a single class
 const AttendanceSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
@@ -24,7 +27,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const todayStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay(); // 0 for Sunday, 5 for Friday, 6 for Saturday
 
-    const [attendance, setAttendance] = useState<Map<number, AttendanceStatus>>(new Map());
+    const [attendance, setAttendance] = useState<Map<string, AttendanceStatus>>(new Map());
     const [savedAttendance, setSavedAttendance] = useState<DailyAttendance | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
     const [activeHoliday, setActiveHoliday] = useState<Holiday | undefined>(undefined);
@@ -32,15 +35,17 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
     useEffect(() => {
-        const initialAttendance = new Map<number, AttendanceStatus>();
+        const initialAttendance = new Map<string, AttendanceStatus>();
         students.forEach(student => {
             initialAttendance.set(student.id, 'present');
         });
         setAttendance(initialAttendance);
 
+        // Note: This data is from localStorage
         const existingAttendance = getAttendanceForClassAndDate(todayStr, classId, selectedYear);
         setSavedAttendance(existingAttendance);
 
+        // Note: This data is from localStorage
         const holidayToday = isHoliday(todayStr);
         setActiveHoliday(holidayToday);
         
@@ -48,7 +53,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
     }, [students, todayStr, classId, selectedYear]);
 
-    const handleStatusChange = (studentId: number, status: AttendanceStatus) => {
+    const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => new Map(prev).set(studentId, status));
     };
 
@@ -74,6 +79,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
             attendance: attendanceData,
         };
 
+        // Note: This saves to localStorage
         saveDailyAttendance(dailyAttendance);
         setSavedAttendance(dailyAttendance);
         toast({ title: "হাজিরা সেভ হয়েছে।", description: `শ্রেণি ${classId.toLocaleString('bn-BD')} এর জন্য আজকের হাজিরা সফলভাবে সেভ হয়েছে।` });
@@ -180,10 +186,38 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 export default function DigitalAttendancePage() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const { selectedYear } = useAcademicYear();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const db = useFirestore();
 
   useEffect(() => {
-    setAllStudents(getStudents());
-  }, []);
+    if (!db) return;
+    setIsLoading(true);
+
+    const studentsQuery = query(
+      collection(db, "students"),
+      orderBy("roll")
+    );
+
+    const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+      const studentsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        dob: doc.data().dob?.toDate(),
+      })) as Student[];
+      setAllStudents(studentsData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching students: ", error);
+      toast({
+        variant: "destructive",
+        title: "শিক্ষার্থীদের তথ্য আনতে সমস্যা হয়েছে",
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, toast]);
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);
@@ -217,6 +251,9 @@ export default function DigitalAttendancePage() {
             </div>
           </CardHeader>
           <CardContent>
+            {isLoading ? (
+                <p className="text-center text-muted-foreground py-8">লোড হচ্ছে...</p>
+            ) : (
             <Tabs defaultValue="6">
               <TabsList className="grid w-full grid-cols-5">
                 {classes.map((className) => (
@@ -241,6 +278,7 @@ export default function DigitalAttendancePage() {
                 </TabsContent>
               ))}
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </main>
