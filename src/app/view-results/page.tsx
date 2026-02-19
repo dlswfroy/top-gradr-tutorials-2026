@@ -31,6 +31,7 @@ import {
 import { BookOpen } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
@@ -44,6 +45,11 @@ export default function ViewResultsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [allStudents, setAllStudents] = useState<Student[]>([]);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     useEffect(() => {
       if (!db) return;
@@ -132,7 +138,7 @@ export default function ViewResultsPage() {
                         className: nextClass,
                         group: (nextClass === '9' || nextClass === '10') ? currentData.group : undefined,
                     };
-                    delete updatedStudentData.id;
+                    delete (updatedStudentData as any).id;
 
                     promotionPromises.push(updateStudent(db, id, updatedStudentData));
                     promotedCount++;
@@ -219,66 +225,87 @@ export default function ViewResultsPage() {
                                 <CardTitle>ফলাফল দেখুন</CardTitle>
                                 <CardDescription>শ্রেণিভিত্তিক চূড়ান্ত ফলাফল দেখুন। শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</CardDescription>
                             </div>
-                            <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
-                                <Link href="/results">
-                                    <Button variant="outline">নম্বর ইনপুট করুন</Button>
-                                </Link>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button disabled={isLoading || processedResults.filter(r => r.isPass).length === 0}>
-                                            পরবর্তী সেশনে উত্তীর্ণ করুন
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            এটি উত্তীর্ণ শিক্ষার্থীদের পরবর্তী শিক্ষাবর্ষ ({String(parseInt(selectedYear, 10) + 1)}) এবং পরবর্তী শ্রেণিতে পাঠাবে। এই কাজটি ফিরিয়ে আনা যাবে না।
-                                        </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handlePromoteStudents}>উত্তীর্ণ করুন</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
+                            {isClient ? (
+                                <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
+                                    <Link href="/results">
+                                        <Button variant="outline">নম্বর ইনপুট করুন</Button>
+                                    </Link>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button disabled={isLoading || processedResults.filter(r => r.isPass).length === 0}>
+                                                পরবর্তী সেশনে উত্তীর্ণ করুন
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                এটি উত্তীর্ণ শিক্ষার্থীদের পরবর্তী শিক্ষাবর্ষ ({String(parseInt(selectedYear, 10) + 1)}) এবং পরবর্তী শ্রেণিতে পাঠাবে। এই কাজটি ফিরিয়ে আনা যাবে না।
+                                            </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handlePromoteStudents}>উত্তীর্ণ করুন</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
+                                    <Skeleton className="h-10 w-36" />
+                                    <Skeleton className="h-10 w-48" />
+                                </div>
+                            )}
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
-                            <div className="space-y-2">
-                                <Label htmlFor="class">শ্রেণি</Label>
-                                <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); }}>
-                                    <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="6">৬ষ্ঠ</SelectItem>
-                                        <SelectItem value="7">৭ম</SelectItem>
-                                        <SelectItem value="8">৮ম</SelectItem>
-                                        <SelectItem value="9">৯ম</SelectItem>
-                                        <SelectItem value="10">১০ম</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {showGroupSelector && (
+                        {isClient ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
                                 <div className="space-y-2">
-                                    <Label htmlFor="group">শাখা/গ্রুপ</Label>
-                                    <Select value={group} onValueChange={g => { setGroup(g); }}>
-                                        <SelectTrigger id="group"><SelectValue placeholder="শাখা নির্বাচন" /></SelectTrigger>
+                                    <Label htmlFor="class">শ্রেণি</Label>
+                                    <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); }}>
+                                        <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="science">বিজ্ঞান</SelectItem>
-                                            <SelectItem value="arts">মানবিক</SelectItem>
-                                            <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
+                                            <SelectItem value="6">৬ষ্ঠ</SelectItem>
+                                            <SelectItem value="7">৭ম</SelectItem>
+                                            <SelectItem value="8">৮ম</SelectItem>
+                                            <SelectItem value="9">৯ম</SelectItem>
+                                            <SelectItem value="10">১০ম</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            )}
-                            
-                            <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-span-2 lg:col-start-3">
-                                {isLoading ? 'লোড হচ্ছে...' : 'ফলাফল দেখুন'}
-                            </Button>
-                        </div>
+
+                                {showGroupSelector && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="group">শাখা/গ্রুপ</Label>
+                                        <Select value={group} onValueChange={g => { setGroup(g); }}>
+                                            <SelectTrigger id="group"><SelectValue placeholder="শাখা নির্বাচন" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="science">বিজ্ঞান</SelectItem>
+                                                <SelectItem value="arts">মানবিক</SelectItem>
+                                                <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                
+                                <Button onClick={handleViewResults} disabled={isLoading} className="w-full lg:col-span-2 lg:col-start-3">
+                                    {isLoading ? 'লোড হচ্ছে...' : 'ফলাফল দেখুন'}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                                <div className="space-y-2">
+                                    <Skeleton className="h-5 w-16" />
+                                    <Skeleton className="h-10 w-full" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-5 w-16" />
+                                    <Skeleton className="h-10 w-full" />
+                                </div>
+                                <Skeleton className="h-10 w-full lg:col-span-2 lg:col-start-3" />
+                            </div>
+                        )}
                         
                         {processedResults.length > 0 && subjects.length > 0 && (
                             <div className="border rounded-md overflow-x-auto relative">
