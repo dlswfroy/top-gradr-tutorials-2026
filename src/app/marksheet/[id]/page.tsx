@@ -251,7 +251,7 @@ export default function MarksheetPage() {
                         </table>
                     </section>
                     
-                    <div className="absolute top-10 right-10 w-32">
+                    <div className="absolute top-28 right-8 w-28">
                          <table className="w-full border-collapse border-2 border-black text-xs text-center">
                             <thead className="bg-gray-200">
                                 <tr className="border-b-2 border-black">
