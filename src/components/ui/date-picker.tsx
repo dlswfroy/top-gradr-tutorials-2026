@@ -47,7 +47,7 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "à
     setOpen(false);
   }
   
-  const headerDate = displayDate || new Date();
+  const headerDate = displayDate || value || new Date();
   
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -75,7 +75,6 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "à
           onSelect={setDisplayDate}
           initialFocus
           locale={bn}
-          captionLayout="dropdown-buttons"
           fromYear={1950}
           toYear={new Date().getFullYear() + 5}
         />
