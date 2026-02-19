@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -124,6 +125,12 @@ export function Header() {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                   ফলাফল দেখুন
+                </Link>
+                <Link
+                  href="/results-upload"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  ফলাফল আপলোড
                 </Link>
                 <Link
                   href="#"
