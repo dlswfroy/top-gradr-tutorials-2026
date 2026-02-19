@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import React from 'react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { getStudents, updateStudent } from '@/lib/student-data';
+import { getStudents, updateStudent, Student } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { getResultsForClass, ClassResult } from '@/lib/results-data';
 import { processStudentResults, StudentProcessedResult } from '@/lib/results-calculation';
@@ -29,10 +29,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { BookOpen } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 export default function ViewResultsPage() {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
+    const db = useFirestore();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -40,9 +43,24 @@ export default function ViewResultsPage() {
     const [processedResults, setProcessedResults] = useState<StudentProcessedResult[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [allStudents, setAllStudents] = useState<Student[]>([]);
 
-    const handleViewResults = () => {
-        if (!className) {
+    useEffect(() => {
+      if (!db) return;
+      const studentsQuery = query(collection(db, "students"));
+      const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+        const studentsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          dob: doc.data().dob?.toDate(),
+        })) as Student[];
+        setAllStudents(studentsData);
+      });
+      return () => unsubscribe();
+    }, [db]);
+
+    const handleViewResults = async () => {
+        if (!className || !db) {
             toast({
                 variant: 'destructive',
                 title: 'শ্রেণি নির্বাচন করুন',
@@ -53,7 +71,6 @@ export default function ViewResultsPage() {
 
         setIsLoading(true);
 
-        const allStudents = getStudents();
         const studentsInClass = allStudents.filter(s => 
             s.academicYear === selectedYear && 
             s.className === className &&
@@ -71,9 +88,11 @@ export default function ViewResultsPage() {
         const allSubjectsForGroup = getSubjects(className, group);
         setSubjects(allSubjectsForGroup);
         
-        const resultsBySubject: ClassResult[] = allSubjectsForGroup.map(subject => {
-            return getResultsForClass(selectedYear, className, subject.name, group);
-        }).filter((result): result is ClassResult => result !== undefined);
+        const resultsBySubjectPromises = allSubjectsForGroup.map(subject => {
+            return getResultsForClass(db, selectedYear, className, subject.name, group);
+        });
+        const resultsBySubject = (await Promise.all(resultsBySubjectPromises)).filter((result): result is ClassResult => result !== undefined);
+
 
         const finalResults = processStudentResults(studentsInClass, resultsBySubject, allSubjectsForGroup);
         setProcessedResults(finalResults);
@@ -81,7 +100,8 @@ export default function ViewResultsPage() {
         setIsLoading(false);
     };
 
-    const handlePromoteStudents = () => {
+    const handlePromoteStudents = async () => {
+        if (!db) return;
         if (processedResults.length === 0) {
             toast({
                 variant: 'destructive',
@@ -95,6 +115,8 @@ export default function ViewResultsPage() {
         let promotedCount = 0;
         let failedCount = 0;
         let graduatedCount = 0;
+
+        const promotionPromises: Promise<any>[] = [];
 
         processedResults.forEach(result => {
             if (result.isPass) {
@@ -110,8 +132,9 @@ export default function ViewResultsPage() {
                         className: nextClass,
                         group: (nextClass === '9' || nextClass === '10') ? currentData.group : undefined,
                     };
+                    delete updatedStudentData.id;
 
-                    updateStudent(id, updatedStudentData);
+                    promotionPromises.push(updateStudent(db, id, updatedStudentData));
                     promotedCount++;
                 }
             } else {
@@ -119,6 +142,8 @@ export default function ViewResultsPage() {
             }
         });
         
+        await Promise.all(promotionPromises);
+
         toast({
             title: 'শিক্ষার্থী উত্তীর্ণ করা সম্পন্ন',
             description: `${promotedCount} জন শিক্ষার্থী পরবর্তী শ্রেণিতে উত্তীর্ণ হয়েছে। ${graduatedCount} জন গ্র্যাজুয়েট হয়েছে। ${failedCount} জন ফেল করেছে।`,

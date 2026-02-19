@@ -1,4 +1,17 @@
 'use client';
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  Firestore,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export interface StudentResult {
   studentId: string;
@@ -8,96 +21,94 @@ export interface StudentResult {
 }
 
 export interface ClassResult {
+  id?: string;
   academicYear: string;
   className: string;
-  group?: string; // for 9-10
+  group?: string;
   subject: string;
   fullMarks: number;
   results: StudentResult[];
 }
 
-const RESULTS_STORAGE_KEY = 'resultsData';
+const resultsCollection = 'results';
 
-export const getResultsFromStorage = (): ClassResult[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-  try {
-    const data = window.localStorage.getItem(RESULTS_STORAGE_KEY);
-    const results: ClassResult[] = data ? JSON.parse(data) : [];
+const getDocumentId = (result: Omit<ClassResult, 'results' | 'fullMarks' | 'id'>): string => {
+    // Sanitize subject name for Firestore document ID
+    return `${result.academicYear}_${result.className}_${result.group || 'none'}_${result.subject.replace(/[^a-zA-Z0-9]/g, '-')}`;
+}
 
-    // Normalize subject names to fix old data
-    return results.map(res => {
-        if (res.subject === 'ধর্ম শিক্ষা') {
-            return { ...res, subject: 'ধর্ম ও নৈতিক শিক্ষা' };
-        }
-        return res;
+export const saveClassResults = async (db: Firestore, newResult: ClassResult) => {
+  const docId = getDocumentId(newResult);
+  const docRef = doc(db, resultsCollection, docId);
+  
+  const dataToSave = { ...newResult };
+  delete dataToSave.id;
+
+  return setDoc(docRef, dataToSave)
+    .catch(async (serverError) => {
+      console.error("Error saving results:", serverError);
+      const permissionError = new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'write',
+        requestResourceData: dataToSave,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw serverError;
     });
-
-  } catch (error) {
-    console.error("Error reading results from localStorage", error);
-    return [];
-  }
 };
 
-const saveResultsToStorage = (records: ClassResult[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  try {
-    window.localStorage.setItem(RESULTS_STORAGE_KEY, JSON.stringify(records));
-  } catch (error) {
-    console.error("Error saving results to localStorage", error);
-  }
-};
-
-export const saveClassResults = (newResult: ClassResult) => {
-  const allResults = getResultsFromStorage();
-  const existingIndex = allResults.findIndex(
-    r =>
-      r.academicYear === newResult.academicYear &&
-      r.className === newResult.className &&
-      r.subject === newResult.subject &&
-      r.group === newResult.group
-  );
-
-  if (existingIndex !== -1) {
-    allResults[existingIndex] = newResult;
-  } else {
-    allResults.push(newResult);
-  }
-  saveResultsToStorage(allResults);
-};
-
-export const getResultsForClass = (
+export const getResultsForClass = async (
+  db: Firestore,
   academicYear: string,
   className: string,
   subject: string,
   group?: string
-): ClassResult | undefined => {
-    const allResults = getResultsFromStorage();
-    return allResults.find(
-      r =>
-        r.academicYear === academicYear &&
-        r.className === className &&
-        r.subject === subject &&
-        r.group === (group || undefined)
-    );
+): Promise<ClassResult | undefined> => {
+    const docId = getDocumentId({ academicYear, className, subject, group });
+    const docRef = doc(db, resultsCollection, docId);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = { id: docSnap.id, ...docSnap.data() } as ClassResult;
+            if (data.subject === 'ধর্ম শিক্ষা') {
+                data.subject = 'ধর্ম ও নৈতিক শিক্ষা';
+            }
+            return data;
+        }
+        return undefined;
+    } catch(e) {
+        console.error("Error getting results by ID:", e);
+        return undefined;
+    }
 };
 
-export const getAllResults = (): ClassResult[] => getResultsFromStorage();
-
-export const deleteClassResult = (academicYear: string, className: string, subject: string, group?: string): boolean => {
-    const allResults = getResultsFromStorage();
-    const resultsToKeep = allResults.filter(r => 
-        !(r.academicYear === academicYear &&
-        r.className === className &&
-        r.subject === subject &&
-        r.group === (group || undefined))
-    );
-    if (allResults.length > resultsToKeep.length) {
-        saveResultsToStorage(resultsToKeep);
-        return true;
+export const getAllResults = async (db: Firestore, academicYear: string): Promise<ClassResult[]> => {
+    const q = query(collection(db, resultsCollection), where("academicYear", "==", academicYear));
+    try {
+        const querySnapshot = await getDocs(q);
+        const results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassResult));
+        return results.map(res => {
+            if (res.subject === 'ধর্ম শিক্ষা') {
+                return { ...res, subject: 'ধর্ম ও নৈতিক শিক্ষা' };
+            }
+            return res;
+        });
+    } catch (e) {
+        console.error("Error getting all results:", e);
+        return [];
     }
-    return false;
+};
+
+export const deleteClassResult = async (db: Firestore, id: string): Promise<void> => {
+    const docRef = doc(db, resultsCollection, id);
+    return deleteDoc(docRef)
+    .catch(async (serverError) => {
+        console.error("Error deleting result:", serverError);
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
 }

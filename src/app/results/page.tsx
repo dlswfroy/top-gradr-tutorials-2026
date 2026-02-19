@@ -74,16 +74,16 @@ export default function ResultsPage() {
     }, [db]);
 
 
-    const updateSavedResults = () => {
-        // Note: data from localStorage
-        const allResults = getAllResults().filter(r => r.academicYear === selectedYear);
+    const updateSavedResults = async () => {
+        if (!db) return;
+        const allResults = await getAllResults(db, selectedYear);
         setSavedResults(allResults);
     }
     
     useEffect(() => {
         updateSavedResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedYear]);
+    }, [selectedYear, db]);
 
     const groupedResults = useMemo(() => {
         if (savedResults.length === 0) return {};
@@ -145,8 +145,8 @@ export default function ResultsPage() {
         }
     }, [subject, availableSubjects, studentsForClass.length]);
     
-    const handleLoadStudents = () => {
-        if (!className || !subject) {
+    const handleLoadStudents = async () => {
+        if (!className || !subject || !db) {
             toast({ variant: 'destructive', title: 'তথ্য নির্বাচন করুন' });
             return;
         }
@@ -159,8 +159,7 @@ export default function ResultsPage() {
         ).sort((a,b) => a.roll - b.roll);
         setStudentsForClass(filteredStudents);
 
-        // Data from localStorage
-        const existingResults = getResultsForClass(selectedYear, className, subject, group);
+        const existingResults = await getResultsForClass(db, selectedYear, className, subject, group);
         const initialMarks = new Map<string, Marks>();
 
         if (existingResults) {
@@ -196,7 +195,8 @@ export default function ResultsPage() {
         setMarks(newMarks);
     };
 
-    const handleSaveResults = () => {
+    const handleSaveResults = async () => {
+        if (!db) return;
         if (studentsForClass.length === 0) {
             toast({ variant: 'destructive', title: 'কোনো শিক্ষার্থী নেই' });
             return;
@@ -207,7 +207,7 @@ export default function ResultsPage() {
             ...marks
         }));
 
-        saveClassResults({
+        await saveClassResults(db, {
             academicYear: selectedYear,
             className,
             group: group || undefined,
@@ -216,13 +216,14 @@ export default function ResultsPage() {
             results: resultsData
         });
         
-        updateSavedResults();
+        await updateSavedResults();
         toast({ title: 'ফলাফল সেভ হয়েছে' });
     };
 
-    const handleDeleteResult = (result: ClassResult) => {
-        deleteClassResult(result.academicYear, result.className, result.subject, result.group);
-        updateSavedResults();
+    const handleDeleteResult = async (result: ClassResult) => {
+        if (!db || !result.id) return;
+        await deleteClassResult(db, result.id);
+        await updateSavedResults();
         toast({ title: 'ফলাফল মোছা হয়েছে' });
     }
 
@@ -239,14 +240,126 @@ export default function ResultsPage() {
     };
 
     const handleDownloadSample = () => {
-      // Logic remains the same, no data fetching needed
+       const headers = [
+            ['রোল', 'লিখিত', 'বহুনির্বাচনী', 'ব্যবহারিক']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(headers);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'নম্বর নমুনা');
+        XLSX.writeFile(wb, 'marks_sample.xlsx');
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      // This needs significant rework for Firestore and will be disabled for now
-      toast({title: "Excel upload temporarily disabled", description: "This feature is being updated for Firestore."})
-    };
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!db || !className || !subject) {
+            toast({
+                variant: "destructive",
+                title: "প্রথমে শ্রেণি ও বিষয় নির্বাচন করুন",
+                description: "Excel ফাইল আপলোড করার আগে অনুগ্রহ করে শ্রেণি এবং বিষয় নির্বাচন করুন।",
+            });
+            return;
+        }
 
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    toast({ variant: "destructive", title: "ফাইল খালি" });
+                    return;
+                }
+                
+                if (studentsForClass.length === 0) {
+                    toast({ variant: "destructive", title: "শিক্ষার্থী লোড করা হয়নি", description: "ফাইল আপলোড করার আগে 'শিক্ষার্থী লোড করুন' বাটনে ক্লিক করুন।" });
+                    return;
+                }
+
+                const headerMapping: { [key: string]: keyof Marks } = {
+                    'written': 'written', 'লিখিত': 'written',
+                    'mcq': 'mcq', 'বহুনির্বাচনী': 'mcq',
+                    'practical': 'practical', 'ব্যবহারিক': 'practical',
+                };
+                
+                const bengaliToEnglishDigit: { [key: string]: string } = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+                const convertToNumber = (value: any): number | undefined => {
+                    if (value === undefined || value === null || String(value).trim() === '') return undefined;
+                    let strValue = String(value).trim();
+                    strValue = strValue.replace(/[০-৯]/g, d => bengaliToEnglishDigit[d]);
+                    const num = parseInt(strValue, 10);
+                    return isNaN(num) ? undefined : num;
+                };
+
+                const newMarks = new Map(marks);
+                let updatedCount = 0;
+                const processingErrors: string[] = [];
+
+                for (const [index, row] of json.entries()) {
+                    const rollValue = (Object.keys(row as any).find(k => k.toLowerCase() === 'roll' || k === 'রোল') as any);
+                    const roll = convertToNumber((row as any)[rollValue]);
+
+                    if (roll === undefined) {
+                        processingErrors.push(`সারি ${index + 2}: রোল নম্বর পাওয়া যায়নি।`);
+                        continue;
+                    }
+
+                    const student = studentsForClass.find(s => s.roll === roll);
+                    if (!student) {
+                        processingErrors.push(`সারি ${index + 2}: রোল ${roll} এর জন্য কোনো শিক্ষার্থী পাওয়া যায়নি।`);
+                        continue;
+                    }
+
+                    const studentMarks = newMarks.get(student.id) || {};
+                    let rowUpdated = false;
+
+                    for (const excelHeader of Object.keys(row as any)) {
+                        const markKey = headerMapping[excelHeader.trim().toLowerCase()];
+                        if (markKey) {
+                            const markValue = convertToNumber((row as any)[excelHeader]);
+                            if (markValue !== undefined) {
+                                studentMarks[markKey] = markValue;
+                                rowUpdated = true;
+                            }
+                        }
+                    }
+                    
+                    if (rowUpdated) {
+                        newMarks.set(student.id, studentMarks);
+                        updatedCount++;
+                    }
+                }
+
+                if (processingErrors.length > 0) {
+                    throw new Error(processingErrors.join('\n'));
+                }
+
+                setMarks(newMarks);
+
+                toast({
+                    title: "নম্বর লোড হয়েছে",
+                    description: `${updatedCount} জন শিক্ষার্থীর নম্বর Excel ফাইল থেকে লোড করা হয়েছে। পরিবর্তনগুলো সেভ করতে 'ফলাফল সেভ করুন' বাটনে ক্লিক করুন।`,
+                });
+
+            } catch (error: any) {
+                console.error("File upload error:", error);
+                toast({
+                    variant: "destructive",
+                    title: "ফাইল আপলোড ব্যর্থ হয়েছে",
+                    description: error.message || "দয়া করে ফাইলের ফরম্যাট এবং আবশ্যকীয় তথ্য ঠিক আছে কিনা তা পরীক্ষা করুন।",
+                    duration: 10000,
+                });
+            } finally {
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
 
     const showGroupSelector = className === '9' || className === '10';
 
@@ -266,7 +379,7 @@ export default function ResultsPage() {
                                     <Download className="mr-2 h-4 w-4" />
                                     নমুনা ফাইল
                                 </Button>
-                                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled>
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                                     <FileUp className="mr-2 h-4 w-4" />
                                     Excel আপলোড
                                 </Button>
@@ -282,7 +395,7 @@ export default function ResultsPage() {
                              {!isClient ? (
                                 <>
                                     <div className="space-y-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-10 w-full" /></div>
-                                    <div className="space-y-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-10 w-full" /></div>
+                                    {showGroupSelector && <div className="space-y-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-10 w-full" /></div>}
                                     <div className="space-y-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-10 w-full" /></div>
                                     <div className="space-y-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-10 w-full" /></div>
                                     <Skeleton className="h-10 w-full" />
@@ -425,7 +538,7 @@ export default function ResultsPage() {
                                                         </TableHeader>
                                                         <TableBody>
                                                             {groupedResults[classNameKey].map((res, i) => (
-                                                                <TableRow key={`${res.subject}-${res.group}-${i}`}>
+                                                                <TableRow key={`${res.id}-${i}`}>
                                                                     <TableCell>{res.group ? groupMap[res.group] : '-'}</TableCell>
                                                                     <TableCell>{res.subject}</TableCell>
                                                                     <TableCell>{res.fullMarks.toLocaleString('bn-BD')}</TableCell>

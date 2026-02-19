@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirestore } from '@/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 const classMap: { [key: string]: string } = { '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten' };
 const groupMap: { [key: string]: string } = { 'science': 'Science', 'arts': 'Arts', 'commerce': 'Commerce' };
@@ -19,9 +21,11 @@ const religionMap: { [key: string]: string } = { 'islam': 'Islam', 'hinduism': '
 export default function MarksheetPage() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const studentId = parseInt(params.id as string, 10);
+    const studentId = params.id as string;
+    const db = useFirestore();
 
     const [student, setStudent] = useState<Student | null>(null);
+    const [allStudents, setAllStudents] = useState<Student[]>([]);
     const [processedResult, setProcessedResult] = useState<StudentProcessedResult | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -29,64 +33,84 @@ export default function MarksheetPage() {
     const academicYear = searchParams.get('academicYear');
 
     useEffect(() => {
-        if (!studentId || !academicYear) {
-            setIsLoading(false);
-            return;
-        }
+      if (!db) return;
+      const studentsQuery = query(collection(db, "students"));
+      const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+        const studentsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          dob: doc.data().dob?.toDate(),
+        })) as Student[];
+        setAllStudents(studentsData);
+      });
+      return () => unsubscribe();
+    }, [db]);
 
-        const studentData = getStudentById(studentId);
-        if (!studentData) {
-            setIsLoading(false);
-            return;
-        }
-        setStudent(studentData);
 
-        // Get all students for the class to calculate merit rank correctly
-        const allStudentsInClass = getStudents().filter(s => 
-            s.academicYear === academicYear && 
-            s.className === studentData.className &&
-            (studentData.className < '9' || !studentData.group || s.group === studentData.group)
-        );
-
-        if (allStudentsInClass.length === 0) {
-            setIsLoading(false);
-            return;
-        }
-        
-        // Get all subjects for the group
-        const allSubjectsForGroup = getSubjects(studentData.className, studentData.group || undefined);
-        
-        // Get all available results for those subjects
-        const resultsBySubject: ClassResult[] = allSubjectsForGroup
-            .map(subject => getResultsForClass(academicYear, studentData.className, subject.name, studentData.group || undefined))
-            .filter((result): result is ClassResult => !!result);
-        
-        // Process results for the entire class to get correct merit positions
-        const allFinalResults = processStudentResults(allStudentsInClass, resultsBySubject, allSubjectsForGroup);
-
-        // Find the result for the current student
-        const finalResultForThisStudent = allFinalResults.find(res => res.student.id === studentId);
-
-        if (!finalResultForThisStudent) {
-            setIsLoading(false);
-            setProcessedResult(null); // Set to null to show error message
-            return;
-        }
-
-        // Determine the subjects to display on this student's marksheet
-        const subjectsForThisStudent = allSubjectsForGroup.filter(subjectInfo => {
-            if (studentData.group === 'science') {
-                 if (studentData.optionalSubject === 'উচ্চতর গণিত' && subjectInfo.name === 'কৃষি শিক্ষা') return false;
-                 if (studentData.optionalSubject === 'কৃষি শিক্ষা' && subjectInfo.name === 'উচ্চতর গণিত') return false;
+    useEffect(() => {
+        const processMarks = async () => {
+            if (!studentId || !academicYear || !db || allStudents.length === 0) {
+                return;
             }
-            return true;
-        });
-        
-        setSubjects(subjectsForThisStudent);
-        setProcessedResult(finalResultForThisStudent);
-        setIsLoading(false);
 
-    }, [studentId, academicYear]);
+            const studentData = allStudents.find(s => s.id === studentId);
+            if (!studentData) {
+                setIsLoading(false);
+                return;
+            }
+            setStudent(studentData);
+
+            // Get all students for the class to calculate merit rank correctly
+            const allStudentsInClass = allStudents.filter(s => 
+                s.academicYear === academicYear && 
+                s.className === studentData.className &&
+                (studentData.className < '9' || !studentData.group || s.group === studentData.group)
+            );
+
+            if (allStudentsInClass.length === 0) {
+                setIsLoading(false);
+                return;
+            }
+            
+            // Get all subjects for the group
+            const allSubjectsForGroup = getSubjects(studentData.className, studentData.group || undefined);
+            
+            // Get all available results for those subjects
+            const resultsPromises = allSubjectsForGroup
+                .map(subject => getResultsForClass(db, academicYear, studentData.className, subject.name, studentData.group || undefined));
+            
+            const resultsBySubject = (await Promise.all(resultsPromises)).filter((result): result is ClassResult => !!result);
+            
+            // Process results for the entire class to get correct merit positions
+            const allFinalResults = processStudentResults(allStudentsInClass, resultsBySubject, allSubjectsForGroup);
+
+            // Find the result for the current student
+            const finalResultForThisStudent = allFinalResults.find(res => res.student.id === studentId);
+
+            if (!finalResultForThisStudent) {
+                setIsLoading(false);
+                setProcessedResult(null); // Set to null to show error message
+                return;
+            }
+
+            // Determine the subjects to display on this student's marksheet
+            const subjectsForThisStudent = allSubjectsForGroup.filter(subjectInfo => {
+                if (studentData.group === 'science' || studentData.group === 'arts') {
+                     if (studentData.optionalSubject === 'উচ্চতর গণিত' && subjectInfo.name === 'কৃষি শিক্ষা') return false;
+                     if (studentData.optionalSubject === 'কৃষি শিক্ষা' && subjectInfo.name === 'উচ্চতর গণিত') return false;
+                }
+                return true;
+            });
+            
+            setSubjects(subjectsForThisStudent);
+            setProcessedResult(finalResultForThisStudent);
+            setIsLoading(false);
+        }
+
+        setIsLoading(true);
+        processMarks();
+
+    }, [studentId, academicYear, db, allStudents]);
 
 
     const schoolLogo = PlaceHolderImages.find(p => p.id === 'school-logo');

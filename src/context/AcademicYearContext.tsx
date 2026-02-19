@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 
+const ACADEMIC_YEAR_STORAGE_KEY = 'selectedAcademicYear';
+
 type AcademicYearContextType = {
   selectedYear: string;
   setSelectedYear: (year: string) => void;
@@ -11,7 +13,18 @@ type AcademicYearContextType = {
 const AcademicYearContext = createContext<AcademicYearContextType | undefined>(undefined);
 
 export function AcademicYearProvider({ children }: { children: ReactNode }) {
-  const [selectedYear, setSelectedYear] = useState<string>(() => new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYearState] = useState<string>(() => new Date().getFullYear().toString());
+
+  useEffect(() => {
+    try {
+      const item = window.localStorage.getItem(ACADEMIC_YEAR_STORAGE_KEY);
+      if (item) {
+        setSelectedYearState(item);
+      }
+    } catch (error) {
+      console.log('Failed to read academic year from localStorage');
+    }
+  }, []);
   
   const availableYears = useMemo(() => {
     const startYear = 2020;
@@ -23,17 +36,20 @@ export function AcademicYearProvider({ children }: { children: ReactNode }) {
     return years;
   }, []);
 
-  useEffect(() => {
-    if (!availableYears.includes(selectedYear)) {
-        setSelectedYear(new Date().getFullYear().toString());
+  const setSelectedYear = (year: string) => {
+    try {
+      window.localStorage.setItem(ACADEMIC_YEAR_STORAGE_KEY, year);
+      setSelectedYearState(year);
+    } catch (error) {
+      console.log('Failed to save academic year to localStorage');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  }
+  
   const value = useMemo(() => ({
     selectedYear,
     setSelectedYear,
     availableYears,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [selectedYear, availableYears]);
 
   return (

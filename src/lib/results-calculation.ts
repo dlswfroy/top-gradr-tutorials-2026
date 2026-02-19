@@ -60,9 +60,8 @@ export function processStudentResults(
         const optionalSubjectName = student.optionalSubject;
 
         const subjectsForStudent = allSubjectsForGroup.filter(subjectInfo => {
-            // For science group, 'Higher Math' and 'Agriculture Studies' are mutually exclusive optional subjects.
-            // This logic ensures that if one is selected as optional, the other is not included in the results calculation.
-            if (student.group === 'science') {
+            const group = student.group;
+            if (group === 'science' || group === 'arts') {
                  if (optionalSubjectName === 'উচ্চতর গণিত' && subjectInfo.name === 'কৃষি শিক্ষা') return false;
                  if (optionalSubjectName === 'কৃষি শিক্ষা' && subjectInfo.name === 'উচ্চতর গণিত') return false;
             }
