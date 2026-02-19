@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar as CalendarIcon, Trash2, Upload } from 'lucide-react';
+import { Trash2, Upload } from 'lucide-react';
 import { format } from "date-fns";
 import { bn } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast";
@@ -20,10 +20,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, orderBy, FirestoreError } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, FirestoreError, where, getDocs } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useAcademicYear } from '@/context/AcademicYearContext';
+import { studentFromDoc, addStudent, NewStudentData } from '@/lib/student-data';
+import { getSubjects } from '@/lib/subjects';
+import { ClassResult } from '@/lib/results-data';
+import { processStudentResults } from '@/lib/results-calculation';
 
 
 function SchoolInfoSettings() {
@@ -312,6 +317,171 @@ function HolidaySettings() {
     );
 }
 
+function StudentMigrationSettings() {
+    const db = useFirestore();
+    const { toast } = useToast();
+    const { selectedYear } = useAcademicYear();
+    const [isMigrating, setIsMigrating] = useState(false);
+
+    const handleMigration = async () => {
+        if (!db) return;
+        setIsMigrating(true);
+        toast({ title: "মাইগ্রেশন প্রক্রিয়া শুরু হয়েছে...", description: "এটি সম্পন্ন হতে কয়েক মুহূর্ত সময় লাগতে পারে।" });
+
+        const fromYear = selectedYear;
+        const toYear = String(parseInt(fromYear, 10) + 1);
+
+        try {
+            const studentsQuery = query(collection(db, "students"), where("academicYear", "==", fromYear));
+            const resultsQuery = query(collection(db, "results"), where("academicYear", "==", fromYear));
+
+            const [studentsSnapshot, resultsSnapshot] = await Promise.all([getDocs(studentsQuery), getDocs(resultsQuery)]);
+
+            const allStudentsFromYear = studentsSnapshot.docs.map(doc => studentFromDoc(doc));
+            const allResultsFromYear = resultsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassResult));
+            
+            if (allStudentsFromYear.length === 0) {
+                toast({ variant: "destructive", title: "কোনো শিক্ষার্থী পাওয়া যায়নি", description: `${fromYear} শিক্ষাবর্ষে মাইগ্রেট করার জন্য কোনো শিক্ষার্থী নেই।` });
+                setIsMigrating(false);
+                return;
+            }
+
+            const classes = ['6', '7', '8', '9', '10'];
+            const groups = ['science', 'arts', 'commerce'];
+
+            let totalPromoted = 0;
+            let totalFailed = 0;
+            let totalGraduated = 0;
+            
+            const newStudentPromises: Promise<any>[] = [];
+
+            for (const className of classes) {
+                const classGroups = (className === '9' || className === '10') ? groups : [undefined];
+
+                for (const group of classGroups) {
+                    const studentsInGroup = allStudentsFromYear.filter(s =>
+                        s.className === className && (group ? s.group === group : !s.group)
+                    );
+
+                    if (studentsInGroup.length === 0) continue;
+
+                    const subjectsForGroup = getSubjects(className, group);
+                    const resultsForGroup = allResultsFromYear.filter(r =>
+                        r.className === className && (group ? r.group === group : !r.group)
+                    );
+                    
+                    const finalResults = processStudentResults(studentsInGroup, resultsForGroup, subjectsForGroup);
+
+                    const passedStudents = finalResults.filter(r => r.isPass).sort((a,b) => (a.meritPosition || 999) - (b.meritPosition || 999));
+                    const failedStudents = finalResults.filter(r => !r.isPass).sort((a, b) => a.student.roll - b.student.roll);
+
+                    if (className === '10') {
+                        totalGraduated += passedStudents.length;
+                    } else {
+                        passedStudents.forEach((result, index) => {
+                            const { id, createdAt, updatedAt, ...currentData } = result.student;
+                            const nextClass = String(parseInt(className) + 1);
+                            const newStudentData: NewStudentData = {
+                                ...currentData,
+                                academicYear: toYear,
+                                className: nextClass,
+                                roll: index + 1,
+                                group: (nextClass === '9' || nextClass === '10') ? currentData.group : '',
+                                optionalSubject: (nextClass === '9' || nextClass === '10') ? currentData.optionalSubject : '',
+                            };
+                            newStudentPromises.push(addStudent(db, newStudentData));
+                            totalPromoted++;
+                        });
+                    }
+                    
+                    failedStudents.forEach((result, index) => {
+                        const { id, createdAt, updatedAt, ...currentData } = result.student;
+                        const newStudentData: NewStudentData = {
+                            ...currentData,
+                            academicYear: toYear,
+                            className: className,
+                            roll: index + 1,
+                        };
+                        newStudentPromises.push(addStudent(db, newStudentData));
+                        totalFailed++;
+                    });
+                }
+            }
+
+            if (newStudentPromises.length === 0 && totalGraduated === 0) {
+                 toast({
+                    variant: "destructive",
+                    title: "মাইগ্রেশন করার জন্য কোনো শিক্ষার্থী নেই",
+                    description: "সকল শিক্ষার্থীর ফলাফল প্রক্রিয়া করা যায়নি অথবা কোনো পাশ করা শিক্ষার্থী নেই।",
+                 });
+                 setIsMigrating(false);
+                 return;
+            }
+
+            await Promise.all(newStudentPromises);
+            
+            toast({
+                title: "মাইগ্রেশন সম্পন্ন হয়েছে",
+                description: `${totalPromoted} জন শিক্ষার্থী পরবর্তী শ্রেণিতে উত্তীর্ণ হয়েছে, ${totalFailed} জন ফেল করেছে এবং ${totalGraduated} জন গ্র্যাজুয়েট হয়েছে।`,
+                duration: 9000,
+            });
+
+        } catch (error) {
+            console.error("Migration failed:", error);
+            toast({
+                variant: "destructive",
+                title: "মাইগ্রেশন ব্যর্থ হয়েছে",
+                description: "একটি সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+            });
+        } finally {
+            setIsMigrating(false);
+        }
+    }
+
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>শিক্ষার্থী মাইগ্রেশন</CardTitle>
+                <CardDescription>
+                    নির্বাচিত শিক্ষাবর্ষ ({selectedYear.toLocaleString('bn-BD')}) থেকে পরবর্তী শিক্ষাবর্ষে ({String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')}) শিক্ষার্থীদের উত্তীর্ণ করুন।
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
+                    <h4 className="font-semibold text-destructive">সতর্কবাণী</h4>
+                    <p className="text-sm text-muted-foreground">
+                        এই প্রক্রিয়াটি необратиযোগ্য। এটি বার্ষিক পরীক্ষার ফলাফলের উপর ভিত্তি করে শিক্ষার্থীদের নতুন শিক্ষাবর্ষে নতুন ক্লাসে এবং নতুন রোল নম্বরে নথিভুক্ত করবে।
+                        পূর্ববর্তী শিক্ষাবর্ষের সকল শিক্ষার্থীর রেকর্ড অক্ষত থাকবে। নিশ্চিত করুন যে সকল শ্রেণীর বার্ষিক পরীক্ষার ফলাফল সঠিকভাবে ইনপুট করা হয়েছে।
+                    </p>
+                </div>
+            </CardContent>
+            <CardFooter className="border-t px-6 py-4">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isMigrating}>
+                            {isMigrating ? 'মাইগ্রেট করা হচ্ছে...' : `মাইগ্রেশন শুরু করুন (${selectedYear.toLocaleString('bn-BD')} → ${String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')})`}
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                এই কাজটি ফিরিয়ে আনা যাবে না। এটি {selectedYear.toLocaleString('bn-BD')} শিক্ষাবর্ষের সকল শিক্ষার্থীর জন্য চূড়ান্ত ফলাফল গণনা করবে এবং তাদের {String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')} শিক্ষাবর্ষে নতুন রেকর্ড তৈরি করবে। আপনি কি এগিয়ে যেতে চান?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleMigration}>চালিয়ে যান</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
+    );
+}
+
+
 export default function SettingsPage() {
     const [isClient, setIsClient] = useState(false);
 
@@ -330,9 +500,10 @@ export default function SettingsPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="school-info">
-                                <TabsList className="grid w-full grid-cols-2">
+                                <TabsList className="grid w-full grid-cols-3">
                                     <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>
                                     <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>
+                                    <TabsTrigger value="migration">শিক্ষার্থী মাইগ্রেশন</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="school-info" className="pt-4">
                                     <SchoolInfoSettings />
@@ -340,11 +511,15 @@ export default function SettingsPage() {
                                 <TabsContent value="holidays" className="pt-4">
                                    <HolidaySettings />
                                 </TabsContent>
+                                <TabsContent value="migration" className="pt-4">
+                                   <StudentMigrationSettings />
+                                </TabsContent>
                             </Tabs>
                         ) : (
                             <div className="space-y-4">
-                                <div className="grid w-full grid-cols-2 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                                <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
+                                    <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                 </div>
                                 <SchoolInfoSettings />
