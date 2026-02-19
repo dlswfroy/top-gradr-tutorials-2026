@@ -75,11 +75,14 @@ export function DatePicker({ value, onChange, triggerClassName, placeholder = "�
           onSelect={setDisplayDate}
           initialFocus
           locale={bn}
+          captionLayout="dropdown-buttons"
+          fromYear={1950}
+          toYear={new Date().getFullYear() + 5}
         />
         <div className="flex justify-end gap-2 p-2 border-t">
-          <Button variant="ghost" onClick={handleClear}>Clear</Button>
-          <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleSet}>Set</Button>
+          <Button variant="ghost" onClick={handleClear}>মুছুন</Button>
+          <Button variant="ghost" onClick={handleCancel}>বাতিল</Button>
+          <Button onClick={handleSet}>সেট</Button>
         </div>
       </PopoverContent>
     </Popover>
