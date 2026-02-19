@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,15 +10,113 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Trash2, Upload } from 'lucide-react';
 import { format } from "date-fns";
 import { bn } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { addHoliday, getHolidays, deleteHoliday, Holiday } from '@/lib/holiday-data';
+import { useSchoolInfo, SchoolInfo } from '@/context/SchoolInfoContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+
+
+function SchoolInfoSettings() {
+    const { schoolInfo, updateSchoolInfo } = useSchoolInfo();
+    const { toast } = useToast();
+    const [info, setInfo] = useState(schoolInfo);
+    const [logoPreview, setLogoPreview] = useState<string | null>(schoolInfo.logoUrl);
+
+    useEffect(() => {
+        setInfo(schoolInfo);
+        setLogoPreview(schoolInfo.logoUrl);
+    }, [schoolInfo]);
+
+    const handleInputChange = (field: keyof SchoolInfo, value: string) => {
+        setInfo(prev => ({...prev, [field]: value}));
+    };
+
+    const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                setLogoPreview(result);
+                handleInputChange('logoUrl', result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveChanges = () => {
+        updateSchoolInfo(info);
+        toast({
+            title: 'তথ্য সংরক্ষিতক্ষিত হয়েছে',
+            description: 'প্রতিষ্ঠানের তথ্য সফলভাবে আপডেট করা হয়েছে।',
+        });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>প্রতিষ্ঠানের সাধারণ তথ্য</CardTitle>
+                <CardDescription>স্কুলের নাম, ঠিকানা, লোগো এবং অন্যান্য তথ্য এখানে পরিবর্তন করুন।</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+                 <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="schoolName">প্রতিষ্ঠানের নাম</Label>
+                            <Input id="schoolName" value={info.name} onChange={(e) => handleInputChange('name', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="eiin">EIIN</Label>
+                            <Input id="eiin" value={info.eiin} onChange={(e) => handleInputChange('eiin', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="schoolCode">স্কুল কোড</Label>
+                            <Input id="schoolCode" value={info.code} onChange={(e) => handleInputChange('code', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">ঠিকানা</Label>
+                            <Textarea id="address" value={info.address} onChange={(e) => handleInputChange('address', e.target.value)} />
+                        </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                  <h3 className="font-semibold text-lg border-b pb-2">লোগো</h3>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                            <div className="w-24 h-24 rounded-md border flex items-center justify-center bg-muted overflow-hidden">
+                                {logoPreview ? (
+                                    <Image src={logoPreview} alt="School Logo" width={96} height={96} className="object-contain w-full h-full" />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-1 text-center text-muted-foreground">
+                                        <Upload className="h-8 w-8" />
+                                        <span>লোগো</span>
+                                    </div>
+                                )}
+                            </div>
+                            <Input id="logo" name="logo" type="file" className="hidden" onChange={handleLogoChange} accept="image/*" />
+                            <Button type="button" variant="outline" onClick={() => document.getElementById('logo')?.click()}>
+                                লোগো আপলোড করুন
+                            </Button>
+                        </div>
+                    </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t mt-4">
+                <Button onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
+              </div>
+
+            </CardContent>
+        </Card>
+    );
+}
 
 
 export default function SettingsPage() {
@@ -82,10 +182,14 @@ export default function SettingsPage() {
                         <CardDescription>অ্যাপ্লিকেশনের বিভিন্ন সেটিংস এখানে পরিচালনা করুন।</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Tabs defaultValue="holidays">
-                            <TabsList>
+                        <Tabs defaultValue="school-info">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>
                                 <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>
                             </TabsList>
+                            <TabsContent value="school-info" className="pt-4">
+                                <SchoolInfoSettings />
+                            </TabsContent>
                             <TabsContent value="holidays" className="pt-4">
                                 <Card>
                                     <CardHeader>

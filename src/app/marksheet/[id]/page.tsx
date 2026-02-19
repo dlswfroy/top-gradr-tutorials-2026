@@ -10,7 +10,7 @@ import { processStudentResults, StudentProcessedResult } from '@/lib/results-cal
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useSchoolInfo } from '@/context/SchoolInfoContext';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
@@ -23,6 +23,7 @@ export default function MarksheetPage() {
     const searchParams = useSearchParams();
     const studentId = params.id as string;
     const db = useFirestore();
+    const { schoolInfo } = useSchoolInfo();
 
     const [student, setStudent] = useState<Student | null>(null);
     const [allStudents, setAllStudents] = useState<Student[]>([]);
@@ -112,8 +113,6 @@ export default function MarksheetPage() {
 
     }, [studentId, academicYear, db, allStudents]);
 
-
-    const schoolLogo = PlaceHolderImages.find(p => p.id === 'school-logo');
     
     const renderMeritPosition = (position?: number) => {
         if (!position) return '-';
@@ -154,37 +153,37 @@ export default function MarksheetPage() {
                 </Button>
             </div>
             <div className="w-[210mm] h-[297mm] bg-white mx-auto p-8 shadow-lg printable-area relative">
-                {schoolLogo && (
+                {schoolInfo.logoUrl && (
                     <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <Image src={schoolLogo.imageUrl} alt="School Logo Watermark" width={400} height={400} className="opacity-10" />
+                        <Image src={schoolInfo.logoUrl} alt="School Logo Watermark" width={400} height={400} className="opacity-10" />
                     </div>
                 )}
                 <div className="relative z-10 border-4 border-black p-4 h-full flex flex-col">
                     <header className="mb-4">
                          <div className="flex justify-between items-start">
                             <div className="flex items-center gap-4">
-                                {schoolLogo && <Image src={schoolLogo.imageUrl} alt="School Logo" width={80} height={80} />}
+                                {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="School Logo" width={80} height={80} />}
                                 <div className="text-left">
-                                    <h1 className="text-3xl font-bold">BIRGANJ POURO HIGH SCHOOL</h1>
-                                    <p className="text-sm">Upazila: Birganj, Post: Birganj, Zila: Dinajpur</p>
+                                    <h1 className="text-3xl font-bold">{schoolInfo.name}</h1>
+                                    <p className="text-sm">{schoolInfo.address}</p>
                                     <p className="mt-1"><b>Academic Session:</b> {academicYear}</p>
                                 </div>
                             </div>
-                            <div className="text-xs w-28">
+                            <div className="text-xs w-28 mt-2">
                                 <table className="w-full border-collapse border-2 border-black text-center">
                                     <thead className="bg-gray-200">
                                         <tr className="border-b-2 border-black">
-                                            <th className="p-0.5 border-r border-black">Interval</th>
-                                            <th className="p-0.5 border-r border-black">Point</th>
-                                            <th className="p-0.5">Grade</th>
+                                            <th className="p-0 border-r border-black">Interval</th>
+                                            <th className="p-0 border-r border-black">Point</th>
+                                            <th className="p-0">Grade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {gradingScale.map(g => (
                                             <tr key={g.grade} className="border-b border-black last:border-b-0">
-                                                <td className="p-0.5 border-r border-black">{g.interval}</td>
-                                                <td className="p-0.5 border-r border-black">{g.point}</td>
-                                                <td className="p-0.5">{g.grade}</td>
+                                                <td className="p-0 border-r border-black">{g.interval}</td>
+                                                <td className="p-0 border-r border-black">{g.point}</td>
+                                                <td className="p-0">{g.grade}</td>
                                             </tr>
                                         ))}
                                     </tbody>

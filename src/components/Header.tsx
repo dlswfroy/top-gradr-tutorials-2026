@@ -18,19 +18,20 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useSchoolInfo } from '@/context/SchoolInfoContext';
 import { Label } from "@/components/ui/label";
 
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
   const { selectedYear, setSelectedYear, availableYears } = useAcademicYear();
+  const { schoolInfo } = useSchoolInfo();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   const profilePhoto = PlaceHolderImages.find(p => p.id === 'profile-photo');
-  const schoolLogo = PlaceHolderImages.find(p => p.id === 'school-logo');
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-primary px-4 text-primary-foreground shadow-sm sm:px-6 md:px-8">
@@ -53,10 +54,10 @@ export function Header() {
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold text-foreground"
               >
-                {schoolLogo && (
-                   <Image src={schoolLogo.imageUrl} alt="School Logo" width={32} height={32} className="rounded-full" />
+                {schoolInfo.logoUrl && (
+                   <Image src={schoolInfo.logoUrl} alt="School Logo" width={32} height={32} className="rounded-full" />
                 )}
-                <span className="">বীরগঞ্জ পৌর উচ্চ বিদ্যালয়</span>
+                <span className="">{schoolInfo.name}</span>
               </Link>
             </SheetHeader>
             <div className="p-4 border-b">
@@ -151,11 +152,11 @@ export function Header() {
       </div>
 
       <Link href="/" className="flex items-center gap-2">
-          {schoolLogo && (
-            <Image src={schoolLogo.imageUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" data-ai-hint={schoolLogo.imageHint}/>
+          {schoolInfo.logoUrl && (
+            <Image src={schoolInfo.logoUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" />
           )}
           <h1 className="text-xl font-bold whitespace-nowrap drop-shadow-md">
-            বীরগঞ্জ পৌর উচ্চ বিদ্যালয়
+            {schoolInfo.name}
           </h1>
       </Link>
       

@@ -3,6 +3,7 @@ import { Noto_Sans_Bengali, PT_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AcademicYearProvider } from '@/context/AcademicYearContext';
+import { SchoolInfoProvider } from '@/context/SchoolInfoContext';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { cn } from '@/lib/utils';
 
@@ -32,9 +33,11 @@ export default function RootLayout({
     <html lang="bn">
       <body className={cn("font-body antialiased", noto_sans_bengali.variable, pt_sans.variable)}>
         <FirebaseClientProvider>
-          <AcademicYearProvider>
-            {children}
-          </AcademicYearProvider>
+          <SchoolInfoProvider>
+            <AcademicYearProvider>
+              {children}
+            </AcademicYearProvider>
+          </SchoolInfoProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
