@@ -19,15 +19,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, query, orderBy, FirestoreError } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,7 +43,7 @@ export default function StaffListPage() {
   const { toast } = useToast();
   const [staffToView, setStaffToView] = useState<Staff | null>(null);
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function StaffListPage() {
   }, []);
 
   useEffect(() => {
-    if (!db || !user) return;
+    if (!db || !user || userLoading) return;
     setIsLoading(true);
 
     const staffQuery = query(collection(db, "staff"), orderBy("nameBn"));
@@ -74,7 +74,7 @@ export default function StaffListPage() {
     });
 
     return () => unsubscribe();
-  }, [db, user]);
+  }, [db, user, userLoading]);
 
   const handleDeleteStaff = (staffId: string) => {
     if (!db) return;

@@ -254,7 +254,7 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
 
 export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }: { student: Student | null, open: boolean, onOpenChange: (open: boolean) => void, onFeeCollected: () => void }) {
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
 
@@ -275,10 +275,10 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
     }, [db, studentId, selectedYear, user]);
 
     useEffect(() => {
-        if (open && studentId) {
+        if (open && studentId && !userLoading) {
             fetchFeeData();
         }
-    }, [open, studentId, fetchFeeData]);
+    }, [open, studentId, fetchFeeData, userLoading]);
 
     const handleEdit = (collection: FeeCollection) => {
         setEditingCollection(collection);
@@ -327,9 +327,10 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                              student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />
                         )}
                         <div className="flex-1 text-center md:text-left space-y-2">
-                             <DialogTitle className="text-2xl">
-                                {isLoading || !student ? <Skeleton className="h-8 w-3/4" /> : `ছাত্র/ ছাত্রীর বেতন আদায় তথ্য`}
-                            </DialogTitle>
+                            {isLoading || !student ?
+                                <Skeleton className="h-8 w-3/4" />
+                                : <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য</DialogTitle>
+                            }
                             <DialogDescription>
                                 {isLoading || !student ? (
                                     <Skeleton className="h-4 w-1/2" />

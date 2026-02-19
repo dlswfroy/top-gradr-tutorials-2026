@@ -19,13 +19,13 @@ export default function Home() {
   const [absentStudents, setAbsentStudents] = useState(0);
   const { selectedYear } = useAcademicYear();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   
   // For now, let's keep these as static
   const totalTeachers = 0;
 
   useEffect(() => {
-      if (!db || !user) return;
+      if (!db || !user || userLoading) return;
 
       const studentsQuery = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
       
@@ -73,7 +73,7 @@ export default function Home() {
 
       return () => unsubscribe();
 
-  }, [selectedYear, db, user]);
+  }, [selectedYear, db, user, userLoading]);
 
 
   return (

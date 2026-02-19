@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -24,7 +23,7 @@ export default function ResultsBulkUploadPage() {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -38,7 +37,7 @@ export default function ResultsBulkUploadPage() {
     }, []);
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
         const studentsQuery = query(collection(db, "students"));
         const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
             const studentsData = querySnapshot.docs.map(doc => ({
@@ -55,7 +54,7 @@ export default function ResultsBulkUploadPage() {
             errorEmitter.emit('permission-error', permissionError);
         });
         return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
     const handleDownloadSample = () => {
         if (!className) {

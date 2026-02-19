@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -36,7 +35,7 @@ export default function ResultsPage() {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -63,7 +62,7 @@ export default function ResultsPage() {
     const groupMap: { [key: string]: string } = { 'science': 'বিজ্ঞান', 'arts': 'মানবিক', 'commerce': 'ব্যবসায় শিক্ষা' };
 
     useEffect(() => {
-      if (!db || !user) return;
+      if (!db || !user || userLoading) return;
       const studentsQuery = query(collection(db, "students"));
       const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -80,11 +79,11 @@ export default function ResultsPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
 
     const updateSavedResults = async () => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
         const allResults = await getAllResults(db, selectedYear);
         setSavedResults(allResults);
     }
@@ -92,7 +91,7 @@ export default function ResultsPage() {
     useEffect(() => {
         updateSavedResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedYear, db, user]);
+    }, [selectedYear, db, user, userLoading]);
 
     const groupedResults = useMemo(() => {
         if (savedResults.length === 0) return {};

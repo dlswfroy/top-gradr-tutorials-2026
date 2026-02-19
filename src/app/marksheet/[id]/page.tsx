@@ -24,7 +24,7 @@ export default function MarksheetPage() {
     const searchParams = useSearchParams();
     const studentId = params.id as string;
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const { schoolInfo } = useSchoolInfo();
 
     const [student, setStudent] = useState<Student | null>(null);
@@ -36,7 +36,7 @@ export default function MarksheetPage() {
     const academicYear = searchParams.get('academicYear');
 
     useEffect(() => {
-      if (!db || !user) return;
+      if (!db || !user || userLoading) return;
       const studentsQuery = query(collection(db, "students"));
       const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -53,12 +53,12 @@ export default function MarksheetPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
 
     useEffect(() => {
         const processMarks = async () => {
-            if (!studentId || !academicYear || !db || allStudents.length === 0 || !user) {
+            if (!studentId || !academicYear || !db || allStudents.length === 0 || !user || userLoading) {
                 return;
             }
 
@@ -119,7 +119,7 @@ export default function MarksheetPage() {
         setIsLoading(true);
         processMarks();
 
-    }, [studentId, academicYear, db, allStudents, user]);
+    }, [studentId, academicYear, db, allStudents, user, userLoading]);
 
     
     const renderMeritPosition = (position?: number) => {

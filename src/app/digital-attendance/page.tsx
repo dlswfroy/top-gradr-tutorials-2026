@@ -7,9 +7,9 @@ import { Student } from '@/lib/student-data';
 import { useEffect, useState, useMemo } from 'react';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { Button } from '@/components/ui/button';
-import { useToast } from "@/hooks/use-toast"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { saveDailyAttendance, getAttendanceForClassAndDate, StudentAttendance, DailyAttendance, AttendanceStatus } from '@/lib/attendance-data';
 import { isHoliday, Holiday } from '@/lib/holiday-data';
@@ -26,7 +26,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay(); // 0 for Sunday, 5 for Friday, 6 for Saturday
@@ -39,7 +39,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
         
         const initialAttendance = new Map<string, AttendanceStatus>();
         students.forEach(student => {
@@ -59,7 +59,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
         checkExistingData();
 
-    }, [students, todayStr, classId, selectedYear, db, user]);
+    }, [students, todayStr, classId, selectedYear, db, user, userLoading]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => new Map(prev).set(studentId, status));
@@ -200,10 +200,10 @@ export default function DigitalAttendancePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
-    if (!db || !user) return;
+    if (!db || !user || userLoading) return;
     setIsLoading(true);
 
     const studentsQuery = query(
@@ -229,7 +229,7 @@ export default function DigitalAttendancePage() {
     });
 
     return () => unsubscribe();
-  }, [db, toast, user]);
+  }, [db, toast, user, userLoading]);
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);

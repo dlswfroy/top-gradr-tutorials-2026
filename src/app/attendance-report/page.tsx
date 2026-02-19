@@ -24,12 +24,12 @@ interface StudentReport {
 const ReportSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const [reportData, setReportData] = useState<StudentReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
 
         const fetchAttendance = async () => {
             const allAttendance = (await getAttendanceFromStorage(db)).filter(
@@ -65,7 +65,7 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
 
         fetchAttendance();
 
-    }, [classId, students, selectedYear, db, user]);
+    }, [classId, students, selectedYear, db, user, userLoading]);
 
      if (isLoading) {
         return <p className="text-center p-8">লোড হচ্ছে...</p>
@@ -122,10 +122,10 @@ export default function AttendanceReportPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
-    if (!db || !user) return;
+    if (!db || !user || userLoading) return;
     setIsLoading(true);
     const studentsQuery = query(
         collection(db, "students"),
@@ -150,7 +150,7 @@ export default function AttendanceReportPage() {
     });
 
     return () => unsubscribe();
-  }, [db, toast, user]);
+  }, [db, toast, user, userLoading]);
 
 
   const studentsForYear = useMemo(() => {

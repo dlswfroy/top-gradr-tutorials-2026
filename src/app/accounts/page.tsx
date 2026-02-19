@@ -18,7 +18,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -38,11 +37,11 @@ const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) =>
     const [isLoading, setIsLoading] = useState(true);
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const [feeStudent, setFeeStudent] = useState<Student | null>(null);
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
         setIsLoading(true);
 
         const studentsQuery = query(
@@ -68,7 +67,7 @@ const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) =>
         });
 
         return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
     const studentsForYear = useMemo(() => {
         return allStudents.filter(student => student.academicYear === selectedYear);
@@ -418,7 +417,7 @@ const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], i
 export default function AccountsPage() {
   const [isClient, setIsClient] = useState(false);
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const { selectedYear } = useAcademicYear();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -433,8 +432,10 @@ export default function AccountsPage() {
 
   useEffect(() => {
     setIsClient(true);
-    fetchTransactions();
-  }, [fetchTransactions]);
+    if (!userLoading) {
+      fetchTransactions();
+    }
+  }, [fetchTransactions, userLoading]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">

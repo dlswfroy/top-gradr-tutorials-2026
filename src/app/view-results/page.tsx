@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -39,7 +38,7 @@ export default function ViewResultsPage() {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -55,7 +54,7 @@ export default function ViewResultsPage() {
     }, []);
 
     useEffect(() => {
-      if (!db || !user) return;
+      if (!db || !user || userLoading) return;
       const studentsQuery = query(collection(db, "students"));
       const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -72,7 +71,7 @@ export default function ViewResultsPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
     const handleViewResults = async () => {
         if (!className || !db) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, FileUp } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import { getStudentById, updateStudent, deleteStudent, Student } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore, useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +36,7 @@ export default function EditStudentPage() {
     const { toast } = useToast();
     const { availableYears } = useAcademicYear();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     
     const studentId = params.id as string;
 
@@ -52,7 +51,7 @@ export default function EditStudentPage() {
     }, []);
 
     useEffect(() => {
-        if (!studentId || !db || !user) return;
+        if (!studentId || !db || !user || userLoading) return;
 
         const fetchStudent = async () => {
             setIsLoading(true);
@@ -71,7 +70,7 @@ export default function EditStudentPage() {
             setIsLoading(false);
         }
         fetchStudent();
-    }, [studentId, router, toast, db, user]);
+    }, [studentId, router, toast, db, user, userLoading]);
 
      useEffect(() => {
         if (!student) return;

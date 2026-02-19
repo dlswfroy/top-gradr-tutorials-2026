@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import { getStaffById, updateStaff, deleteStaff, Staff, UpdateStaffData } from '@/lib/staff-data';
 import {
   AlertDialog,
@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -35,7 +35,7 @@ export default function EditStaffPage() {
     const params = useParams();
     const { toast } = useToast();
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     
     const staffId = params.id as string;
 
@@ -44,7 +44,7 @@ export default function EditStaffPage() {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!staffId || !db || !user) return;
+        if (!staffId || !db || !user || userLoading) return;
 
         const fetchStaff = async () => {
             setIsLoading(true);
@@ -62,7 +62,7 @@ export default function EditStaffPage() {
             setIsLoading(false);
         }
         fetchStaff();
-    }, [staffId, router, toast, db, user]);
+    }, [staffId, router, toast, db, user, userLoading]);
 
     const handleInputChange = (field: keyof UpdateStaffData, value: any) => {
         if (!staff) return;

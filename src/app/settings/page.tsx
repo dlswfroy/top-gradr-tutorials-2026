@@ -161,7 +161,7 @@ function SchoolInfoSettings() {
 
 function HolidaySettings() {
     const db = useFirestore();
-    const { user } = useUser();
+    const { user, loading: userLoading } = useUser();
     const { toast } = useToast();
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -169,7 +169,7 @@ function HolidaySettings() {
     const [newHolidayDescription, setNewHolidayDescription] = useState('');
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (!db || !user || userLoading) return;
         setIsLoading(true);
         const holidaysQuery = query(collection(db, 'holidays'), orderBy('date'));
         const unsubscribe = onSnapshot(holidaysQuery, (snapshot) => {
@@ -185,7 +185,7 @@ function HolidaySettings() {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [db, user]);
+    }, [db, user, userLoading]);
 
     const handleAddHoliday = () => {
         if (!db) return;
