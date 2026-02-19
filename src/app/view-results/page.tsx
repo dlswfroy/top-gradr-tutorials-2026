@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { getStudents, updateStudent, Student } from '@/lib/student-data';
+import { addStudent, Student, NewStudentData } from '@/lib/student-data';
 import { getSubjects, Subject } from '@/lib/subjects';
 import { getResultsForClass, ClassResult } from '@/lib/results-data';
 import { processStudentResults, StudentProcessedResult } from '@/lib/results-calculation';
@@ -116,46 +116,46 @@ export default function ViewResultsPage() {
             });
             return;
         }
-
+    
         const nextYear = String(parseInt(selectedYear, 10) + 1);
-        let promotedCount = 0;
-        let failedCount = 0;
-        let graduatedCount = 0;
-
+    
+        // Filter for students who passed and are not in the final class
+        const passedStudentsToPromote = processedResults
+            .filter(r => r.isPass && r.student.className !== '10')
+            .sort((a, b) => (a.meritPosition || 999) - (b.meritPosition || 999));
+        
         const promotionPromises: Promise<any>[] = [];
-
-        processedResults.forEach(result => {
-            if (result.isPass) {
-                if (result.student.className === '10') {
-                    graduatedCount++;
-                } else {
-                    const nextClass = String(parseInt(result.student.className, 10) + 1);
-                    const { id, ...currentData } = result.student;
-                    
-                    const updatedStudentData = {
-                        ...currentData,
-                        academicYear: nextYear,
-                        className: nextClass,
-                        group: (nextClass === '9' || nextClass === '10') ? currentData.group : undefined,
-                    };
-                    delete (updatedStudentData as any).id;
-
-                    promotionPromises.push(updateStudent(db, id, updatedStudentData));
-                    promotedCount++;
-                }
-            } else {
-                failedCount++;
-            }
+    
+        passedStudentsToPromote.forEach((result, index) => {
+            const nextClass = String(parseInt(result.student.className, 10) + 1);
+            
+            // Destructure to get a clean data object, remove fields that should not be copied
+            const { id, createdAt, updatedAt, ...currentData } = result.student;
+            
+            const newStudentData: NewStudentData = {
+                ...currentData,
+                academicYear: nextYear,
+                className: nextClass,
+                roll: index + 1, // New roll based on merit position
+                // Reset group if they are moving out of class 8, it will be assigned later
+                group: (nextClass === '9' || nextClass === '10') ? currentData.group : undefined,
+            };
+    
+            promotionPromises.push(addStudent(db, newStudentData));
         });
         
         await Promise.all(promotionPromises);
-
+    
+        const promotedCount = passedStudentsToPromote.length;
+        const graduatedCount = processedResults.filter(r => r.isPass && r.student.className === '10').length;
+        const failedCount = processedResults.filter(r => !r.isPass).length;
+    
         toast({
             title: 'শিক্ষার্থী উত্তীর্ণ করা সম্পন্ন',
-            description: `${promotedCount} জন শিক্ষার্থী পরবর্তী শ্রেণিতে উত্তীর্ণ হয়েছে। ${graduatedCount} জন গ্র্যাজুয়েট হয়েছে। ${failedCount} জন ফেল করেছে।`,
+            description: `${promotedCount} জন শিক্ষার্থী পরবর্তী শ্রেণিতে (${nextYear}) উত্তীর্ণ হয়েছে। ${graduatedCount} জন গ্র্যাজুয়েট হয়েছে। ${failedCount} জন ফেল করেছে।`,
             duration: 8000,
         });
-
+    
         // Clear current results view
         setProcessedResults([]); 
         setSubjects([]);

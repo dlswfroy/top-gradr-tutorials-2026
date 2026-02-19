@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { getSubjects, Subject as SubjectType } from '@/lib/subjects';
+import { getSubjects, Subject as SubjectType, subjectNameNormalization } from '@/lib/subjects';
 import { saveClassResults, getResultsForClass, getDocumentId, ClassResult, StudentResult } from '@/lib/results-data';
 import { Student } from '@/lib/student-data';
 import * as XLSX from 'xlsx';
@@ -55,7 +55,7 @@ export default function ResultsBulkUploadPage() {
         }
     
         const headers: string[] = ['রোল', 'নাম'];
-        const allPossibleSubjects = getSubjects(className);
+        const allPossibleSubjects = getSubjects(className, group || undefined);
     
         const addHeader = (header: string, sub: SubjectType) => {
             headers.push(`${header} (লিখিত)`);
@@ -66,19 +66,15 @@ export default function ResultsBulkUploadPage() {
         };
     
         if (className === '9' || className === '10') {
-            const common = ['বাংলা প্রথম', 'বাংলা দ্বিতীয়', 'ইংরেজি প্রথম', 'ইংরেজি দ্বিতীয়', 'গণিত', 'ধর্ম ও নৈতিক শিক্ষা', 'তথ্য ও যোগাযোগ প্রযুক্তি'];
-            
-            const addedHeaders = new Set<string>();
-            const addHeaderOnce = (name: string, subject: SubjectType) => {
-                if(!addedHeaders.has(name)){
-                    addHeader(name, subject);
-                    addedHeaders.add(name);
-                }
-            }
-            
             if (!group) { // Master template for all groups
                  const allGroupSubjects = getSubjects(className);
-                 allGroupSubjects.forEach(sub => addHeaderOnce(sub.name, sub));
+                 const addedHeaders = new Set<string>();
+                 allGroupSubjects.forEach(sub => {
+                    if(!addedHeaders.has(sub.name)){
+                        addHeader(sub.name, sub);
+                        addedHeaders.add(sub.name);
+                    }
+                });
             } else { // Template for a specific group
                 const groupSubjects = getSubjects(className, group);
                 groupSubjects.forEach(sub => addHeader(sub.name, sub));
@@ -133,20 +129,6 @@ export default function ResultsBulkUploadPage() {
                 const json = XLSX.utils.sheet_to_json(worksheet) as any[];
 
                 const resultsToSave = new Map<string, ClassResult>();
-
-                const subjectNameNormalization: { [key: string]: string } = {
-                    'ধর্ম শিক্ষা': 'ধর্ম ও নৈতিক শিক্ষা',
-                    'বাংলা ১ম': 'বাংলা প্রথম', 'বাংলা 1st': 'বাংলা প্রথম',
-                    'বাংলা ২য়': 'বাংলা দ্বিতীয়', 'বাংলা 2nd': 'বাংলা দ্বিতীয়',
-                    'ইংরেজি ১ম': 'ইংরেজি প্রথম', 'ইংরেজি 1st': 'ইংরেজি প্রথম',
-                    'ইংরেজি ২য়': 'ইংরেজি দ্বিতীয়', 'ইংরেজি 2nd': 'ইংরেজি দ্বিতীয়',
-                    'আইসিটি': 'তথ্য ও যোগাযোগ প্রযুক্তি',
-                    'বিজিএস': 'বাংলাদেশ ও বিশ্ব পরিচয়',
-                    'বি ও বি পরিচয়': 'বাংলাদেশ ও বিশ্ব পরিচয়',
-                    'পদার্থবিজ্ঞান': 'পদার্থ',
-                    'রসায়ন': 'রসায়ন',
-                    'জীববিজ্ঞান': 'জীব বিজ্ঞান',
-                };
 
                 for (const row of json) {
                     const bengaliToEnglishDigit: { [key: string]: string } = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };

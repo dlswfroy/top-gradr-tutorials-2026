@@ -7,6 +7,20 @@ export interface Subject {
     fullMarks: number;
 }
 
+export const subjectNameNormalization: { [key: string]: string } = {
+    'ধর্ম শিক্ষা': 'ধর্ম ও নৈতিক শিক্ষা',
+    'বাংলা ১ম': 'বাংলা প্রথম', 'বাংলা 1st': 'বাংলা প্রথম',
+    'বাংলা ২য়': 'বাংলা দ্বিতীয়', 'বাংলা 2nd': 'বাংলা দ্বিতীয়',
+    'ইংরেজি ১ম': 'ইংরেজি প্রথম', 'ইংরেজি 1st': 'ইংরেজি প্রথম',
+    'ইংরেজি ২য়': 'ইংরেজি দ্বিতীয়', 'ইংরেজি 2nd': 'ইংরেজি দ্বিতীয়',
+    'আইসিটি': 'তথ্য ও যোগাযোগ প্রযুক্তি',
+    'বিজিএস': 'বাংলাদেশ ও বিশ্ব পরিচয়',
+    'বি ও বি পরিচয়': 'বাংলাদেশ ও বিশ্ব পরিচয়',
+    'পদার্থবিজ্ঞান': 'পদার্থ',
+    'রসায়ন': 'রসায়ন',
+    'জীববিজ্ঞান': 'জীব বিজ্ঞান',
+};
+
 const subjectsFor6to8: Subject[] = [
     { name: 'বাংলা প্রথম', englishName: 'Bangla 1st Paper', code: '101', practical: false, fullMarks: 100 },
     { name: 'বাংলা দ্বিতীয়', englishName: 'Bangla 2nd Paper', code: '102', practical: false, fullMarks: 100 },

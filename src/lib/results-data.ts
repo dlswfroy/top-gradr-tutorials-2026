@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { subjectNameNormalization } from './subjects';
 
 export interface StudentResult {
   studentId: string;
@@ -40,10 +41,13 @@ export const getDocumentId = (result: Omit<ClassResult, 'results' | 'fullMarks' 
 }
 
 export const saveClassResults = async (db: Firestore, newResult: ClassResult) => {
-  const docId = getDocumentId(newResult);
+  const normalizedSubject = subjectNameNormalization[newResult.subject] || newResult.subject;
+  const resultWithNormalizedSubject = { ...newResult, subject: normalizedSubject };
+
+  const docId = getDocumentId(resultWithNormalizedSubject);
   const docRef = doc(db, resultsCollection, docId);
   
-  const dataToSave: { [key: string]: any } = { ...newResult };
+  const dataToSave: { [key: string]: any } = { ...resultWithNormalizedSubject };
   delete dataToSave.id;
 
   // Clean up top-level undefined properties and nested ones in the results array
@@ -58,8 +62,9 @@ export const saveClassResults = async (db: Firestore, newResult: ClassResult) =>
       const cleanedResult: { [key: string]: any } = {};
       Object.keys(studentResult).forEach((keyStr) => {
         const key = keyStr as keyof StudentResult;
-        if (studentResult[key] !== undefined && studentResult[key] !== null) {
-          cleanedResult[key] = studentResult[key];
+        const value = studentResult[key];
+        if (value !== undefined && value !== null) {
+          cleanedResult[key] = value;
         }
       });
       return cleanedResult;
@@ -86,16 +91,13 @@ export const getResultsForClass = async (
   subject: string,
   group?: string
 ): Promise<ClassResult | undefined> => {
-    const docId = getDocumentId({ academicYear, className, subject, group });
+    const normalizedSubject = subjectNameNormalization[subject] || subject;
+    const docId = getDocumentId({ academicYear, className, subject: normalizedSubject, group });
     const docRef = doc(db, resultsCollection, docId);
     try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            const data = { id: docSnap.id, ...docSnap.data() } as ClassResult;
-            if (data.subject === 'ধর্ম শিক্ষা') {
-                return { ...data, subject: 'ধর্ম ও নৈতিক শিক্ষা' };
-            }
-            return data;
+            return { id: docSnap.id, ...docSnap.data() } as ClassResult;
         }
         return undefined;
     } catch(e) {
@@ -108,13 +110,7 @@ export const getAllResults = async (db: Firestore, academicYear: string): Promis
     const q = query(collection(db, resultsCollection), where("academicYear", "==", academicYear));
     try {
         const querySnapshot = await getDocs(q);
-        const results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassResult));
-        return results.map(res => {
-            if (res.subject === 'ধর্ম শিক্ষা') {
-                return { ...res, subject: 'ধর্ম ও নৈতিক শিক্ষা' };
-            }
-            return res;
-        });
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassResult));
     } catch (e) {
         console.error("Error getting all results:", e);
         return [];
