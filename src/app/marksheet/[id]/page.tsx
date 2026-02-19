@@ -81,7 +81,7 @@ export default function MarksheetPage() {
                 return;
             }
             
-            // Get all subjects for the group
+            // Get all available results for those subjects
             const allSubjectsForGroup = getSubjects(studentData.className, studentData.group || undefined);
             
             // Get all available results for those subjects
@@ -177,21 +177,21 @@ export default function MarksheetPage() {
                                     <p className="mt-1"><b>Academic Session:</b> {academicYear}</p>
                                 </div>
                             </div>
-                            <div className="text-xs w-28 mt-2">
+                            <div className="text-xs w-auto mt-2">
                                 <table className="w-full border-collapse border-2 border-black text-center">
                                     <thead className="bg-gray-200">
                                         <tr className="border-b-2 border-black">
-                                            <th className="p-0 border-r border-black">Interval</th>
-                                            <th className="p-0 border-r border-black">Point</th>
-                                            <th className="p-0">Grade</th>
+                                            <th className="p-1 px-2 border-r border-black">Interval</th>
+                                            <th className="p-1 px-2 border-r border-black">Point</th>
+                                            <th className="p-1 px-2">Grade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {gradingScale.map(g => (
                                             <tr key={g.grade} className="border-b border-black last:border-b-0">
-                                                <td className="p-0 border-r border-black">{g.interval}</td>
-                                                <td className="p-0 border-r border-black">{g.point}</td>
-                                                <td className="p-0">{g.grade}</td>
+                                                <td className="p-0.5 px-2 border-r border-black">{g.interval}</td>
+                                                <td className="p-0.5 px-2 border-r border-black">{g.point}</td>
+                                                <td className="p-0.5 px-2">{g.grade}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -206,9 +206,9 @@ export default function MarksheetPage() {
                     <section className="mb-4 text-sm">
                         <div className="grid grid-cols-[1fr_3fr] gap-x-4">
                             <div className="font-bold">Class</div><div>: {classMap[student.className] || student.className}</div>
-                            <div className="font-bold">Student's name</div><div>: {student.studentNameEn || student.studentNameBn}</div>
-                            <div className="font-bold">Father's name</div><div>: {student.fatherNameEn || student.fatherNameBn}</div>
-                            <div className="font-bold">Mother's name</div><div>: {student.motherNameEn || student.motherNameBn}</div>
+                            <div className="font-bold">Student's name</div><div>: {student.studentNameEn || ''}</div>
+                            <div className="font-bold">Father's name</div><div>: {student.fatherNameEn || ''}</div>
+                            <div className="font-bold">Mother's name</div><div>: {student.motherNameEn || ''}</div>
                         </div>
                          <div className="grid grid-cols-[1fr_3fr_1.5fr_1.5fr_2fr_2fr] gap-x-4">
                             <div className="font-bold">Date of birth</div><div>: {student.dob ? new Date(student.dob).toLocaleDateString('en-GB') : 'N/A'}</div>
