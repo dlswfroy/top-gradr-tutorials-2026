@@ -1,39 +1,43 @@
 'use client';
 import { ReactNode, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 import { firebaseConfig } from './config';
 import { FirebaseProvider } from './provider';
 
-// Singleton instances
-let app: ReturnType<typeof initializeApp>;
-let auth: ReturnType<typeof getAuth>;
-let firestore: ReturnType<typeof getFirestore>;
+// Singleton instances to prevent re-initialization
+let app: FirebaseApp | undefined;
+let firestore: Firestore | undefined;
 
+// Initialize Firebase on the client-side only
 if (typeof window !== 'undefined') {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
   firestore = getFirestore(app);
 }
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const instances = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return { app: null, auth: null, firestore: null };
+    // During SSR, app and firestore are undefined.
+    if (!app || !firestore) {
+        return null;
     }
-    return { app, auth, firestore };
+    return { app, firestore };
   }, []);
 
-  if (!instances.app || !instances.auth || !instances.firestore) {
+  if (!instances) {
+    // Render children without the provider on the server
+    // or if initialization somehow failed.
     return <>{children}</>;
   }
 
   return (
     <FirebaseProvider
       app={instances.app}
-      auth={instances.auth}
       firestore={instances.firestore}
     >
       {children}
