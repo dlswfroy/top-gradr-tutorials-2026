@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { Staff } from '@/lib/staff-data';
 
 const classNamesMap: { [key: string]: string } = {
     '6': 'ষষ্ঠ', '7': 'সপ্তম', '8': 'অষ্টম', '9': 'নবম', '10': 'দশম',
 };
 
 const toBengaliNumber = (str: string | number) => {
-    if (!str) return '';
+    if (!str && str !== 0) return '';
     const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
     return String(str).replace(/[0-9]/g, (w) => bengaliDigits[parseInt(w, 10)]);
 };
@@ -29,18 +31,34 @@ export default function TestimonialPage() {
     const { schoolInfo, isLoading: isSchoolInfoLoading } = useSchoolInfo();
 
     const [student, setStudent] = useState<Student | null>(null);
+    const [headmaster, setHeadmaster] = useState<Staff | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!studentId || !db) return;
 
-        const fetchStudent = async () => {
+        const fetchData = async () => {
             setIsLoading(true);
-            const studentData = await getStudentById(db, studentId);
+            
+            const [studentData, staffSnapshot] = await Promise.all([
+                getStudentById(db, studentId),
+                getDocs(query(
+                    collection(db, 'staff'),
+                    where('isActive', '==', true),
+                    where('designation', 'in', ['প্রধান শিক্ষক', 'প্রধান শিক্ষক (ভারপ্রাপ্ত)'])
+                ))
+            ]);
+            
             setStudent(studentData || null);
+
+            if (!staffSnapshot.empty) {
+                const hmDoc = staffSnapshot.docs[0];
+                setHeadmaster({ id: hmDoc.id, ...hmDoc.data() } as Staff);
+            }
+
             setIsLoading(false);
         };
-        fetchStudent();
+        fetchData();
     }, [studentId, db]);
 
     if (isLoading || isSchoolInfoLoading) {
@@ -130,8 +148,8 @@ export default function TestimonialPage() {
                 <footer className="px-10 pb-16 z-10 text-right mt-auto">
                     <div className="inline-block text-center">
                         <div className="w-64 border-t-2 border-dotted border-black pt-2">
-                            <p className="font-semibold">[প্রধান শিক্ষকের নাম]</p>
-                            <p>প্রধান শিক্ষক</p>
+                            <p className="font-semibold">{headmaster?.nameBn || '[প্রধান শিক্ষকের নাম]'}</p>
+                            <p>{headmaster?.designation || 'প্রধান শিক্ষক'}</p>
                             <p>{schoolInfo.name}</p>
                         </div>
                     </div>
