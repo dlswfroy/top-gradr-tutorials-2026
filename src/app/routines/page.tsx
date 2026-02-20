@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,20 +10,86 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+// Data from the image, mapped to 6 periods by skipping the 4th period and using 1,2,3,5,6,7.
+const routineData: Record<string, Record<string, string[]>> = {
+    '6': {
+        'রবিবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বিজ্ঞান - শান্তি', 'বাও বি - জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'আইসিটি - শারমিন'],
+        'সোমবার': ['কৃষি - জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'আইসিটি - শারমিন', 'বাও বি - জান্নাতুন', 'বাংলা ১ম - ওবায়দা', 'বিজ্ঞান - শান্তি'],
+        'মঙ্গলবার': ['ইংরেজী ১ম - আরিফুর', 'শারীরিক - মাহাবুব', 'ধর্ম - আনিছুর/নীলা', 'ইংরেজী ২য় - যুধিষ্ঠির', 'গণিত - ধনঞ্জয়', 'শারীরিক - ওবায়দা'],
+        'বুধবার': ['কৃষি - জান্নাতুন', 'গণিত - ধনঞ্জয়', 'ধর্ম - আনিছুর/নীলা', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী ১ম - আরিফুর', 'আইসিটি - শারমিন'],
+        'বৃহস্পতিবার': ['বাও বি - জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী ১ম - আরিফুর', 'বাংলা ১ম - ওবায়দা', 'ইংরেজী২য় - যুধিষ্ঠির', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
+    },
+    '7': {
+        'রবিবার': ['ইংরেজী ১ম - আরিফুর', 'শারীরিক - ওবায়দা', 'কৃষি - মাহাবুব', 'ধর্ম - আনিছুর/নীলা', 'বিজ্ঞান - শান্তি', 'ইংরেজী২য় - যুধিষ্ঠির'],
+        'সোমবার': ['গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন', 'বাও বি - আনিছুর', 'কৃষি - মাহাবুব', 'কৃষি - মাহাবুব', 'শারীরিক - ওবায়দা'],
+        'মঙ্গলবার': ['কৃষি - মাহাবুব', 'বাংলা ২য় - যুধিষ্ঠির', 'বিজ্ঞান - শান্তি', 'গণিত - ধনঞ্জয়', 'ধর্ম - মাহাবুব/নীলা', 'বাও বি - আনিছুর'],
+        'বুধবার': ['বাংলা ১ম - ওবায়দা', 'ইংরেজী ১ম - আরিফুর', 'ইংরেজী ২য় - আরিফুর', 'কৃষি - মাহাবুব', 'গণিত - ধনঞ্জয়', 'শারীরিক - ওবায়দা'],
+        'বৃহস্পতিবার': ['গণিত - ধনঞ্জয়', 'বাও বি - আনিছুর', 'ইংরেজী ২য় - আরিফুর', 'বিজ্ঞান - শান্তি', 'ধর্ম - মাহাবুব/নীলা', 'বাংলা ১ম - ওবায়দা'],
+    },
+    '8': {
+        'রবিবার': ['বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর', 'বিজ্ঞান - শান্তি', 'বাংলা ১ম - ওবায়দা', 'বাও বি - আনিছুর'],
+        'সোমবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা'],
+        'মঙ্গলবার': ['বাংলা ২য় - যুধিষ্ঠির', 'শারীরিক - নীলা', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা'],
+        'বুধবার': ['গণিত - ধনঞ্জয়', 'বাংলা ১ম - ওবায়দা', 'কৃষি - মাহাবুব', 'ধর্ম - মাহাবুব/নীলা', 'বাংলা ২য় - যুধিষ্ঠির', 'আইসিটি - শারমিন'],
+        'বৃহস্পতিবার': ['শারীরিক - নীলা', 'কৃষি - মাহাবুব', 'গণিত - ধনঞ্জয়', 'কৃষি - মাহাবুব', 'ইংরেজী ১ম - আরিফুর', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
+    },
+    '9': {
+        'রবিবার': ['গণিত - ধনঞ্জয়', 'জীব/পৌর - শান্তি/জান্নাতুন', 'রসায়ন/ভূগোল - ধনঞ্জয়/শারমিন', 'বাংলা ২য় - যুধিষ্ঠির', 'রসায়ন/ভূগোল - ধনঞ্জয়/শারমিন', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
+        'সোমবার': ['আইসিটি - শারমিন', 'গণিত - ধনঞ্জয়', 'জীব/পৌর - শান্তি/জান্নাতুন', 'ইংরেজী ১ম - আরিফুর', 'গণিত - ধনঞ্জয়', 'রসায়ন/ভূগোল - ধনঞ্জয়/শারমিন'],
+        'মঙ্গলবার': ['গণিত - ধনঞ্জয়', 'বাংলা ১ম - ওবায়দা', 'পদায/ইতিহাস - ধনঞ্জয়/জান্নাতুন', 'জীব/পৌর - শান্তি/জান্নাতুন', 'ধর্ম - মাহাবুব/নীলা', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
+        'বুধবার': ['ইংরেজী ২য় - আরিফুর', 'পদায/ইতিহাস - ধনঞ্জয়/জান্নাতুন', 'কৃষি - মাহাবুব', 'শারীরিক - মাহাবুব', 'পদায/ইতিহাস - ধনঞ্জয়/জান্নাতুন', 'কৃষি - জান্নাতুন'],
+        'বৃহস্পতিবার': ['পদায/ইতিহাস - ধনঞ্জয়/জান্নাতুন', 'গণিত - ধনঞ্জয়', 'রসায়ন/ভূগোল - ধনঞ্জয়/শারমিন', 'শারীরিক - মাহাবুব', 'গণিত - ধনঞ্জয়', 'ধর্ম - আনিছুর/নীলা'],
+    },
+    '10': {
+        'রবিবার': ['আইসিটি - শারমিন', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী ১ম - আরিফুর', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়'],
+        'সোমবার': ['আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাও বি - জান্নাতুন', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন'],
+        'মঙ্গলবার': ['আইসিটি - শারমিন', 'ইংরেজী ২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ২য় - যুধিষ্ঠির', 'জীব/পৌর - শান্তি/জান্নাতুন', 'কৃষি - জান্নাতুন'],
+        'বুধবার': ['আইসিটি - শারমিন', 'বাংলা ১ম - ওবায়দা', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ১ম - ওবায়দা', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর'],
+        'বৃহস্পতিবার': ['বাংলা ১ম - ওবায়দা', 'ইংরেজী ১ম - আরিফুর', 'কৃষি - মাহাবুব', 'বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'আইসিটি - শারমিন'],
+    },
+};
+
+
 const ClassRoutineTab = () => {
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
-    const showGroupSelector = className === '9' || className === '10';
+    const [currentRoutine, setCurrentRoutine] = useState<any>(null);
+
+    const showGroupSelector = useMemo(() => className === '9' || className === '10', [className]);
 
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
-    const periods = ["১ম", "২য়", "৩য়", "৪র্থ", "৫ম", "৬ষ্ঠ"];
+    const periods = [
+        { name: "১ম", time: "১০:৩০ - ১১:২০" },
+        { name: "২য়", time: "১১:২০ - ১২:১০" },
+        { name: "৩য়", time: "১২:১০ - ০১:০০" },
+    ];
+    const postBreakPeriods = [
+        { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" },
+        { name: "৫ম", time: "০২:৩০ - ০৩:২০" },
+        { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" },
+    ];
+
+    const handleViewRoutine = () => {
+        if (!className) {
+            setCurrentRoutine(null);
+            return;
+        }
+        if (showGroupSelector && !group) {
+             setCurrentRoutine(null);
+            return;
+        }
+        
+        // @ts-ignore
+        const routine = routineData[className];
+        setCurrentRoutine(routine);
+    }
 
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
                  <div className="space-y-2 flex-1">
                     <Label htmlFor="class">শ্রেণি</Label>
-                    <Select value={className} onValueChange={setClassName}>
+                    <Select value={className} onValueChange={(value) => { setClassName(value); setGroup(''); setCurrentRoutine(null);}}>
                         <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন করুন" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="6">৬ষ্ঠ</SelectItem>
@@ -37,7 +103,7 @@ const ClassRoutineTab = () => {
                  {showGroupSelector && (
                     <div className="space-y-2 flex-1">
                         <Label htmlFor="group">গ্রুপ</Label>
-                        <Select value={group} onValueChange={setGroup}>
+                        <Select value={group} onValueChange={(value) => { setGroup(value); setCurrentRoutine(null); }}>
                             <SelectTrigger id="group"><SelectValue placeholder="গ্রুপ নির্বাচন করুন" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="science">বিজ্ঞান</SelectItem>
@@ -48,39 +114,50 @@ const ClassRoutineTab = () => {
                     </div>
                 )}
                 <div className="flex items-end">
-                     <Button>রুটিন দেখুন</Button>
+                     <Button onClick={handleViewRoutine}>রুটিন দেখুন</Button>
                 </div>
             </div>
 
-            {/* Placeholder for routine table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>ক্লাস রুটিন</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <div className="overflow-x-auto">
-                        <Table className="border">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="border-r">বার</TableHead>
-                                    {periods.map(p => <TableHead key={p} className="border-r text-center">{p} পিরিয়ড</TableHead>)}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {days.map(day => (
-                                    <TableRow key={day}>
-                                        <TableCell className="font-semibold border-r">{day}</TableCell>
-                                        {periods.map(p => <TableCell key={p} className="border-r text-center">বিষয়</TableCell>)}
+            {currentRoutine ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>ক্লাস রুটিন ({className ? `শ্রেণি - ${className}` : ''} {group ? `- ${group}` : ''})</CardTitle>
+                         {showGroupSelector && <p className="text-sm text-muted-foreground">দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</p>}
+                    </CardHeader>
+                    <CardContent>
+                    <div className="overflow-x-auto">
+                            <Table className="border">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="border-r font-bold align-middle text-center">বার</TableHead>
+                                        {periods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
+                                        <TableHead className="border-r text-center font-semibold bg-gray-100">বিরতি<br/><span className="font-normal text-xs">০১:০০ - ০১:৪০</span></TableHead>
+                                        {postBreakPeriods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                   </div>
-                   <div className="text-center text-muted-foreground p-8">
-                       রুটিন পরিচালনা করার ফিচার শীঘ্রই আসছে।
-                   </div>
-                </CardContent>
-            </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {days.map(day => (
+                                        <TableRow key={day}>
+                                            <TableCell className="font-semibold border-r">{day}</TableCell>
+                                            {(currentRoutine[day] || Array(6).fill('-')).slice(0, 3).map((subject: string, i: number) => (
+                                                <TableCell key={`${day}-pre-${i}`} className="border-r text-center">{subject}</TableCell>
+                                            ))}
+                                             <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
+                                             {(currentRoutine[day] || Array(6).fill('-')).slice(3, 6).map((subject: string, i: number) => (
+                                                <TableCell key={`${day}-post-${i}`} className="border-r text-center">{subject}</TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                    </div>
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="text-center text-muted-foreground p-8 border rounded-lg">
+                    অনুগ্রহ করে শ্রেণি এবং গ্রুপ (প্রযোজ্য ক্ষেত্রে) নির্বাচন করে "রুটিন দেখুন" বাটনে ক্লিক করুন।
+                </div>
+            )}
         </div>
     );
 };
