@@ -77,7 +77,7 @@ export function Header() {
                 <span className="">{isSchoolInfoLoading ? <Skeleton className="h-6 w-32" /> : schoolInfo.name}</span>
               </Link>
             </SheetHeader>
-            <div className="p-4 border-b">
+            <div className="p-4 border-b bg-blue-100">
                 <Label htmlFor="academic-year-select" className="text-sm font-medium text-muted-foreground">শিক্ষাবর্ষ</Label>
                  {isClient && availableYears.length > 0 ? (
                     <Select value={selectedYear} onValueChange={setSelectedYear}>
