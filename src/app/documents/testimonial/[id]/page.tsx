@@ -15,6 +15,13 @@ const classNamesMap: { [key: string]: string } = {
     '6': 'ষষ্ঠ', '7': 'সপ্তম', '8': 'অষ্টম', '9': 'নবম', '10': 'দশম',
 };
 
+const toBengaliNumber = (str: string | number) => {
+    if (!str) return '';
+    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return String(str).replace(/[0-9]/g, (w) => bengaliDigits[parseInt(w, 10)]);
+};
+
+
 export default function TestimonialPage() {
     const params = useParams();
     const studentId = params.id as string;
@@ -44,8 +51,8 @@ export default function TestimonialPage() {
         return <div className="flex items-center justify-center min-h-screen bg-gray-100">শিক্ষার্থী পাওয়া যায়নি।</div>;
     }
     
-    const issueDate = format(new Date(), "d MMMM, yyyy", { locale: bn });
-    const studentDob = student.dob ? format(new Date(student.dob), "d MMMM, yyyy", { locale: bn }) : 'প্রযোজ্য নয়';
+    const issueDate = toBengaliNumber(format(new Date(), "d MMMM, yyyy", { locale: bn }));
+    const studentDob = student.dob ? toBengaliNumber(format(new Date(student.dob), "d MMMM, yyyy", { locale: bn })) : 'প্রযোজ্য নয়';
 
     return (
         <div className="bg-gray-100 p-8 font-body">
@@ -107,7 +114,7 @@ export default function TestimonialPage() {
                         উপজেলা: <span className="font-semibold">{student.permanentUpazila || student.presentUpazila || ''}</span>, 
                         জেলা: <span className="font-semibold">{student.permanentDistrict || student.presentDistrict || ''}</span>। 
                         সে এই বিদ্যালয়ে <span className="font-semibold">{classNamesMap[student.className] || student.className}</span> শ্রেণিতে অধ্যয়নরত আছে। 
-                        তার শ্রেণি রোল নম্বর <span className="font-semibold">{student.roll.toLocaleString('bn-BD')}</span> এবং জন্ম তারিখ <span className="font-semibold">{studentDob}</span>।
+                        তার শ্রেণি রোল নম্বর <span className="font-semibold">{toBengaliNumber(student.roll)}</span> এবং জন্ম তারিখ <span className="font-semibold">{studentDob}</span>।
                     </p>
 
                     <p className="text-base mt-6 leading-10">
