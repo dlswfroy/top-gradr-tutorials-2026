@@ -2,7 +2,18 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Menu } from 'lucide-react';
+import {
+  ArrowLeft,
+  Menu,
+  LayoutDashboard,
+  UserPlus,
+  Users,
+  CalendarCheck,
+  BookMarked,
+  Banknote,
+  Users2,
+  Settings,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,48 +100,56 @@ export function Header() {
                   href="/"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <LayoutDashboard className="h-5 w-5" />
                   ড্যাসবোর্ড
                 </Link>
                 <Link
                   href="/add-student"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <UserPlus className="h-5 w-5" />
                   নতুন শিক্ষার্থী যোগ
                 </Link>
                 <Link
                   href="/student-list"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <Users className="h-5 w-5" />
                   শিক্ষার্থী তালিকা
                 </Link>
                 <Link
                   href="/attendance"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <CalendarCheck className="h-5 w-5" />
                   হাজিরা
                 </Link>
                 <Link
                   href="/results"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <BookMarked className="h-5 w-5" />
                   ফলাফল
                 </Link>
                 <Link
                   href="/accounts"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <Banknote className="h-5 w-5" />
                   হিসাব শাখা
                 </Link>
                 <Link
                   href="/staff"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <Users2 className="h-5 w-5" />
                   শিক্ষক ও কর্মচারী
                 </Link>
                 <Link
                   href="/settings"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
+                  <Settings className="h-5 w-5" />
                   সেটিং
                 </Link>
               </div>
