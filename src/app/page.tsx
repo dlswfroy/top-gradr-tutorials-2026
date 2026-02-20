@@ -95,56 +95,56 @@ export default function Home() {
       <Header />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-          <Card>
+          <Card className="bg-sky-100 border-sky-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-sky-800">
                 মোট শিক্ষার্থী
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-4 w-4 text-sky-700" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalStudents.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-sky-900">{totalStudents.toLocaleString('bn-BD')}</div>
+              <p className="text-xs text-sky-600">
                 শিক্ষাবর্ষ {selectedYear.toLocaleString('bn-BD')}
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-emerald-100 border-emerald-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-emerald-800">
                 উপস্থিত
               </CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <UserCheck className="h-4 w-4 text-emerald-700" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{presentStudents.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-emerald-900">{presentStudents.toLocaleString('bn-BD')}</div>
+              <p className="text-xs text-emerald-600">
                 আজকে উপস্থিত
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-rose-100 border-rose-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">অনুপস্থিত</CardTitle>
-              <UserX className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-rose-800">অনুপস্থিত</CardTitle>
+              <UserX className="h-4 w-4 text-rose-700" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{absentStudents.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-rose-900">{absentStudents.toLocaleString('bn-BD')}</div>
+              <p className="text-xs text-rose-600">
                 আজকে অনুপস্থিত
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-amber-100 border-amber-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-amber-800">
                 মোট শিক্ষক
               </CardTitle>
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
+              <GraduationCap className="h-4 w-4 text-amber-700" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalTeachers.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-amber-900">{totalTeachers.toLocaleString('bn-BD')}</div>
+              <p className="text-xs text-amber-600">
                 &nbsp;
               </p>
             </CardContent>
