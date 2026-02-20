@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, forwardRef } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Data from the image, mapped to 6 periods by skipping the 4th period and using 1,2,3,5,6,7.
 const routineData: Record<string, Record<string, string[]>> = {
@@ -29,7 +32,7 @@ const routineData: Record<string, Record<string, string[]>> = {
     },
     '8': {
         'রবিবার': ['বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর', 'বিজ্ঞান - শান্তি', 'বাংলা ১ম - ওবায়দা', 'বাও বি - আনিছুর'],
-        'সোমবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বাংলা ২য় - যুধিষ্ঠिर', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা'],
+        'সোমবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা'],
         'মঙ্গলবার': ['বাংলা ২য় - যুধিষ্ঠির', 'শারীরিক - নীলা', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা'],
         'বুধবার': ['গণিত - ধনঞ্জয়', 'বাংলা ১ম - ওবায়দা', 'কৃষি - মাহাবুব', 'ধর্ম - মাহাবুব/নীলা', 'বাংলা ২য় - যুধিষ্ঠির', 'আইসিটি - শারমিন'],
         'বৃহস্পতিবার': ['শারীরিক - নীলা', 'কৃষি - মাহাবুব', 'গণিত - ধনঞ্জয়', 'কৃষি - মাহাবুব', 'ইংরেজী ১ম - আরিফুর', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
@@ -45,35 +48,212 @@ const routineData: Record<string, Record<string, string[]>> = {
         'রবিবার': ['আইসিটি - শারমিন', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী ১ম - আরিফুর', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়'],
         'সোমবার': ['আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাও বি - জান্নাতুন', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন'],
         'মঙ্গলবার': ['আইসিটি - শারমিন', 'ইংরেজী ২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ২য় - যুধিষ্ঠির', 'জীব/পৌর - শান্তি/জান্নাতুন', 'কৃষি - জান্নাতুন'],
-        'Wednesday': ['আইসিটি - শারমিন', 'বাংলা ১ম - ওবায়দা', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ১ম - ওবায়দা', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর'],
+        'বুধবার': ['আইসিটি - শারমিন', 'বাংলা ১ম - ওবায়দা', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ১ম - ওবায়দা', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর'],
         'বৃহস্পতিবার': ['বাংলা ১ম - ওবায়দা', 'ইংরেজী ১ম - আরিফুর', 'কৃষি - মাহাবুব', 'বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'আইসিটি - শারমিন'],
     },
 };
 
-const RoutineTable = ({ className, routine, showGroupInfo }: { className: string, routine: any, showGroupInfo: boolean }) => {
+const parseSubjectTeacher = (cell: string): { subject: string, teacher: string | null } => {
+    if (!cell || !cell.includes(' - ')) {
+        return { subject: cell, teacher: null };
+    }
+    const parts = cell.split(' - ');
+    const teacher = parts.pop()?.trim() || null;
+    const subject = parts.join(' - ').trim();
+    return { subject, teacher };
+};
+
+const useRoutineAnalysis = (routine: typeof routineData) => {
+    const analysis = useMemo(() => {
+        const teacherClashes = new Set<string>();
+        const consecutiveClassClashes = new Set<string>();
+        const breakClashes = new Set<string>();
+        
+        const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] } } } = {};
+        const classStats: { [cls: string]: { [subject: string]: number } } = {};
+        const teachers = new Set<string>();
+
+        const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
+        const classes = Object.keys(routine);
+        const periodsCount = 6;
+
+        classes.forEach(cls => {
+            days.forEach(day => {
+                if (routine[cls]?.[day]) {
+                    routine[cls][day].forEach(cell => {
+                        const { teacher } = parseSubjectTeacher(cell);
+                        if (teacher) teachers.add(teacher);
+                    });
+                }
+            });
+        });
+
+        teachers.forEach(t => {
+            teacherStats[t] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] } };
+        });
+
+        days.forEach(day => {
+            for (let periodIdx = 0; periodIdx < periodsCount; periodIdx++) {
+                const periodTeachers = new Map<string, string>();
+                classes.forEach(cls => {
+                    const cell = routine[cls]?.[day]?.[periodIdx];
+                    if (cell) {
+                        const { teacher } = parseSubjectTeacher(cell);
+                        if (teacher) {
+                            if (periodTeachers.has(teacher)) {
+                                teacherClashes.add(`${cls}-${day}-${periodIdx}`);
+                                const existingCls = periodTeachers.get(teacher)!;
+                                teacherClashes.add(`${existingCls}-${day}-${periodIdx}`);
+                            } else {
+                                periodTeachers.set(teacher, cls);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        classes.forEach(cls => {
+            classStats[cls] = {};
+            days.forEach(day => {
+                const dayRoutine = routine[cls]?.[day];
+                if (dayRoutine) {
+                    dayRoutine.forEach((cell, periodIdx) => {
+                        const { subject, teacher } = parseSubjectTeacher(cell);
+                        if(subject) {
+                             const mainSubject = subject.split('/')[0].trim();
+                            classStats[cls][mainSubject] = (classStats[cls][mainSubject] || 0) + 1;
+                        }
+                        if (teacher) {
+                            teacher.split('/').forEach(t => {
+                                const trimmedTeacher = t.trim();
+                                if(!teacherStats[trimmedTeacher]) {
+                                    teachers.add(trimmedTeacher);
+                                    teacherStats[trimmedTeacher] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] } };
+                                }
+                                teacherStats[trimmedTeacher].total++;
+                                teacherStats[trimmedTeacher].daily[day].push(`${subject} (${cls} শ্রেণি)`);
+                                if (periodIdx === 5) {
+                                    teacherStats[trimmedTeacher].sixthPeriods++;
+                                }
+                            });
+                        }
+                    });
+
+                    const consecutivePairs = [[0, 1], [1, 2], [3, 4], [4, 5]];
+                    consecutivePairs.forEach(([p1, p2]) => {
+                        const teacher1 = parseSubjectTeacher(dayRoutine[p1]).teacher;
+                        const teacher2 = parseSubjectTeacher(dayRoutine[p2]).teacher;
+                        if (teacher1 && teacher1 === teacher2) {
+                            consecutiveClassClashes.add(`${cls}-${day}-${p1}`);
+                            consecutiveClassClashes.add(`${cls}-${day}-${p2}`);
+                        }
+                    });
+
+                    const teacherBeforeBreak = parseSubjectTeacher(dayRoutine[2]).teacher;
+                    const teacherAfterBreak = parseSubjectTeacher(dayRoutine[3]).teacher;
+                    if (teacherBeforeBreak && teacherBeforeBreak === teacherAfterBreak) {
+                        breakClashes.add(`${cls}-${day}-2`);
+                        breakClashes.add(`${cls}-${day}-3`);
+                    }
+                }
+            });
+        });
+
+        return { conflicts: { teacherClashes, consecutiveClassClashes, breakClashes }, stats: { teacherStats, classStats } };
+    }, [routine]);
+
+    return analysis;
+};
+
+const RoutineStatistics = ({ stats }: { stats: any }) => {
+    const { teacherStats, classStats } = stats;
+    const teachers = Object.keys(teacherStats).sort();
+    const classes = Object.keys(classStats).sort((a,b) => parseInt(a) - parseInt(b));
+    const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
+
+    return (
+        <Accordion type="multiple" className="w-full space-y-4">
+            <AccordionItem value="teacher-stats">
+                <AccordionTrigger className="text-lg font-semibold">শিক্ষকভিত্তিক পরিসংখ্যান</AccordionTrigger>
+                <AccordionContent>
+                    <div className="overflow-x-auto border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>শিক্ষকের নাম</TableHead>
+                                    <TableHead>মোট ক্লাস</TableHead>
+                                    <TableHead>৬ষ্ঠ পিরিয়ডে ক্লাস</TableHead>
+                                    <TableHead>দিনভিত্তিক ক্লাস</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teachers.map(teacher => (
+                                    <TableRow key={teacher}>
+                                        <TableCell className="font-medium">{teacher}</TableCell>
+                                        <TableCell>{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell>{teacherStats[teacher].sixthPeriods.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell>
+                                            <ul className="list-disc list-inside text-xs">
+                                                {Object.entries(teacherStats[teacher].daily).map(([day, classes]) => (
+                                                    (classes as string[]).length > 0 && <li key={day}><strong>{day}:</strong> {(classes as string[]).length.toLocaleString('bn-BD')}টি</li>
+                                                ))}
+                                            </ul>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="class-stats">
+                <AccordionTrigger className="text-lg font-semibold">শ্রেণিভিত্তিক পরিসংখ্যান</AccordionTrigger>
+                <AccordionContent>
+                     <div className="overflow-x-auto border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>শ্রেণি</TableHead>
+                                    <TableHead>বিষয়</TableHead>
+                                    <TableHead>সাপ্তাহিক ক্লাস সংখ্যা</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {classes.map(cls => {
+                                    const subjects = Object.keys(classStats[cls]).sort();
+                                    return subjects.map((subject, index) => (
+                                        <TableRow key={`${cls}-${subject}`}>
+                                            {index === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top">{classNamesMap[cls]}</TableCell>}
+                                            <TableCell>{subject}</TableCell>
+                                            <TableCell>{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
+                                        </TableRow>
+                                    ));
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+    );
+};
+
+
+const RoutineTable = ({ className, routine, showGroupInfo, conflicts }: { className: string, routine: any, showGroupInfo: boolean, conflicts: any }) => {
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
-    const periods = [
-        { name: "১ম", time: "১০:৩০ - ১১:২০" },
-        { name: "২য়", time: "১১:২০ - ১২:১০" },
-        { name: "৩য়", time: "১২:১০ - ০১:০০" },
-    ];
-    const postBreakPeriods = [
-        { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" },
-        { name: "৫ম", time: "০২:৩০ - ০৩:২০" },
-        { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" },
-    ];
-     const classNamesMap: { [key: string]: string } = {
-        '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম',
-    };
+    const periods = [ { name: "১ম", time: "১০:৩০ - ১১:২০" }, { name: "২য়", time: "১১:২০ - ১২:১০" }, { name: "৩য়", time: "১২:১০ - ০১:০০" } ];
+    const postBreakPeriods = [ { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" }, { name: "৫ম", time: "০২:৩০ - ০৩:২০" }, { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" } ];
+    const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>ক্লাস রুটিন (শ্রেণি - {classNamesMap[className] || className})</CardTitle>
-                 {showGroupInfo && <CardDescription>দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</CardDescription>}
+                {showGroupInfo && <CardDescription>দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</CardDescription>}
             </CardHeader>
             <CardContent>
-            <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                     <Table className="border">
                         <TableHeader>
                             <TableRow>
@@ -87,45 +267,52 @@ const RoutineTable = ({ className, routine, showGroupInfo }: { className: string
                             {days.map(day => (
                                 <TableRow key={day}>
                                     <TableCell className="font-semibold border-r">{day}</TableCell>
-                                    {(routine[day] || Array(6).fill('-')).slice(0, 3).map((subject: string, i: number) => (
-                                        <TableCell key={`${day}-pre-${i}`} className="border-r text-center">{subject}</TableCell>
-                                    ))}
-                                     <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
-                                     {(routine[day] || Array(6).fill('-')).slice(3, 6).map((subject: string, i: number) => (
-                                        <TableCell key={`${day}-post-${i}`} className="border-r text-center">{subject}</TableCell>
-                                    ))}
+                                    {[...Array(6)].map((_, periodIdx) => {
+                                        const subject = (routine[day] || [])[periodIdx] || '-';
+                                        const key = `${className}-${day}-${periodIdx}`;
+                                        const isTeacherClash = conflicts.teacherClashes.has(key);
+                                        const isConsecutiveClash = conflicts.consecutiveClassClashes.has(key);
+                                        const isBreakClash = conflicts.breakClashes.has(key);
+                                        const isConflict = isTeacherClash || isConsecutiveClash || isBreakClash;
+                                        
+                                        let tooltipContent = '';
+                                        if (isTeacherClash) tooltipContent += 'একই সময়ে এই শিক্ষকের অন্য ক্লাসে ক্লাস রয়েছে। ';
+                                        if (isConsecutiveClash) tooltipContent += 'একই শিক্ষকের এই ক্লাসে পরপর ক্লাস পড়েছে। ';
+                                        if (isBreakClash) tooltipContent += 'বিরতির আগে ও পরে একই শিক্ষকের ক্লাস পড়েছে। ';
+                                        
+                                        if (periodIdx === 3) {
+                                            return <>
+                                                <TableCell key={`${day}-pre-${periodIdx}`} className={cn("border-r text-center", { "bg-red-100 text-red-700": isConflict })} title={tooltipContent}>{subject}</TableCell>
+                                                <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
+                                            </>;
+                                        }
+
+                                        return <TableCell key={`${day}-pre-${periodIdx}`} className={cn("border-r text-center", { "bg-red-100 text-red-700": isConflict })} title={tooltipContent}>{subject}</TableCell>;
+                                    })}
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
-            </div>
+                </div>
             </CardContent>
         </Card>
     );
 };
 
-const CombinedRoutineTable = () => {
+const CombinedRoutineTable = ({ conflicts }: { conflicts: any }) => {
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
     const classes = ['6', '7', '8', '9', '10'];
-    const periods = [
-        { name: "১ম", time: "১০:৩০ - ১১:২০" },
-        { name: "২য়", time: "১১:২০ - ১২:১০" },
-        { name: "৩য়", time: "১২:১০ - ০১:০০" },
-    ];
-    const postBreakPeriods = [
-        { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" },
-        { name: "৫ম", time: "০২:৩০ - ০৩:২০" },
-        { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" },
-    ];
-    const classNamesMap: { [key: string]: string } = {
-        '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম',
-    };
+    const periods = [ { name: "১ম", time: "১০:৩০ - ১১:২০" }, { name: "২য়", time: "১১:২০ - ১২:১০" }, { name: "৩য়", time: "১২:১০ - ০১:০০" } ];
+    const postBreakPeriods = [ { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" }, { name: "৫ম", time: "০২:৩০ - ০৩:২০" }, { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" } ];
+    const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
     return (
          <Card>
             <CardHeader>
                 <CardTitle>সকল শ্রেণির সম্মিলিত ক্লাস রুটিন</CardTitle>
-                <CardDescription>দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</CardDescription>
+                <CardDescription>
+                    অসঙ্গতিপূর্ণ ক্লাসগুলো লাল রঙে হাইলাইট করা হয়েছে। বিস্তারিত জানতে সেলের উপর মাউস রাখুন।
+                </CardDescription>
             </CardHeader>
             <CardContent>
                  <div className="overflow-x-auto">
@@ -147,15 +334,37 @@ const CombinedRoutineTable = () => {
                                              <TableCell className="font-semibold border-r align-middle text-center" rowSpan={classes.length}>{day}</TableCell>
                                         )}
                                         <TableCell className="font-semibold border-r text-center">{classNamesMap[cls]}</TableCell>
-                                        {(routineData[cls]?.[day] || Array(6).fill('-')).slice(0, 3).map((subject: string, i: number) => (
-                                            <TableCell key={`${day}-${cls}-pre-${i}`} className="border-r text-center">{subject}</TableCell>
-                                        ))}
-                                        {classIndex === 0 && (
-                                            <TableCell className="border-r text-center bg-muted font-semibold align-middle" rowSpan={classes.length}>টিফিন</TableCell>
-                                        )}
-                                        {(routineData[cls]?.[day] || Array(6).fill('-')).slice(3, 6).map((subject: string, i: number) => (
-                                            <TableCell key={`${day}-${cls}-post-${i}`} className="border-r text-center">{subject}</TableCell>
-                                        ))}
+                                        {[...Array(6)].map((_, periodIdx) => {
+                                            const subject = (routineData[cls]?.[day] || [])[periodIdx] || '-';
+                                            const key = `${cls}-${day}-${periodIdx}`;
+                                            const isTeacherClash = conflicts.teacherClashes.has(key);
+                                            const isConsecutiveClash = conflicts.consecutiveClassClashes.has(key);
+                                            const isBreakClash = conflicts.breakClashes.has(key);
+                                            const isConflict = isTeacherClash || isConsecutiveClash || isBreakClash;
+                                            
+                                            let tooltipContent = '';
+                                            if (isTeacherClash) tooltipContent += 'একই সময়ে এই শিক্ষকের অন্য ক্লাসে ক্লাস রয়েছে। ';
+                                            if (isConsecutiveClash) tooltipContent += 'একই শিক্ষকের এই ক্লাসে পরপর ক্লাস পড়েছে। ';
+                                            if (isBreakClash) tooltipContent += 'বিরতির আগে ও পরে একই শিক্ষকের ক্লাস পড়েছে। ';
+
+                                            const cell = (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                             <TableCell className={cn("border-r text-center", { "bg-red-100 text-red-700": isConflict })}>
+                                                                {subject}
+                                                             </TableCell>
+                                                        </TooltipTrigger>
+                                                        {isConflict && <TooltipContent><p>{tooltipContent}</p></TooltipContent>}
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            );
+                                            
+                                            if (periodIdx === 2) {
+                                                return <>{cell}<TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell></>;
+                                            }
+                                            return cell;
+                                        })}
                                     </TableRow>
                                 ))
                             ))}
@@ -168,7 +377,7 @@ const CombinedRoutineTable = () => {
 };
 
 
-const ClassRoutineTab = () => {
+const ClassRoutineTab = ({ conflicts }: { conflicts: any }) => {
     const [className, setClassName] = useState('all');
     
     return (
@@ -191,12 +400,13 @@ const ClassRoutineTab = () => {
             </div>
             
             {className === 'all' ? (
-                <CombinedRoutineTable />
+                <CombinedRoutineTable conflicts={conflicts} />
             ) : (
                 <RoutineTable 
                     className={className} 
                     routine={routineData[className] || {}}
                     showGroupInfo={className === '9' || className === '10'}
+                    conflicts={conflicts}
                 />
             )}
         </div>
@@ -243,6 +453,7 @@ const ExamRoutineTab = () => {
 export default function RoutinesPage() {
     const { selectedYear } = useAcademicYear();
     const [isClient, setIsClient] = useState(false);
+    const { conflicts, stats } = useRoutineAnalysis(routineData);
 
     useEffect(() => {
         setIsClient(true);
@@ -260,15 +471,19 @@ export default function RoutinesPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="class-routine">
-                                <TabsList className="grid w-full grid-cols-2">
+                                <TabsList className="grid w-full grid-cols-3">
                                     <TabsTrigger value="class-routine">ক্লাস রুটিন</TabsTrigger>
                                     <TabsTrigger value="exam-routine">পরীক্ষার রুটিন</TabsTrigger>
+                                    <TabsTrigger value="statistics">পরিসংখ্যান</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="class-routine" className="mt-4">
-                                    <ClassRoutineTab />
+                                    <ClassRoutineTab conflicts={conflicts} />
                                 </TabsContent>
                                 <TabsContent value="exam-routine" className="mt-4">
                                     <ExamRoutineTab />
+                                </TabsContent>
+                                <TabsContent value="statistics" className="mt-4">
+                                    <RoutineStatistics stats={stats} />
                                 </TabsContent>
                             </Tabs>
                         ) : (
