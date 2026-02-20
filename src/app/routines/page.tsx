@@ -195,32 +195,30 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
     const classes = Object.keys(classStats).sort((a,b) => parseInt(a) - parseInt(b));
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
-    let classStatSerial = 1;
-
     return (
         <Accordion type="multiple" className="w-full space-y-4">
             <AccordionItem value="teacher-stats">
                 <AccordionTrigger className="text-lg font-semibold">শিক্ষকভিত্তিক পরিসংখ্যান</AccordionTrigger>
                 <AccordionContent>
                     <div className="overflow-x-auto border rounded-lg">
-                        <Table>
+                        <Table className="border-collapse border">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ক্রমিক</TableHead>
-                                    <TableHead>শিক্ষকের নাম</TableHead>
-                                    <TableHead>মোট ক্লাস</TableHead>
-                                    <TableHead>৬ষ্ঠ পিরিয়ডে</TableHead>
-                                    <TableHead>দিনভিত্তিক ক্লাস (বিরতির আগে, পরে)</TableHead>
+                                    <TableHead className="border">ক্রমিক</TableHead>
+                                    <TableHead className="border">শিক্ষকের নাম</TableHead>
+                                    <TableHead className="border">মোট ক্লাস</TableHead>
+                                    <TableHead className="border">৬ষ্ঠ পিরিয়ডে</TableHead>
+                                    <TableHead className="border">দিনভিত্তিক ক্লাস (বিরতির আগে, পরে)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {teachers.map((teacher, index) => (
-                                    <TableRow key={teacher}>
-                                        <TableCell>{(index + 1).toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell className="font-medium">{teacher}</TableCell>
-                                        <TableCell>{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell>{teacherStats[teacher].sixthPeriods.toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell>
+                                    <TableRow key={teacher} className="border">
+                                        <TableCell className="border">{(index + 1).toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell className="font-medium border">{teacher}</TableCell>
+                                        <TableCell className="border">{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell className="border">{teacherStats[teacher].sixthPeriods.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell className="border">
                                             <ul className="list-disc list-inside text-xs space-y-1">
                                                 {Object.entries(teacherStats[teacher].daily).map(([day, classes]) => {
                                                     const breakInfo = teacherStats[teacher].breakDown[day];
@@ -245,13 +243,13 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                 <AccordionTrigger className="text-lg font-semibold">শ্রেণিভিত্তিক পরিসংখ্যান</AccordionTrigger>
                 <AccordionContent>
                      <div className="overflow-x-auto border rounded-lg">
-                        <Table>
+                        <Table className="border-collapse border">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ক্রমিক</TableHead>
-                                    <TableHead>শ্রেণি</TableHead>
-                                    <TableHead>বিষয়</TableHead>
-                                    <TableHead>সাপ্তাহিক ক্লাস সংখ্যা</TableHead>
+                                    <TableHead className="border">ক্রমিক</TableHead>
+                                    <TableHead className="border">শ্রেণি</TableHead>
+                                    <TableHead className="border">বিষয়</TableHead>
+                                    <TableHead className="border">সাপ্তাহিক ক্লাস সংখ্যা</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -259,11 +257,11 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                     const subjects = Object.keys(classStats[cls]).sort();
                                     if(subjects.length === 0) return null;
                                     return subjects.map((subject, index) => (
-                                        <TableRow key={`${cls}-${subject}`}>
-                                            <TableCell>{(classStatSerial++).toLocaleString('bn-BD')}</TableCell>
-                                            {index === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top">{classNamesMap[cls]}</TableCell>}
-                                            <TableCell>{subject}</TableCell>
-                                            <TableCell>{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
+                                        <TableRow key={`${cls}-${subject}`} className="border">
+                                            <TableCell className="border">{(index + 1).toLocaleString('bn-BD')}</TableCell>
+                                            {index === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top border">{classNamesMap[cls]}</TableCell>}
+                                            <TableCell className="border">{subject}</TableCell>
+                                            <TableCell className="border">{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
                                         </TableRow>
                                     ));
                                 })}
