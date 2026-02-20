@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
+import { DatePicker } from '@/components/ui/date-picker';
 
 // Digital Attendance content (from digital-attendance/page.tsx)
 const AttendanceSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
@@ -244,7 +245,7 @@ interface StudentReport {
     absentDays: number;
     totalDays: number;
 }
-const ReportSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
+const ReportSheet = ({ classId, students, startDate, endDate }: { classId: string, students: Student[], startDate?: Date, endDate?: Date }) => {
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
     const [reportData, setReportData] = useState<StudentReport[]>([]);
@@ -254,9 +255,28 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
         if (!db) return;
 
         const fetchAttendance = async () => {
-            const allAttendance = (await getAttendanceFromStorage(db)).filter(
+            setIsLoading(true);
+            const allAttendanceForClass = (await getAttendanceFromStorage(db)).filter(
                 att => att.academicYear === selectedYear && att.className === classId
             );
+
+            const allAttendance = allAttendanceForClass.filter(att => {
+                 if (!startDate || !endDate) {
+                    return true;
+                }
+                try {
+                    const attDate = new Date(att.date);
+                    const start = new Date(startDate);
+                    start.setHours(0, 0, 0, 0);
+
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999);
+
+                    return attDate >= start && attDate <= end;
+                } catch(e) {
+                    return false;
+                }
+            });
             
             const studentReports = students.map(student => {
                 let presentDays = 0;
@@ -287,7 +307,7 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
 
         fetchAttendance();
 
-    }, [classId, students, selectedYear, db]);
+    }, [classId, students, selectedYear, db, startDate, endDate]);
 
      if (isLoading) {
         return <p className="text-center p-8">লোড হচ্ছে...</p>
@@ -339,6 +359,12 @@ const ReportSheet = ({ classId, students }: { classId: string, students: Student
 
 const AttendanceReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { selectedYear } = useAcademicYear();
+    const [startDate, setStartDate] = useState<Date | undefined>(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth(), 1);
+    });
+    const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+    
     const studentsForYear = useMemo(() => {
         return allStudents.filter(student => student.academicYear === selectedYear);
     }, [allStudents, selectedYear]);
@@ -350,22 +376,34 @@ const AttendanceReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     return (
-        <Tabs defaultValue="6" className="mt-4">
-            <TabsList className="grid w-full grid-cols-5">
+        <div className="mt-4">
+             <div className="flex flex-col sm:flex-row gap-4 mb-4 p-4 border rounded-lg items-end">
+                <div className="w-full space-y-2">
+                    <Label>শুরুর তারিখ</Label>
+                    <DatePicker value={startDate} onChange={setStartDate} placeholder="শুরুর তারিখ" />
+                </div>
+                <div className="w-full space-y-2">
+                    <Label>শেষের তারিখ</Label>
+                    <DatePicker value={endDate} onChange={setEndDate} placeholder="শেষের তারিখ" />
+                </div>
+            </div>
+            <Tabs defaultValue="6">
+                <TabsList className="grid w-full grid-cols-5">
+                    {classes.map((className) => (
+                        <TabsTrigger key={className} value={className}>{classNamesMap[className]} শ্রেণি</TabsTrigger>
+                    ))}
+                </TabsList>
                 {classes.map((className) => (
-                    <TabsTrigger key={className} value={className}>{classNamesMap[className]} শ্রেণি</TabsTrigger>
+                    <TabsContent key={className} value={className}>
+                        <Card>
+                            <CardContent className="p-0">
+                                <ReportSheet classId={className} students={getStudentsByClass(className)} startDate={startDate} endDate={endDate} />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 ))}
-            </TabsList>
-            {classes.map((className) => (
-                <TabsContent key={className} value={className}>
-                    <Card>
-                        <CardContent className="p-0">
-                            <ReportSheet classId={className} students={getStudentsByClass(className)} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            ))}
-        </Tabs>
+            </Tabs>
+        </div>
     );
 };
 
