@@ -13,6 +13,7 @@ import {
   Banknote,
   Users2,
   Settings,
+  FileText,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -144,6 +145,13 @@ export function Header() {
                 >
                   <Users2 className="h-5 w-5" />
                   শিক্ষক ও কর্মচারী
+                </Link>
+                <Link
+                  href="/documents"
+                  className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-slate-100 text-slate-800 hover:bg-slate-200"
+                >
+                  <FileText className="h-5 w-5" />
+                  ডকুমেন্ট
                 </Link>
                 <Link
                   href="/settings"
