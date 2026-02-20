@@ -325,10 +325,7 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                              student.photoUrl && <Image src={student.photoUrl} alt="Student photo" width={96} height={96} className="rounded-lg border object-cover" />
                         )}
                         <div className="flex-1 text-center md:text-left space-y-2">
-                            {isLoading || !student ?
-                                <Skeleton className="h-8 w-3/4" />
-                                : <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য</DialogTitle>
-                            }
+                            <DialogTitle className="text-2xl">ছাত্র/ ছাত্রীর বেতন আদায় তথ্য</DialogTitle>
                             {isLoading || !student ? (
                                 <Skeleton className="h-4 w-1/2" />
                             ) : (
