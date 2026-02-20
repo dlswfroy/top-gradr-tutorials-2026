@@ -68,6 +68,17 @@ export default function EditStaffPage() {
         setStaff({ ...staff, [field]: value });
     };
 
+    const handleDesignationChange = (designation: string) => {
+        if (!staff) return;
+        const teacherDesignations = ['প্রধান শিক্ষক', 'প্রধান শিক্ষক (ভারপ্রাপ্ত)', 'সহকারী শিক্ষক'];
+        const staffType = teacherDesignations.includes(designation) ? 'teacher' : 'staff';
+        setStaff(prev => ({
+            ...prev!,
+            designation: designation,
+            staffType: staffType,
+        }));
+    };
+
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) {
@@ -216,20 +227,20 @@ export default function EditStaffPage() {
                           <Label htmlFor="nameEn">নাম (ইংরেজি)</Label>
                           <Input id="nameEn" name="nameEn" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
                       </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="designation">পদবি</Label>
-                          <Input id="designation" name="designation" required value={staff.designation} onChange={e => handleInputChange('designation', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="staffType">ধরণ</Label>
-                          <Select required value={staff.staffType} onValueChange={(value: 'teacher' | 'staff') => handleInputChange('staffType', value)}>
-                              <SelectTrigger id="staffType" name="staffType"><SelectValue placeholder="ধরণ নির্বাচন করুন" /></SelectTrigger>
-                              <SelectContent>
-                                  <SelectItem value="teacher">শিক্ষক</SelectItem>
-                                  <SelectItem value="staff">কর্মচারী</SelectItem>
-                              </SelectContent>
-                          </Select>
-                      </div>
+                       <div className="space-y-2">
+                            <Label htmlFor="designation">পদবি</Label>
+                            <Select required value={staff.designation} onValueChange={handleDesignationChange}>
+                                <SelectTrigger id="designation" name="designation"><SelectValue placeholder="পদবি নির্বাচন করুন" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="প্রধান শিক্ষক">প্রধান শিক্ষক</SelectItem>
+                                    <SelectItem value="প্রধান শিক্ষক (ভারপ্রাপ্ত)">প্রধান শিক্ষক (ভারপ্রাপ্ত)</SelectItem>
+                                    <SelectItem value="সহকারী শিক্ষক">সহকারী শিক্ষক</SelectItem>
+                                    <SelectItem value="অফিস সহকারী">অফিস সহকারী</SelectItem>
+                                    <SelectItem value="অফিস সহায়ক">অফিস সহায়ক</SelectItem>
+                                    <SelectItem value="আয়া">আয়া</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                        <div className="space-y-2">
                           <Label htmlFor="subject">বিষয়</Label>
                           <Input id="subject" name="subject" value={staff.subject} onChange={e => handleInputChange('subject', e.target.value)} />

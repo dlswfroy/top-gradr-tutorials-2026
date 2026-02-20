@@ -51,6 +51,16 @@ export default function AddStaffPage() {
         setStaff(prev => ({...prev, [field]: value}));
     };
 
+    const handleDesignationChange = (designation: string) => {
+        const teacherDesignations = ['প্রধান শিক্ষক', 'প্রধান শিক্ষক (ভারপ্রাপ্ত)', 'সহকারী শিক্ষক'];
+        const staffType = teacherDesignations.includes(designation) ? 'teacher' : 'staff';
+        setStaff(prev => ({
+            ...prev,
+            designation: designation,
+            staffType: staffType as 'teacher' | 'staff',
+        }));
+    };
+
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) {
@@ -162,15 +172,15 @@ export default function AddStaffPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="designation">পদবি</Label>
-                            <Input id="designation" name="designation" required value={staff.designation} onChange={e => handleInputChange('designation', e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="staffType">ধরণ</Label>
-                            <Select required value={staff.staffType} onValueChange={(value: 'teacher' | 'staff') => handleInputChange('staffType', value)}>
-                                <SelectTrigger id="staffType" name="staffType"><SelectValue placeholder="ধরণ নির্বাচন করুন" /></SelectTrigger>
+                            <Select required value={staff.designation} onValueChange={handleDesignationChange}>
+                                <SelectTrigger id="designation" name="designation"><SelectValue placeholder="পদবি নির্বাচন করুন" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="teacher">শিক্ষক</SelectItem>
-                                    <SelectItem value="staff">কর্মচারী</SelectItem>
+                                    <SelectItem value="প্রধান শিক্ষক">প্রধান শিক্ষক</SelectItem>
+                                    <SelectItem value="প্রধান শিক্ষক (ভারপ্রাপ্ত)">প্রধান শিক্ষক (ভারপ্রাপ্ত)</SelectItem>
+                                    <SelectItem value="সহকারী শিক্ষক">সহকারী শিক্ষক</SelectItem>
+                                    <SelectItem value="অফিস সহকারী">অফিস সহকারী</SelectItem>
+                                    <SelectItem value="অফিস সহায়ক">অফিস সহায়ক</SelectItem>
+                                    <SelectItem value="আয়া">আয়া</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

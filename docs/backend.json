@@ -46,7 +46,17 @@
         "employeeId": { "type": "string" },
         "nameBn": { "type": "string" },
         "nameEn": { "type": "string" },
-        "designation": { "type": "string" },
+        "designation": {
+          "type": "string",
+          "enum": [
+            "প্রধান শিক্ষক",
+            "প্রধান শিক্ষক (ভারপ্রাপ্ত)",
+            "সহকারী শিক্ষক",
+            "অফিস সহকারী",
+            "অফিস সহায়ক",
+            "আয়া"
+          ]
+        },
         "subject": { "type": "string" },
         "mobile": { "type": "string" },
         "email": { "type": "string", "format": "email" },
