@@ -106,12 +106,8 @@ const RoutineTable = ({ className, routine, showGroupInfo }: { className: string
 
 
 const ClassRoutineTab = () => {
-    const [className, setClassName] = useState('6');
-    const showGroupInfo = className === '9' || className === '10';
-
-    const selectedRoutine = useMemo(() => {
-        return routineData[className] || {};
-    }, [className]);
+    const [className, setClassName] = useState('all');
+    const classes = ['6', '7', '8', '9', '10'];
     
     return (
         <div className="space-y-6">
@@ -121,6 +117,7 @@ const ClassRoutineTab = () => {
                     <Select value={className} onValueChange={setClassName}>
                         <SelectTrigger id="class-name"><SelectValue placeholder="শ্রেণি নির্বাচন করুন" /></SelectTrigger>
                         <SelectContent>
+                           <SelectItem value="all">সকল শ্রেণি</SelectItem>
                            <SelectItem value="6">৬ষ্ঠ</SelectItem>
                            <SelectItem value="7">৭ম</SelectItem>
                            <SelectItem value="8">৮ম</SelectItem>
@@ -131,12 +128,22 @@ const ClassRoutineTab = () => {
                 </div>
             </div>
             
-            {className && (
+            {className === 'all' ? (
+                <div className="space-y-8">
+                    {classes.map(cls => (
+                        <RoutineTable 
+                            key={cls}
+                            className={cls} 
+                            routine={routineData[cls] || {}}
+                            showGroupInfo={cls === '9' || cls === '10'}
+                        />
+                    ))}
+                </div>
+            ) : (
                 <RoutineTable 
-                    key={className}
                     className={className} 
-                    routine={selectedRoutine} 
-                    showGroupInfo={showGroupInfo}
+                    routine={routineData[className] || {}}
+                    showGroupInfo={className === '9' || className === '10'}
                 />
             )}
         </div>
