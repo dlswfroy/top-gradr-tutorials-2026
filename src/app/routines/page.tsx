@@ -32,13 +32,22 @@ const parseSubjectTeacher = (cell: string): { subject: string, teacher: string |
 
 const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) => {
     const analysis = useMemo(() => {
+        const colorPalette = [
+            '#FDEDEC', '#F5EEF8', '#EAF2F8', '#D6EAF8',
+            '#D1F2EB', '#D0ECE7', '#D4EFDF', '#FCF3CF',
+            '#FDEBD0', '#FAE5D3', '#F6DDCC', '#FADBD8', 
+            '#E5E7E9', '#E8DAEF', '#D2B4DE', '#A9CCE3',
+            '#A3E4D7', '#A2D9CE', '#ABEBC6', '#F9E79F',
+            '#FAD7A0', '#F5CBA7', '#EDBB99', '#D98880'
+        ];
+
         const teacherClashes = new Set<string>();
         const consecutiveClassClashes = new Set<string>();
         const breakClashes = new Set<string>();
         
         const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] } } } = {};
         const classStats: { [cls: string]: { [subject: string]: number } } = {};
-        const teachers = new Set<string>();
+        const allIndividualTeachers = new Set<string>();
 
         const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
         const classes = Object.keys(routine);
@@ -50,17 +59,26 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                     routine[cls][day].forEach(cell => {
                         const { teacher } = parseSubjectTeacher(cell);
                         if (teacher) {
-                            teacher.split('/').forEach(t => teachers.add(t.trim()));
+                            teacher.split('/').forEach(t => {
+                                const trimmed = t.trim();
+                                if (trimmed) allIndividualTeachers.add(trimmed);
+                            });
                         }
                     });
                 }
             });
         });
 
-        teachers.forEach(t => {
+        allIndividualTeachers.forEach(t => {
             teacherStats[t] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] } };
         });
-
+        
+        const sortedTeachers = Array.from(allIndividualTeachers).sort();
+        const teacherColorMap = new Map<string, string>();
+        sortedTeachers.forEach((teacher, index) => {
+            teacherColorMap.set(teacher, colorPalette[index % colorPalette.length]);
+        });
+        
         days.forEach(day => {
             for (let periodIdx = 0; periodIdx < periodsCount; periodIdx++) {
                 const periodTeachers = new Map<string, string>();
@@ -71,6 +89,7 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                         if (teacher) {
                             teacher.split('/').forEach(t => {
                                 const trimmedTeacher = t.trim();
+                                if (!trimmedTeacher) return;
                                 if (periodTeachers.has(trimmedTeacher)) {
                                     teacherClashes.add(`${cls}-${day}-${periodIdx}`);
                                     const existingCls = periodTeachers.get(trimmedTeacher)!;
@@ -99,14 +118,14 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                         if (teacher) {
                             teacher.split('/').forEach(t => {
                                 const trimmedTeacher = t.trim();
-                                if(!teacherStats[trimmedTeacher]) {
-                                    teachers.add(trimmedTeacher);
-                                    teacherStats[trimmedTeacher] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] } };
-                                }
-                                teacherStats[trimmedTeacher].total++;
-                                teacherStats[trimmedTeacher].daily[day].push(`${subject} (${cls} শ্রেণি)`);
-                                if (periodIdx === 5) {
-                                    teacherStats[trimmedTeacher].sixthPeriods++;
+                                if (!trimmedTeacher) return;
+                                
+                                if (teacherStats[trimmedTeacher]) {
+                                    teacherStats[trimmedTeacher].total++;
+                                    teacherStats[trimmedTeacher].daily[day].push(`${subject} (${cls} শ্রেণি)`);
+                                    if (periodIdx === 5) {
+                                        teacherStats[trimmedTeacher].sixthPeriods++;
+                                    }
                                 }
                             });
                         }
@@ -116,23 +135,33 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                     consecutivePairs.forEach(([p1, p2]) => {
                         const teacher1 = parseSubjectTeacher(dayRoutine[p1]).teacher;
                         const teacher2 = parseSubjectTeacher(dayRoutine[p2]).teacher;
-                        if (teacher1 && teacher2 && teacher1.split('/')[0].trim() === teacher2.split('/')[0].trim()) {
-                            consecutiveClassClashes.add(`${cls}-${day}-${p1}`);
-                            consecutiveClassClashes.add(`${cls}-${day}-${p2}`);
+                        if (teacher1 && teacher2) {
+                            const teachers1 = teacher1.split('/').map(t => t.trim()).filter(Boolean);
+                            const teachers2 = teacher2.split('/').map(t => t.trim()).filter(Boolean);
+                            const hasOverlap = teachers1.some(t => teachers2.includes(t));
+                            if (hasOverlap) {
+                                consecutiveClassClashes.add(`${cls}-${day}-${p1}`);
+                                consecutiveClassClashes.add(`${cls}-${day}-${p2}`);
+                            }
                         }
                     });
 
                     const teacherBeforeBreak = parseSubjectTeacher(dayRoutine[2]).teacher;
                     const teacherAfterBreak = parseSubjectTeacher(dayRoutine[3]).teacher;
-                    if (teacherBeforeBreak && teacherAfterBreak && teacherBeforeBreak.split('/')[0].trim() === teacherAfterBreak.split('/')[0].trim()) {
-                        breakClashes.add(`${cls}-${day}-2`);
-                        breakClashes.add(`${cls}-${day}-3`);
+                    if (teacherBeforeBreak && teacherAfterBreak) {
+                        const teachersBefore = teacherBeforeBreak.split('/').map(t => t.trim()).filter(Boolean);
+                        const teachersAfter = teacherAfterBreak.split('/').map(t => t.trim()).filter(Boolean);
+                        const hasOverlap = teachersBefore.some(t => teachersAfter.includes(t));
+                         if (hasOverlap) {
+                            breakClashes.add(`${cls}-${day}-2`);
+                            breakClashes.add(`${cls}-${day}-3`);
+                        }
                     }
                 }
             });
         });
 
-        return { conflicts: { teacherClashes, consecutiveClassClashes, breakClashes }, stats: { teacherStats, classStats } };
+        return { conflicts: { teacherClashes, consecutiveClassClashes, breakClashes }, stats: { teacherStats, classStats }, teacherColorMap };
     }, [routine]);
 
     return analysis;
@@ -212,7 +241,7 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
 };
 
 
-const RoutineTable = ({ className, routineData, conflicts, isEditMode, onCellChange }: { className: string, routineData: any, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void }) => {
+const RoutineTable = ({ className, routineData, conflicts, isEditMode, onCellChange, teacherColorMap }: { className: string, routineData: any, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void, teacherColorMap: Map<string, string> }) => {
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
     const periods = [ { name: "১ম", time: "১০:৩০ - ১১:২০" }, { name: "২য়", time: "১১:২০ - ১২:১০" }, { name: "৩য়", time: "১২:১০ - ০১:০০" } ];
     const postBreakPeriods = [ { name: "৪র্থ", time: "০১:৪০ - ০২:৩০" }, { name: "৫ম", time: "০২:৩০ - ০৩:২০" }, { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" } ];
@@ -242,13 +271,13 @@ const RoutineTable = ({ className, routineData, conflicts, isEditMode, onCellCha
                                     <TableCell className="font-semibold border-r">{day}</TableCell>
                                     {[...Array(3)].map((_, periodIdx) => {
                                         const cellContent = (routineForClass[day] || [])[periodIdx] || '';
-                                        return <EditableCell key={`${day}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(className, day, periodIdx, value)} conflictKey={`${className}-${day}-${periodIdx}`} conflicts={conflicts} />;
+                                        return <EditableCell key={`${day}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(className, day, periodIdx, value)} conflictKey={`${className}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} />;
                                     })}
                                     <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
                                     {[...Array(3)].map((_, i) => {
                                         const periodIdx = i + 3;
                                         const cellContent = (routineForClass[day] || [])[periodIdx] || '';
-                                        return <EditableCell key={`${day}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(className, day, periodIdx, value)} conflictKey={`${className}-${day}-${periodIdx}`} conflicts={conflicts} />;
+                                        return <EditableCell key={`${day}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(className, day, periodIdx, value)} conflictKey={`${className}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} />;
                                     })}
                                 </TableRow>
                             ))}
@@ -260,7 +289,7 @@ const RoutineTable = ({ className, routineData, conflicts, isEditMode, onCellCha
     );
 };
 
-const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange }: { routineData: Record<string, Record<string, string[]>>, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void }) => {
+const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange, teacherColorMap }: { routineData: Record<string, Record<string, string[]>>, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void, teacherColorMap: Map<string, string> }) => {
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
     const classes = ['6', '7', '8', '9', '10'];
     const periods = [ { name: "১ম", time: "১০:৩০ - ১১:২০" }, { name: "২য়", time: "১১:২০ - ১২:১০" }, { name: "৩য়", time: "১২:১০ - ০১:০০" } ];
@@ -297,13 +326,13 @@ const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange
                                         <TableCell className="font-semibold border-r text-center">{classNamesMap[cls]}</TableCell>
                                         {[...Array(3)].map((_, periodIdx) => {
                                             const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
-                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} />;
+                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} />;
                                         })}
                                         <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
                                         {[...Array(3)].map((_, i) => {
                                             const periodIdx = i + 3;
                                             const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
-                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} />;
+                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} />;
                                         })}
                                     </TableRow>
                                 ))
@@ -316,7 +345,7 @@ const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange
     );
 };
 
-const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflicts }: { content: string, isEditMode: boolean, onCellChange: (value: string) => void, conflictKey: string, conflicts: any }) => {
+const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflicts, teacherColorMap }: { content: string, isEditMode: boolean, onCellChange: (value: string) => void, conflictKey: string, conflicts: any, teacherColorMap: Map<string, string> }) => {
     const isTeacherClash = conflicts.teacherClashes.has(conflictKey);
     const isConsecutiveClash = conflicts.consecutiveClassClashes.has(conflictKey);
     const isBreakClash = conflicts.breakClashes.has(conflictKey);
@@ -326,6 +355,10 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
     if (isTeacherClash) tooltipContent += 'একই সময়ে এই শিক্ষকের অন্য ক্লাসে ক্লাস রয়েছে। ';
     if (isConsecutiveClash) tooltipContent += 'একই শিক্ষকের এই ক্লাসে পরপর ক্লাস পড়েছে। ';
     if (isBreakClash) tooltipContent += 'বিরতির আগে ও পরে একই শিক্ষকের ক্লাস পড়েছে। ';
+
+    const { teacher } = parseSubjectTeacher(content);
+    const firstTeacher = teacher ? teacher.split('/')[0].trim() : null;
+    const color = firstTeacher ? teacherColorMap.get(firstTeacher) : undefined;
 
     const cellContent = isEditMode ? (
         <Input
@@ -341,7 +374,10 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <TableCell className={cn("border-r text-center p-0", { "bg-red-100 text-red-700": isConflict && !isEditMode })}>
+                    <TableCell 
+                        className={cn("border-r text-center p-0", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
+                        style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
+                    >
                         {cellContent}
                     </TableCell>
                 </TooltipTrigger>
@@ -351,7 +387,7 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
     );
 };
 
-const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange }: { routineData: any, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void }) => {
+const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange, teacherColorMap }: { routineData: any, conflicts: any, isEditMode: boolean, onCellChange: (cls: string, day: string, periodIdx: number, value: string) => void, teacherColorMap: Map<string, string> }) => {
     const [className, setClassName] = useState('all');
     
     return (
@@ -374,7 +410,7 @@ const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange }: {
             </div>
             
             {className === 'all' ? (
-                <CombinedRoutineTable routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={onCellChange} />
+                <CombinedRoutineTable routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={onCellChange} teacherColorMap={teacherColorMap} />
             ) : (
                 <RoutineTable 
                     className={className} 
@@ -382,6 +418,7 @@ const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange }: {
                     conflicts={conflicts}
                     isEditMode={isEditMode}
                     onCellChange={onCellChange}
+                    teacherColorMap={teacherColorMap}
                 />
             )}
         </div>
@@ -461,7 +498,7 @@ export default function RoutinesPage() {
         fetchData();
     }, [fetchData]);
 
-    const { conflicts, stats } = useRoutineAnalysis(routineData);
+    const { conflicts, stats, teacherColorMap } = useRoutineAnalysis(routineData);
     
     const handleCellChange = (className: string, day: string, periodIndex: number, value: string) => {
         setRoutineData(prevData => {
@@ -532,7 +569,7 @@ export default function RoutinesPage() {
                                     <TabsTrigger value="statistics">পরিসংখ্যান</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="class-routine" className="mt-4">
-                                    <ClassRoutineTab routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={handleCellChange} />
+                                    <ClassRoutineTab routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={handleCellChange} teacherColorMap={teacherColorMap!} />
                                 </TabsContent>
                                 <TabsContent value="exam-routine" className="mt-4">
                                     <ExamRoutineTab />
