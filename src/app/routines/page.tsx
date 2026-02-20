@@ -127,9 +127,8 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                         const { subject, teacher } = parseSubjectTeacher(cell);
                         if(subject) {
                             const normalizedSubject = subjectNameNormalization[subject] || subject;
-                            const mainSubject = normalizedSubject.split('/')[0].trim();
-                            if (mainSubject) {
-                               classStats[cls][mainSubject] = (classStats[cls][mainSubject] || 0) + 1;
+                            if (normalizedSubject) {
+                               classStats[cls][normalizedSubject] = (classStats[cls][normalizedSubject] || 0) + 1;
                             }
                         }
                         if (teacher) {
@@ -254,8 +253,8 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                         <Table className="border-collapse border">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="border">ক্রমিক</TableHead>
                                     <TableHead className="border">শ্রেণি</TableHead>
+                                    <TableHead className="border">ক্রমিক</TableHead>
                                     <TableHead className="border">বিষয়</TableHead>
                                     <TableHead className="border">সাপ্তাহিক ক্লাস সংখ্যা</TableHead>
                                 </TableRow>
@@ -264,13 +263,12 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                 {classes.map(cls => {
                                     const subjects = Object.keys(classStats[cls]).sort();
                                     if(subjects.length === 0) return null;
-                                    return subjects.map((subject, index) => (
+                                    return subjects.map((subject, subjectIndex) => (
                                         <TableRow key={`${cls}-${subject}`} className="border">
-                                             {index === 0 && <TableCell rowSpan={subjects.length + 1} className="font-medium align-top border"></TableCell>}
-                                            <TableCell className="border">{(index + 1).toLocaleString('bn-BD')}</TableCell>
-                                            {index === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top border">{classNamesMap[cls]}</TableCell>}
+                                            {subjectIndex === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
+                                            <TableCell className="border text-center">{(subjectIndex + 1).toLocaleString('bn-BD')}</TableCell>
                                             <TableCell className="border">{subject}</TableCell>
-                                            <TableCell className="border">{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
+                                            <TableCell className="border text-center">{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
                                         </TableRow>
                                     ));
                                 })}
@@ -407,26 +405,26 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
         <Input
             value={content}
             onChange={(e) => onCellChange(e.target.value)}
-            className={cn("w-full h-full p-1 text-xs border-transparent rounded-none focus:bg-amber-100", { "bg-red-100": isConflict })}
+            className={cn("w-full h-full p-1 text-xs border-transparent rounded-none focus:bg-amber-100 text-center", { "bg-red-100": isConflict })}
         />
     ) : (
-        content
+        <div className="p-2 text-xs text-center">{content || <>&nbsp;</>}</div>
     );
 
     return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <TableCell 
-                        className={cn("border-r text-center p-0", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
-                        style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
-                    >
+        <TableCell 
+            className={cn("border-r p-0", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
+            style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
+        >
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger className="w-full h-full">
                         {cellContent}
-                    </TableCell>
-                </TooltipTrigger>
-                {isConflict && <TooltipContent><p>{tooltipContent}</p></TooltipContent>}
-            </Tooltip>
-        </TooltipProvider>
+                    </TooltipTrigger>
+                    {isConflict && <TooltipContent><p>{tooltipContent}</p></TooltipContent>}
+                </Tooltip>
+            </TooltipProvider>
+        </TableCell>
     );
 };
 
