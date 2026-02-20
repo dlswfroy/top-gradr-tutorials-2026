@@ -261,14 +261,14 @@ export default function EditStudentPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">প্রাতিষ্ঠানিক তথ্য</h3>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                       <div className="space-y-2">
-                          <Label htmlFor="roll"/>
+                          <Label htmlFor="roll">রোল</Label>
                           <Input id="roll" name="roll" type="number" required value={student.roll || ''} onChange={e => handleInputChange('roll', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="academic-year"/>
+                          <Label htmlFor="academic-year">শিক্ষাবর্ষ</Label>
                           <Select required value={student.academicYear || ''} onValueChange={value => handleInputChange('academicYear', value)}>
                               <SelectTrigger id="academic-year" name="academic-year">
-                                  <SelectValue />
+                                  <SelectValue placeholder="শিক্ষাবর্ষ" />
                               </SelectTrigger>
                               <SelectContent>
                                   {availableYears.map(year => (
@@ -278,10 +278,10 @@ export default function EditStudentPage() {
                           </Select>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="class"/>
+                          <Label htmlFor="class">শ্রেণি</Label>
                           <Select required value={student.className} onValueChange={value => handleInputChange('className', value)}>
                               <SelectTrigger id="class" name="class">
-                                  <SelectValue />
+                                  <SelectValue placeholder="শ্রেণি" />
                               </SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="6">৬ষ্ঠ</SelectItem>
@@ -293,10 +293,10 @@ export default function EditStudentPage() {
                           </Select>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="group"/>
+                          <Label htmlFor="group">গ্রুপ</Label>
                           <Select value={student.group || ''} onValueChange={value => handleInputChange('group', value)}>
                               <SelectTrigger id="group" name="group">
-                                  <SelectValue />
+                                  <SelectValue placeholder="গ্রুপ" />
                               </SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="science">বিজ্ঞান</SelectItem>
@@ -307,10 +307,10 @@ export default function EditStudentPage() {
                       </div>
                       {(student.className === '9' || student.className === '10') && (
                           <div className="space-y-2">
-                              <Label htmlFor="optional-subject"/>
+                              <Label htmlFor="optional-subject">ঐচ্ছিক বিষয়</Label>
                               <Select value={student.optionalSubject || ''} onValueChange={value => handleInputChange('optionalSubject', value)} disabled={optionalSubjects.length === 0}>
                                   <SelectTrigger id="optional-subject" name="optional-subject">
-                                      <SelectValue />
+                                      <SelectValue placeholder="ঐচ্ছিক বিষয়" />
                                   </SelectTrigger>
                                   <SelectContent>
                                       {optionalSubjects.map(sub => (
@@ -327,25 +327,25 @@ export default function EditStudentPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">শিক্ষার্থীর তথ্য</h3>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
-                          <Label htmlFor="student-name-bn"/>
+                          <Label htmlFor="student-name-bn">নাম (বাংলা)</Label>
                           <Input id="student-name-bn" name="student-name-bn" required value={student.studentNameBn || ''} onChange={e => handleInputChange('studentNameBn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="student-name-en"/>
+                          <Label htmlFor="student-name-en">নাম (ইংরেজি)</Label>
                           <Input id="student-name-en" name="student-name-en" value={student.studentNameEn || ''} onChange={e => handleInputChange('studentNameEn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="dob"/>
-                          <DatePicker value={student.dob ? new Date(student.dob) : undefined} onChange={date => handleInputChange('dob', date)} />
+                          <Label htmlFor="dob">জন্ম তারিখ</Label>
+                          <DatePicker value={student.dob ? new Date(student.dob) : undefined} onChange={date => handleInputChange('dob', date)} placeholder="জন্ম তারিখ" />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="birth-reg-no"/>
+                          <Label htmlFor="birth-reg-no">জন্ম নিবন্ধন নম্বর</Label>
                           <Input id="birth-reg-no" name="birth-reg-no" value={student.birthRegNo || ''} onChange={e => handleInputChange('birthRegNo', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="gender"/>
+                          <Label htmlFor="gender">লিঙ্গ</Label>
                           <Select value={student.gender || ''} onValueChange={value => handleInputChange('gender', value)}>
-                              <SelectTrigger id="gender" name="gender"><SelectValue /></SelectTrigger>
+                              <SelectTrigger id="gender" name="gender"><SelectValue placeholder="লিঙ্গ" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="male">পুরুষ</SelectItem>
                                   <SelectItem value="female">মহিলা</SelectItem>
@@ -354,9 +354,9 @@ export default function EditStudentPage() {
                           </Select>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="religion"/>
+                          <Label htmlFor="religion">ধর্ম</Label>
                           <Select value={student.religion || ''} onValueChange={value => handleInputChange('religion', value)}>
-                              <SelectTrigger id="religion" name="religion"><SelectValue /></SelectTrigger>
+                              <SelectTrigger id="religion" name="religion"><SelectValue placeholder="ধর্ম" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="islam">ইসলাম</SelectItem>
                                   <SelectItem value="hinduism">হিন্দু</SelectItem>
@@ -392,27 +392,27 @@ export default function EditStudentPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">অভিভাবকের তথ্য</h3>
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className="space-y-2">
-                          <Label htmlFor="father-name-bn"/>
+                          <Label htmlFor="father-name-bn">পিতার নাম (বাংলা)</Label>
                           <Input id="father-name-bn" name="father-name-bn" required value={student.fatherNameBn || ''} onChange={e => handleInputChange('fatherNameBn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="father-name-en"/>
+                          <Label htmlFor="father-name-en">পিতার নাম (ইংরেজি)</Label>
                           <Input id="father-name-en" name="father-name-en" value={student.fatherNameEn || ''} onChange={e => handleInputChange('fatherNameEn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="father-nid"/>
+                            <Label htmlFor="father-nid">পিতার NID</Label>
                             <Input id="father-nid" name="father-nid" value={student.fatherNid || ''} onChange={e => handleInputChange('fatherNid', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="mother-name-bn"/>
+                          <Label htmlFor="mother-name-bn">মাতার নাম (বাংলা)</Label>
                           <Input id="mother-name-bn" name="mother-name-bn" required value={student.motherNameBn || ''} onChange={e => handleInputChange('motherNameBn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="mother-name-en"/>
+                          <Label htmlFor="mother-name-en">মাতার নাম (ইংরেজি)</Label>
                           <Input id="mother-name-en" name="mother-name-en" value={student.motherNameEn || ''} onChange={e => handleInputChange('motherNameEn', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="mother-nid"/>
+                            <Label htmlFor="mother-nid">মাতার NID</Label>
                             <Input id="mother-nid" name="mother-nid" value={student.motherNid || ''} onChange={e => handleInputChange('motherNid', e.target.value)} />
                         </div>
                    </div>
@@ -422,11 +422,11 @@ export default function EditStudentPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">যোগাযোগের তথ্য</h3>
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="space-y-2">
-                          <Label htmlFor="guardian-mobile"/>
+                          <Label htmlFor="guardian-mobile">অভিভাবকের মোবাইল নম্বর</Label>
                           <Input id="guardian-mobile" name="guardian-mobile" value={student.guardianMobile || ''} onChange={e => handleInputChange('guardianMobile', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="student-mobile"/>
+                          <Label htmlFor="student-mobile">শিক্ষার্থীর মোবাইল নম্বর</Label>
                           <Input id="student-mobile" name="student-mobile" value={student.studentMobile || ''} onChange={e => handleInputChange('studentMobile', e.target.value)} />
                       </div>
                    </div>
@@ -436,24 +436,24 @@ export default function EditStudentPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">বর্তমান ঠিকানা</h3>
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="present-village"/>
+                            <Label htmlFor="present-village">গ্রাম/মহল্লা</Label>
                             <Input id="present-village" name="present-village" value={student.presentVillage || ''} onChange={e => handleInputChange('presentVillage', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="present-union"/>
+                            <Label htmlFor="present-union">ইউনিয়ন/ওয়ার্ড</Label>
                             <Input id="present-union" name="present-union" value={student.presentUnion || ''} onChange={e => handleInputChange('presentUnion', e.target.value)} />
                         </div>
                         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="present-post-office"/>
+                                <Label htmlFor="present-post-office">ডাকঘর</Label>
                                 <Input id="present-post-office" name="present-post-office" value={student.presentPostOffice || ''} onChange={e => handleInputChange('presentPostOffice', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="present-upazila"/>
+                                <Label htmlFor="present-upazila">উপজেলা/থানা</Label>
                                 <Input id="present-upazila" name="present-upazila" value={student.presentUpazila || ''} onChange={e => handleInputChange('presentUpazila', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="present-district"/>
+                                <Label htmlFor="present-district">জেলা</Label>
                                 <Input id="present-district" name="present-district" value={student.presentDistrict || ''} onChange={e => handleInputChange('presentDistrict', e.target.value)} />
                             </div>
                         </div>
@@ -475,24 +475,24 @@ export default function EditStudentPage() {
                     </div>
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="permanent-village"/>
+                            <Label htmlFor="permanent-village">গ্রাম/মহল্লা</Label>
                             <Input id="permanent-village" name="permanent-village" value={student.permanentVillage || ''} onChange={e => handleInputChange('permanentVillage', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="permanent-union"/>
+                            <Label htmlFor="permanent-union">ইউনিয়ন/ওয়ার্ড</Label>
                             <Input id="permanent-union" name="permanent-union" value={student.permanentUnion || ''} onChange={e => handleInputChange('permanentUnion', e.target.value)} />
                         </div>
                         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="permanent-post-office"/>
+                                <Label htmlFor="permanent-post-office">ডাকঘর</Label>
                                 <Input id="permanent-post-office" name="permanent-post-office" value={student.permanentPostOffice || ''} onChange={e => handleInputChange('permanentPostOffice', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="permanent-upazila"/>
+                                <Label htmlFor="permanent-upazila">উপজেলা/থানা</Label>
                                 <Input id="permanent-upazila" name="permanent-upazila" value={student.permanentUpazila || ''} onChange={e => handleInputChange('permanentUpazila', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="permanent-district"/>
+                                <Label htmlFor="permanent-district">জেলা</Label>
                                 <Input id="permanent-district" name="permanent-district" value={student.permanentDistrict || ''} onChange={e => handleInputChange('permanentDistrict', e.target.value)} />
                             </div>
                         </div>

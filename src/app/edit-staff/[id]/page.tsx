@@ -205,25 +205,25 @@ export default function EditStaffPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">সাধারণ তথ্য</h3>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
-                          <Label htmlFor="employeeId"/>
+                          <Label htmlFor="employeeId">কর্মচারী আইডি</Label>
                           <Input id="employeeId" name="employeeId" required value={staff.employeeId} onChange={e => handleInputChange('employeeId', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="nameBn"/>
+                          <Label htmlFor="nameBn">নাম (বাংলা)</Label>
                           <Input id="nameBn" name="nameBn" required value={staff.nameBn} onChange={e => handleInputChange('nameBn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="nameEn"/>
+                          <Label htmlFor="nameEn">নাম (ইংরেজি)</Label>
                           <Input id="nameEn" name="nameEn" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="designation"/>
+                          <Label htmlFor="designation">পদবি</Label>
                           <Input id="designation" name="designation" required value={staff.designation} onChange={e => handleInputChange('designation', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="staffType"/>
+                          <Label htmlFor="staffType">ধরণ</Label>
                           <Select required value={staff.staffType} onValueChange={(value: 'teacher' | 'staff') => handleInputChange('staffType', value)}>
-                              <SelectTrigger id="staffType" name="staffType"><SelectValue /></SelectTrigger>
+                              <SelectTrigger id="staffType" name="staffType"><SelectValue placeholder="ধরণ নির্বাচন করুন" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="teacher">শিক্ষক</SelectItem>
                                   <SelectItem value="staff">কর্মচারী</SelectItem>
@@ -231,15 +231,15 @@ export default function EditStaffPage() {
                           </Select>
                       </div>
                        <div className="space-y-2">
-                          <Label htmlFor="subject"/>
+                          <Label htmlFor="subject">বিষয়</Label>
                           <Input id="subject" name="subject" value={staff.subject} onChange={e => handleInputChange('subject', e.target.value)} />
                       </div>
                        <div className="space-y-2">
-                          <Label htmlFor="joinDate"/>
-                          <DatePicker value={staff.joinDate} onChange={date => handleInputChange('joinDate', date as Date)} />
+                          <Label htmlFor="joinDate">যোগদানের তারিখ</Label>
+                          <DatePicker value={staff.joinDate} onChange={date => handleInputChange('joinDate', date as Date)} placeholder="যোগদানের তারিখ" />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="education"/>
+                          <Label htmlFor="education">শিক্ষাগত যোগ্যতা</Label>
                           <Input id="education" name="education" value={staff.education} onChange={e => handleInputChange('education', e.target.value)} />
                       </div>
                       <div className="flex items-center space-x-2">
@@ -253,15 +253,15 @@ export default function EditStaffPage() {
                   <h3 className="font-semibold text-lg border-b pb-2">যোগাযোগ ও অন্যান্য</h3>
                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <div className="space-y-2">
-                          <Label htmlFor="mobile"/>
+                          <Label htmlFor="mobile">মোবাইল</Label>
                           <Input id="mobile" name="mobile" required value={staff.mobile} onChange={e => handleInputChange('mobile', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="email"/>
+                          <Label htmlFor="email">ইমেইল</Label>
                           <Input id="email" name="email" type="email" value={staff.email} onChange={e => handleInputChange('email', e.target.value)} />
                       </div>
                       <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="address"/>
+                          <Label htmlFor="address">ঠিকানা</Label>
                           <Textarea id="address" name="address" value={staff.address} onChange={e => handleInputChange('address', e.target.value)} />
                       </div>
                    </div>

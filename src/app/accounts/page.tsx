@@ -198,7 +198,7 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="date">তারিখ</Label>
-                            <DatePicker value={date} onChange={setDate} />
+                            <DatePicker value={date} onChange={setDate} placeholder="তারিখ" />
                         </div>
                         <div className="space-y-2">
                              <Label>লেনদেনের ধরণ</Label>
@@ -216,7 +216,7 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
                          <div className="space-y-2">
                             <Label htmlFor="account-head">খাত</Label>
                             <Select value={accountHead} onValueChange={setAccountHead}>
-                                <SelectTrigger id="account-head"><SelectValue /></SelectTrigger>
+                                <SelectTrigger id="account-head"><SelectValue placeholder="খাত নির্বাচন করুন" /></SelectTrigger>
                                 <SelectContent>
                                     {(type === 'income' ? incomeHeads : expenseHeads).map(head => (
                                         <SelectItem key={head} value={head}>{head}</SelectItem>
