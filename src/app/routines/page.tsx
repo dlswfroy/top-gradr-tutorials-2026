@@ -45,7 +45,7 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
         const consecutiveClassClashes = new Set<string>();
         const breakClashes = new Set<string>();
         
-        const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] } } } = {};
+        const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] }, beforeBreak: number, afterBreak: number } } = {};
         const classStats: { [cls: string]: { [subject: string]: number } } = {};
         const allIndividualTeachers = new Set<string>();
 
@@ -70,7 +70,7 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
         });
 
         allIndividualTeachers.forEach(t => {
-            teacherStats[t] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] } };
+            teacherStats[t] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] }, beforeBreak: 0, afterBreak: 0 };
         });
         
         const sortedTeachers = Array.from(allIndividualTeachers).sort();
@@ -125,6 +125,11 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                     teacherStats[trimmedTeacher].daily[day].push(`${subject} (${cls} শ্রেণি)`);
                                     if (periodIdx === 5) {
                                         teacherStats[trimmedTeacher].sixthPeriods++;
+                                    }
+                                    if (periodIdx < 3) {
+                                        teacherStats[trimmedTeacher].beforeBreak++;
+                                    } else {
+                                        teacherStats[trimmedTeacher].afterBreak++;
                                     }
                                 }
                             });
@@ -184,6 +189,8 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                 <TableRow>
                                     <TableHead>শিক্ষকের নাম</TableHead>
                                     <TableHead>মোট ক্লাস</TableHead>
+                                    <TableHead>বিরতির আগে</TableHead>
+                                    <TableHead>বিরতির পরে</TableHead>
                                     <TableHead>৬ষ্ঠ পিরিয়ডে ক্লাস</TableHead>
                                     <TableHead>দিনভিত্তিক ক্লাস</TableHead>
                                 </TableRow>
@@ -193,6 +200,8 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                     <TableRow key={teacher}>
                                         <TableCell className="font-medium">{teacher}</TableCell>
                                         <TableCell>{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell>{teacherStats[teacher].beforeBreak.toLocaleString('bn-BD')}</TableCell>
+                                        <TableCell>{teacherStats[teacher].afterBreak.toLocaleString('bn-BD')}</TableCell>
                                         <TableCell>{teacherStats[teacher].sixthPeriods.toLocaleString('bn-BD')}</TableCell>
                                         <TableCell>
                                             <ul className="list-disc list-inside text-xs">
