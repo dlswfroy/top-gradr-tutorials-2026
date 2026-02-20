@@ -29,7 +29,7 @@ const routineData: Record<string, Record<string, string[]>> = {
     },
     '8': {
         'রবিবার': ['বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর', 'বিজ্ঞান - শান্তি', 'বাংলা ১ম - ওবায়দা', 'বাও বি - আনিছুর'],
-        'সোমবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা'],
+        'সোমবার': ['বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'বাংলা ২য় - যুধিষ্ঠिर', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা'],
         'মঙ্গলবার': ['বাংলা ২য় - যুধিষ্ঠির', 'শারীরিক - নীলা', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা'],
         'বুধবার': ['গণিত - ধনঞ্জয়', 'বাংলা ১ম - ওবায়দা', 'কৃষি - মাহাবুব', 'ধর্ম - মাহাবুব/নীলা', 'বাংলা ২য় - যুধিষ্ঠির', 'আইসিটি - শারমিন'],
         'বৃহস্পতিবার': ['শারীরিক - নীলা', 'কৃষি - মাহাবুব', 'গণিত - ধনঞ্জয়', 'কৃষি - মাহাবুব', 'ইংরেজী ১ম - আরিফুর', 'বাও বি/বিজ্ঞান - আনিছুর/শান্তি'],
@@ -106,77 +106,6 @@ const RoutineTable = ({ className, routine, showGroupInfo }: { className: string
 
 
 const ClassRoutineTab = () => {
-    const [className, setClassName] = useState('');
-    const [group, setGroup] = useState('');
-    const [currentRoutine, setCurrentRoutine] = useState<any>(null);
-
-    const showGroupSelector = useMemo(() => className === '9' || className === '10', [className]);
-
-    const handleViewRoutine = () => {
-        if (!className) {
-            setCurrentRoutine(null);
-            return;
-        }
-        if (showGroupSelector && !group) {
-             setCurrentRoutine(null);
-            return;
-        }
-        
-        // @ts-ignore
-        const routine = routineData[className];
-        setCurrentRoutine(routine);
-    }
-
-    return (
-        <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
-                 <div className="space-y-2 flex-1">
-                    <Label htmlFor="class">শ্রেণি</Label>
-                    <Select value={className} onValueChange={(value) => { setClassName(value); setGroup(''); setCurrentRoutine(null);}}>
-                        <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন করুন" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="6">৬ষ্ঠ</SelectItem>
-                            <SelectItem value="7">৭ম</SelectItem>
-                            <SelectItem value="8">৮ম</SelectItem>
-                            <SelectItem value="9">৯ম</SelectItem>
-                            <SelectItem value="10">১০ম</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                 {showGroupSelector && (
-                    <div className="space-y-2 flex-1">
-                        <Label htmlFor="group">গ্রুপ</Label>
-                        <Select value={group} onValueChange={(value) => { setGroup(value); setCurrentRoutine(null); }}>
-                            <SelectTrigger id="group"><SelectValue placeholder="গ্রুপ নির্বাচন করুন" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="science">বিজ্ঞান</SelectItem>
-                                <SelectItem value="arts">মানবিক</SelectItem>
-                                <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
-                <div className="flex items-end">
-                     <Button onClick={handleViewRoutine}>রুটিন দেখুন</Button>
-                </div>
-            </div>
-
-            {currentRoutine ? (
-                <RoutineTable 
-                    className={className} 
-                    routine={currentRoutine}
-                    showGroupInfo={showGroupSelector}
-                />
-            ) : (
-                <div className="text-center text-muted-foreground p-8 border rounded-lg">
-                    অনুগ্রহ করে শ্রেণি এবং গ্রুপ (প্রযোজ্য ক্ষেত্রে) নির্বাচন করে "রুটিন দেখুন" বাটনে ক্লিক করুন।
-                </div>
-            )}
-        </div>
-    );
-};
-
-const FullRoutineTab = () => {
     const classNames = ['6', '7', '8', '9', '10'];
 
     return (
@@ -249,15 +178,11 @@ export default function RoutinesPage() {
                     </CardHeader>
                     <CardContent>
                         {isClient ? (
-                            <Tabs defaultValue="full-routine">
-                                <TabsList className="grid w-full grid-cols-3">
-                                    <TabsTrigger value="full-routine">সকল শ্রেণির রুটিন</TabsTrigger>
+                            <Tabs defaultValue="class-routine">
+                                <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="class-routine">ক্লাস রুটিন</TabsTrigger>
                                     <TabsTrigger value="exam-routine">পরীক্ষার রুটিন</TabsTrigger>
                                 </TabsList>
-                                <TabsContent value="full-routine" className="mt-4">
-                                    <FullRoutineTab />
-                                </TabsContent>
                                 <TabsContent value="class-routine" className="mt-4">
                                     <ClassRoutineTab />
                                 </TabsContent>
@@ -267,9 +192,8 @@ export default function RoutinesPage() {
                             </Tabs>
                         ) : (
                            <div className="space-y-4">
-                               <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                               <div className="grid w-full grid-cols-2 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
-                                    <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                 </div>
                                 <div className="p-4 border rounded-lg">
