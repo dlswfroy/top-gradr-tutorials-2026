@@ -74,9 +74,9 @@ export default function TestimonialPage() {
 
     return (
         <div className="bg-gray-100 p-8 font-body">
-            <div className="fixed top-4 right-4 no-print">
-                <Button onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" />
+            <div className="fixed top-8 right-8 z-50 no-print">
+                <Button onClick={() => window.print()} size="lg" className="shadow-lg">
+                    <Printer className="mr-2 h-5 w-5" />
                     প্রিন্ট করুন
                 </Button>
             </div>
@@ -120,10 +120,10 @@ export default function TestimonialPage() {
                 )}
                 
                 {/* Body Section */}
-                <main className="px-10 py-6 z-10 relative text-justify flex-grow">
+                <main className="px-10 py-6 z-10 relative text-justify flex-grow leading-loose">
                     <h2 className="text-2xl font-bold text-center underline mb-6">প্রত্যয়ন পত্র</h2>
 
-                    <p className="text-base leading-10">
+                    <p className="text-base">
                         এই মর্মে প্রত্যয়ন করা যাচ্ছে যে, <span className="font-semibold">{student.studentNameBn}</span>, 
                         পিতা: <span className="font-semibold">{student.fatherNameBn}</span>, 
                         মাতা: <span className="font-semibold">{student.motherNameBn}</span>, 
@@ -135,11 +135,11 @@ export default function TestimonialPage() {
                         তার শ্রেণি রোল নম্বর <span className="font-semibold">{toBengaliNumber(student.roll)}</span> এবং জন্ম তারিখ <span className="font-semibold">{studentDob}</span>।
                     </p>
 
-                    <p className="text-base mt-6 leading-10">
+                    <p className="text-base mt-6">
                         আমার জানামতে সে রাষ্ট্রবিরোধী বা আইন শৃঙ্খলা পরিপন্থী কোনো কাজের সাথে জড়িত নয়। তার স্বভাব এবং চরিত্র অত্যন্ত প্রশংসনীয়। সে বিদ্যালয়ের সকল নিয়ম-কানুন মেনে চলে।
                     </p>
 
-                    <p className="text-base mt-6 leading-10">
+                    <p className="text-base mt-6">
                         আমি তার উজ্জ্বল ভবিষ্যৎ ও জীবনের সর্বাঙ্গীণ উন্নতি কামনা করি।
                     </p>
                 </main>
