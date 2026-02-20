@@ -18,13 +18,16 @@ import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { FilePen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { subjectNameNormalization } from '@/lib/subjects';
 
 
 const parseSubjectTeacher = (cell: string): { subject: string, teacher: string | null } => {
-    if (!cell || !cell.includes(' - ')) {
-        return { subject: cell, teacher: null };
+    if (!cell) return { subject: '', teacher: null };
+    const trimmedCell = cell.trim();
+    if (!trimmedCell.includes(' - ')) {
+        return { subject: trimmedCell, teacher: null };
     }
-    const parts = cell.split(' - ');
+    const parts = trimmedCell.split(' - ');
     const teacher = parts.pop()?.trim() || null;
     const subject = parts.join(' - ').trim();
     return { subject, teacher };
@@ -45,7 +48,7 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
         const consecutiveClassClashes = new Set<string>();
         const breakClashes = new Set<string>();
         
-        const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] }, beforeBreak: number, afterBreak: number } } = {};
+        const teacherStats: { [teacher: string]: { total: number, sixthPeriods: number, daily: { [day: string]: string[] }, breakDown: { [day: string]: { before: number, after: number }} } } = {};
         const classStats: { [cls: string]: { [subject: string]: number } } = {};
         const allIndividualTeachers = new Set<string>();
 
@@ -70,7 +73,18 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
         });
 
         allIndividualTeachers.forEach(t => {
-            teacherStats[t] = { total: 0, sixthPeriods: 0, daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] }, beforeBreak: 0, afterBreak: 0 };
+            teacherStats[t] = { 
+                total: 0, 
+                sixthPeriods: 0, 
+                daily: { 'রবিবার': [], 'সোমবার': [], 'মঙ্গলবার': [], 'বুধবার': [], 'বৃহস্পতিবার': [] },
+                breakDown: { 
+                    'রবিবার': { before: 0, after: 0 }, 
+                    'সোমবার': { before: 0, after: 0 }, 
+                    'মঙ্গলবার': { before: 0, after: 0 }, 
+                    'বুধবার': { before: 0, after: 0 }, 
+                    'বৃহস্পতিবার': { before: 0, after: 0 } 
+                } 
+            };
         });
         
         const sortedTeachers = Array.from(allIndividualTeachers).sort();
@@ -112,8 +126,11 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                     dayRoutine.forEach((cell, periodIdx) => {
                         const { subject, teacher } = parseSubjectTeacher(cell);
                         if(subject) {
-                             const mainSubject = subject.split('/')[0].trim();
-                            classStats[cls][mainSubject] = (classStats[cls][mainSubject] || 0) + 1;
+                            const normalizedSubject = subjectNameNormalization[subject] || subject;
+                            const mainSubject = normalizedSubject.split('/')[0].trim();
+                            if (mainSubject) {
+                               classStats[cls][mainSubject] = (classStats[cls][mainSubject] || 0) + 1;
+                            }
                         }
                         if (teacher) {
                             teacher.split('/').forEach(t => {
@@ -127,9 +144,9 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                         teacherStats[trimmedTeacher].sixthPeriods++;
                                     }
                                     if (periodIdx < 3) {
-                                        teacherStats[trimmedTeacher].beforeBreak++;
+                                        teacherStats[trimmedTeacher].breakDown[day].before++;
                                     } else {
-                                        teacherStats[trimmedTeacher].afterBreak++;
+                                        teacherStats[trimmedTeacher].breakDown[day].after++;
                                     }
                                 }
                             });
@@ -178,6 +195,8 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
     const classes = Object.keys(classStats).sort((a,b) => parseInt(a) - parseInt(b));
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
+    let classStatSerial = 1;
+
     return (
         <Accordion type="multiple" className="w-full space-y-4">
             <AccordionItem value="teacher-stats">
@@ -187,27 +206,32 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>ক্রমিক</TableHead>
                                     <TableHead>শিক্ষকের নাম</TableHead>
                                     <TableHead>মোট ক্লাস</TableHead>
-                                    <TableHead>বিরতির আগে</TableHead>
-                                    <TableHead>বিরতির পরে</TableHead>
-                                    <TableHead>৬ষ্ঠ পিরিয়ডে ক্লাস</TableHead>
-                                    <TableHead>দিনভিত্তিক ক্লাস</TableHead>
+                                    <TableHead>৬ষ্ঠ পিরিয়ডে</TableHead>
+                                    <TableHead>দিনভিত্তিক ক্লাস (বিরতির আগে, পরে)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {teachers.map(teacher => (
+                                {teachers.map((teacher, index) => (
                                     <TableRow key={teacher}>
+                                        <TableCell>{(index + 1).toLocaleString('bn-BD')}</TableCell>
                                         <TableCell className="font-medium">{teacher}</TableCell>
                                         <TableCell>{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell>{teacherStats[teacher].beforeBreak.toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell>{teacherStats[teacher].afterBreak.toLocaleString('bn-BD')}</TableCell>
                                         <TableCell>{teacherStats[teacher].sixthPeriods.toLocaleString('bn-BD')}</TableCell>
                                         <TableCell>
-                                            <ul className="list-disc list-inside text-xs">
-                                                {Object.entries(teacherStats[teacher].daily).map(([day, classes]) => (
-                                                    (classes as string[]).length > 0 && <li key={day}><strong>{day}:</strong> {(classes as string[]).length.toLocaleString('bn-BD')}টি</li>
-                                                ))}
+                                            <ul className="list-disc list-inside text-xs space-y-1">
+                                                {Object.entries(teacherStats[teacher].daily).map(([day, classes]) => {
+                                                    const breakInfo = teacherStats[teacher].breakDown[day];
+                                                    return (classes as string[]).length > 0 && (
+                                                        <li key={day}>
+                                                            <strong>{day}:</strong> {(classes as string[]).length.toLocaleString('bn-BD')}টি 
+                                                            ({`আগে: ${breakInfo.before.toLocaleString('bn-BD')}, `}
+                                                            {`পরে: ${breakInfo.after.toLocaleString('bn-BD')}`})
+                                                        </li>
+                                                    )
+                                                })}
                                             </ul>
                                         </TableCell>
                                     </TableRow>
@@ -224,6 +248,7 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>ক্রমিক</TableHead>
                                     <TableHead>শ্রেণি</TableHead>
                                     <TableHead>বিষয়</TableHead>
                                     <TableHead>সাপ্তাহিক ক্লাস সংখ্যা</TableHead>
@@ -232,8 +257,10 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             <TableBody>
                                 {classes.map(cls => {
                                     const subjects = Object.keys(classStats[cls]).sort();
+                                    if(subjects.length === 0) return null;
                                     return subjects.map((subject, index) => (
                                         <TableRow key={`${cls}-${subject}`}>
+                                            <TableCell>{(classStatSerial++).toLocaleString('bn-BD')}</TableCell>
                                             {index === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top">{classNamesMap[cls]}</TableCell>}
                                             <TableCell>{subject}</TableCell>
                                             <TableCell>{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
