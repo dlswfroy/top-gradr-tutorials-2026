@@ -62,7 +62,7 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col p-0">
-            <SheetHeader className="p-4 border-b">
+            <SheetHeader className="p-4 border-b bg-red-100">
                 <SheetTitle className="sr-only"></SheetTitle>
                 <SheetDescription className="sr-only">
                     
