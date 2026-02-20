@@ -4,7 +4,7 @@ import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, FilePlus } from 'lucide-react';
 
 export default function DocumentsPage() {
   return (
@@ -14,9 +14,6 @@ export default function DocumentsPage() {
         <Card>
             <CardHeader>
                 <CardTitle>ডকুমেন্ট</CardTitle>
-                <CardDescription>
-                    এখানে প্রয়োজনীয় ডকুমেন্ট ও ফাইল জেনারেট করুন।
-                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -35,6 +32,25 @@ export default function DocumentsPage() {
                                 <Button className="w-full">
                                     শিক্ষার্থী তালিকা দেখুন
                                     <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardFooter>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>খালি প্যাড</CardTitle>
+                            <CardDescription>প্রতিষ্ঠানের প্যাডে কাস্টম ডকুমেন্ট তৈরি ও প্রিন্ট করুন।</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <p className="text-sm text-muted-foreground">
+                               যেকোনো ধরনের কাস্টম চিঠি বা ডকুমেন্ট তৈরি করতে প্রতিষ্ঠানের প্যাড ব্যবহার করুন।
+                           </p>
+                        </CardContent>
+                         <CardFooter>
+                            <Link href="/documents/custom-pad" className="w-full">
+                                <Button className="w-full">
+                                    প্যাড খুলুন
+                                    <FilePlus className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
                         </CardFooter>
