@@ -45,19 +45,12 @@ const routineData: Record<string, Record<string, string[]>> = {
         'রবিবার': ['আইসিটি - শারমিন', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাংলা ২য় - যুধিষ্ঠির', 'ইংরেজী ১ম - আরিফুর', 'বাংলা ১ম - ওবায়দা', 'গণিত - ধনঞ্জয়'],
         'সোমবার': ['আইসিটি - শারমিন', 'ধর্ম - মাহাবুব/নীলা', 'জীব/পৌর - শান্তি/জান্নাতুন', 'বাও বি - জান্নাতুন', 'গণিত - ধনঞ্জয়', 'আইসিটি - শারমিন'],
         'মঙ্গলবার': ['আইসিটি - শারমিন', 'ইংরেজী ২য় - আরিফুর', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ২য় - যুধিষ্ঠির', 'জীব/পৌর - শান্তি/জান্নাতুন', 'কৃষি - জান্নাতুন'],
-        'বুধবার': ['আইসিটি - শারমিন', 'বাংলা ১ম - ওবায়দা', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ১ম - ওবায়দা', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর'],
+        'Wednesday': ['আইসিটি - শারমিন', 'বাংলা ১ম - ওবায়দা', 'বাংলা ২য় - যুধিষ্ঠির', 'বাংলা ১ম - ওবায়দা', 'ধর্ম - মাহাবুব/নীলা', 'ইংরেজী ১ম - আরিফুর'],
         'বৃহস্পতিবার': ['বাংলা ১ম - ওবায়দা', 'ইংরেজী ১ম - আরিফুর', 'কৃষি - মাহাবুব', 'বাংলা ২য় - যুধিষ্ঠির', 'ধর্ম - মাহাবুব/নীলা', 'আইসিটি - শারমিন'],
     },
 };
 
-
-const ClassRoutineTab = () => {
-    const [className, setClassName] = useState('');
-    const [group, setGroup] = useState('');
-    const [currentRoutine, setCurrentRoutine] = useState<any>(null);
-
-    const showGroupSelector = useMemo(() => className === '9' || className === '10', [className]);
-
+const RoutineTable = ({ className, routine, showGroupInfo }: { className: string, routine: any, showGroupInfo: boolean }) => {
     const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
     const periods = [
         { name: "১ম", time: "১০:৩০ - ১১:২০" },
@@ -69,6 +62,55 @@ const ClassRoutineTab = () => {
         { name: "৫ম", time: "০২:৩০ - ০৩:২০" },
         { name: "৬ষ্ঠ", time: "০৩:২০ - ০৪:১০" },
     ];
+     const classNamesMap: { [key: string]: string } = {
+        '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম',
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>ক্লাস রুটিন (শ্রেণি - {classNamesMap[className] || className})</CardTitle>
+                 {showGroupInfo && <p className="text-sm text-muted-foreground">দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</p>}
+            </CardHeader>
+            <CardContent>
+            <div className="overflow-x-auto">
+                    <Table className="border">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="border-r font-bold align-middle text-center">বার</TableHead>
+                                {periods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
+                                <TableHead className="border-r text-center font-semibold bg-gray-100">বিরতি<br/><span className="font-normal text-xs">০১:০০ - ০১:৪০</span></TableHead>
+                                {postBreakPeriods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {days.map(day => (
+                                <TableRow key={day}>
+                                    <TableCell className="font-semibold border-r">{day}</TableCell>
+                                    {(routine[day] || Array(6).fill('-')).slice(0, 3).map((subject: string, i: number) => (
+                                        <TableCell key={`${day}-pre-${i}`} className="border-r text-center">{subject}</TableCell>
+                                    ))}
+                                     <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
+                                     {(routine[day] || Array(6).fill('-')).slice(3, 6).map((subject: string, i: number) => (
+                                        <TableCell key={`${day}-post-${i}`} className="border-r text-center">{subject}</TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+            </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+
+const ClassRoutineTab = () => {
+    const [className, setClassName] = useState('');
+    const [group, setGroup] = useState('');
+    const [currentRoutine, setCurrentRoutine] = useState<any>(null);
+
+    const showGroupSelector = useMemo(() => className === '9' || className === '10', [className]);
 
     const handleViewRoutine = () => {
         if (!className) {
@@ -120,45 +162,33 @@ const ClassRoutineTab = () => {
             </div>
 
             {currentRoutine ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>ক্লাস রুটিন ({className ? `শ্রেণি - ${className}` : ''} {group ? `- ${group}` : ''})</CardTitle>
-                         {showGroupSelector && <p className="text-sm text-muted-foreground">দ্রষ্টব্য: ৯ম ও ১০ম শ্রেণির রুটিন সকল গ্রুপের জন্য সম্মিলিতভাবে দেখানো হয়েছে।</p>}
-                    </CardHeader>
-                    <CardContent>
-                    <div className="overflow-x-auto">
-                            <Table className="border">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="border-r font-bold align-middle text-center">বার</TableHead>
-                                        {periods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
-                                        <TableHead className="border-r text-center font-semibold bg-gray-100">বিরতি<br/><span className="font-normal text-xs">০১:০০ - ০১:৪০</span></TableHead>
-                                        {postBreakPeriods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {days.map(day => (
-                                        <TableRow key={day}>
-                                            <TableCell className="font-semibold border-r">{day}</TableCell>
-                                            {(currentRoutine[day] || Array(6).fill('-')).slice(0, 3).map((subject: string, i: number) => (
-                                                <TableCell key={`${day}-pre-${i}`} className="border-r text-center">{subject}</TableCell>
-                                            ))}
-                                             <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
-                                             {(currentRoutine[day] || Array(6).fill('-')).slice(3, 6).map((subject: string, i: number) => (
-                                                <TableCell key={`${day}-post-${i}`} className="border-r text-center">{subject}</TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                    </div>
-                    </CardContent>
-                </Card>
+                <RoutineTable 
+                    className={className} 
+                    routine={currentRoutine}
+                    showGroupInfo={showGroupSelector}
+                />
             ) : (
                 <div className="text-center text-muted-foreground p-8 border rounded-lg">
                     অনুগ্রহ করে শ্রেণি এবং গ্রুপ (প্রযোজ্য ক্ষেত্রে) নির্বাচন করে "রুটিন দেখুন" বাটনে ক্লিক করুন।
                 </div>
             )}
+        </div>
+    );
+};
+
+const FullRoutineTab = () => {
+    const classNames = ['6', '7', '8', '9', '10'];
+
+    return (
+        <div className="space-y-6">
+            {classNames.map(className => (
+                <RoutineTable 
+                    key={className}
+                    className={className} 
+                    routine={routineData[className]} 
+                    showGroupInfo={className === '9' || className === '10'}
+                />
+            ))}
         </div>
     );
 };
@@ -219,11 +249,15 @@ export default function RoutinesPage() {
                     </CardHeader>
                     <CardContent>
                         {isClient ? (
-                            <Tabs defaultValue="class-routine">
-                                <TabsList className="grid w-full grid-cols-2">
+                            <Tabs defaultValue="full-routine">
+                                <TabsList className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="full-routine">সকল শ্রেণির রুটিন</TabsTrigger>
                                     <TabsTrigger value="class-routine">ক্লাস রুটিন</TabsTrigger>
                                     <TabsTrigger value="exam-routine">পরীক্ষার রুটিন</TabsTrigger>
                                 </TabsList>
+                                <TabsContent value="full-routine" className="mt-4">
+                                    <FullRoutineTab />
+                                </TabsContent>
                                 <TabsContent value="class-routine" className="mt-4">
                                     <ClassRoutineTab />
                                 </TabsContent>
@@ -233,8 +267,9 @@ export default function RoutinesPage() {
                             </Tabs>
                         ) : (
                            <div className="space-y-4">
-                               <div className="grid w-full grid-cols-2 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                               <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
+                                    <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                 </div>
                                 <div className="p-4 border rounded-lg">
