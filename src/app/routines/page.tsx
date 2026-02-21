@@ -32,6 +32,7 @@ const subjectNameNormalization = {
     'পৌরনীতি': 'পৌরনীতি ও নাগরিকতা',
     'উচ্চতর': 'উচ্চতর গণিত',
     'জীব': 'জীব বিজ্ঞান',
+    'কৃষি': 'কৃষি শিক্ষা',
 };
 
 const teacherAllocations: Record<string, Record<string, string[]>> = {
@@ -44,10 +45,10 @@ const teacherAllocations: Record<string, Record<string, string[]>> = {
         'শারীরিক শিক্ষা': ['8']
     },
     'জান্নাতুন': {
-        'পৌরনীতি ও নাগরিকতা': ['9', '10'],
-        'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': ['9', '10'],
         'বাংলাদেশ ও বিশ্ব পরিচয়': ['6'],
-        'কৃষি শিক্ষা': ['6']
+        'কৃষি শিক্ষা': ['6', '8'],
+        'পৌরনীতি ও নাগরিকতা': ['9', '10'],
+        'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': ['9', '10']
     },
     'যুধিষ্ঠির': {
         'বাংলা দ্বিতীয়': ['6', '7', '8', '9', '10'],
@@ -76,9 +77,9 @@ const teacherAllocations: Record<string, Record<string, string[]>> = {
         'জীব বিজ্ঞান': ['9', '10']
     },
     'মাহাবুব': {
+        'কৃষি শিক্ষা': ['7', '9', '10'],
         'ধর্ম ও নৈতিক শিক্ষা': ['8', '9', '10'],
-        'শারীরিক শিক্ষা': ['6'],
-        'কৃষি শিক্ষা': ['7']
+        'শারীরিক শিক্ষা': ['6']
     }
 };
 
@@ -367,14 +368,18 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             </TableHeader>
                             <TableBody>
                                 {classes.map(cls => {
-                                    const subjects = Object.keys(classStats[cls]).sort();
+                                    const subjectsForClass = getSubjects(cls);
+                                    const subjectsInStats = Object.keys(classStats[cls]).map(s => subjectNameNormalization[s] || s);
+                                    
+                                    const subjects = subjectsForClass.filter(s => subjectsInStats.includes(s.name));
+
                                     if(subjects.length === 0) return null;
                                     return subjects.map((subject, subjectIndex) => (
-                                        <TableRow key={`${cls}-${subject}`} className="border">
+                                        <TableRow key={`${cls}-${subject.name}`} className="border">
                                             {subjectIndex === 0 && <TableCell rowSpan={subjects.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
                                             <TableCell className="border text-center">{(subjectIndex + 1).toLocaleString('bn-BD')}</TableCell>
-                                            <TableCell className="border">{subject}</TableCell>
-                                            <TableCell className="border text-center">{classStats[cls][subject].toLocaleString('bn-BD')}</TableCell>
+                                            <TableCell className="border">{subject.name}</TableCell>
+                                            <TableCell className="border text-center">{(classStats[cls][subject.name] || 0).toLocaleString('bn-BD')}</TableCell>
                                         </TableRow>
                                     ));
                                 })}
