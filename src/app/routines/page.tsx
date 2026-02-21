@@ -150,8 +150,9 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                         const subjectsInCell = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
                         
                         subjectsInCell.forEach(s => {
-                            if (!classStats[cls][s]) classStats[cls][s] = 0;
-                            classStats[cls][s] += 1 / subjectsInCell.length;
+                             const normSub = subjectNameNormalization[s] || s;
+                            if (!classStats[cls][normSub]) classStats[cls][normSub] = 0;
+                            classStats[cls][normSub] += 1;
                         });
 
                         if(subject) {
@@ -190,7 +191,9 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                      return;
                                 };
                                 
-                                const subjectForThisTeacher = subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null;
+                                const subjectForThisTeacher = subjectsInCell.length === 1 
+                                    ? subjectsInCell[0] 
+                                    : (subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null);
 
                                 if (!subjectForThisTeacher) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
@@ -299,7 +302,7 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                         <TableCell className="font-medium border">{teacher}</TableCell>
                                         <TableCell className="border text-center">{teacherStats[teacher].total.toLocaleString('bn-BD')}</TableCell>
                                         <TableCell className="border">
-                                             <ul className="list-none p-0 m-0 text-xs">
+                                            <ul className="list-none p-0 m-0 text-xs">
                                                 {Object.entries(teacherStats[teacher].sixthPeriods)
                                                     .filter(([, classes]) => (classes as string[]).length > 0)
                                                     .map(([day]) => (
@@ -342,13 +345,18 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             </TableHeader>
                             <TableBody>
                                 {classes.map(cls => {
-                                    const subjectsForClass = getSubjects(cls, undefined).sort((a,b) => parseInt(a.code) - parseInt(b.code));
+                                    const subjectsForClass = getSubjects(cls, undefined)
+                                        .filter(subject => !(['9','10'].includes(cls) || ['6','7','8'].includes(cls)) || !(
+                                            (subject.name === 'হিসাব বিজ্ঞান' || subject.name === 'ফিন্যান্স ও ব্যাংকিং' || subject.name === 'ব্যবসায় উদ্যোগ') && ['6','7','8'].includes(cls)
+                                        ))
+                                        .sort((a,b) => parseInt(a.code) - parseInt(b.code));
 
                                     if(subjectsForClass.length === 0) return null;
                                     
-                                    return subjectsForClass.map((subject, subjectIndex) => {
+                                    let rowCount = 0;
+                                    const rows = subjectsForClass.map((subject, subjectIndex) => {
                                         const count = classStats[cls]?.[subject.name] || 0;
-
+                                        rowCount++;
                                         return (
                                             <TableRow key={`${cls}-${subject.name}`} className="border">
                                                 {subjectIndex === 0 && <TableCell rowSpan={subjectsForClass.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
@@ -358,6 +366,17 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                             </TableRow>
                                         );
                                     });
+                                     if(cls === '8' || cls === '7' || cls === '6') {
+                                        const physicalEducationCount = classStats[cls]?.[subjectNameNormalization['শারীরিক শিক্ষা']] || 0;
+                                        rows.push(
+                                             <TableRow key={`${cls}-pe`} className="border">
+                                                <TableCell className="border text-center">{(rowCount + 1).toLocaleString('bn-BD')}</TableCell>
+                                                <TableCell className="border">শারীরিক শিক্ষা</TableCell>
+                                                <TableCell className="border text-center">{Math.round(physicalEducationCount).toLocaleString('bn-BD')}</TableCell>
+                                            </TableRow>
+                                        );
+                                    }
+                                    return rows;
                                 })}
                             </TableBody>
                         </Table>
