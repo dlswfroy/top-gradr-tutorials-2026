@@ -47,7 +47,7 @@ const teacherAllocations: Record<string, Record<string, string[]>> = {
     'আরিফুর': { 'ইংরেজি প্রথম': ['6', '7', '8', '9', '10'], 'ইংরেজি দ্বিতীয়': ['8', '9', '10'] },
     'ওবায়দা': { 'বাংলা প্রথম': ['6', '7', '8', '9', '10'], 'শারীরিক শিক্ষা': ['7'] },
     'শারমিন': { 'তথ্য ও যোগাযোগ প্রযুক্তি': ['6', '7', '8', '9', '10'], 'ভূগোল ও পরিবেশ': ['9', '10'] },
-    'শান্তি': { 'সাধারণ বিজ্ঞান': ['6', '7', '8', '9', '10'], 'জীব বিজ্ঞান': ['9', '10'] },
+    'শান্তি': { 'সাধারণ বিজ্ঞান': ['6', '7', '8'], 'জীব বিজ্ঞান': ['9', '10'] },
     'মাহাবুব': { 'কৃষি শিক্ষা': ['7', '9', '10'], 'ধর্ম ও নৈতিক শিক্ষা': ['8', '9', '10'], 'শারীরিক শিক্ষা': ['6'] }
 };
 
@@ -191,9 +191,10 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                      return;
                                 };
                                 
-                                const subjectForThisTeacher = subjectsInCell.length === 1 
-                                    ? subjectsInCell[0] 
-                                    : (subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null);
+                                const subjectForThisTeacher = subjectsInCell.length > 1 && teachersInCell.length > 1
+                                    ? (subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null)
+                                    : subjectsInCell[0];
+
 
                                 if (!subjectForThisTeacher) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
@@ -345,17 +346,30 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             </TableHeader>
                             <TableBody>
                                 {classes.map(cls => {
+                                    const subjectsToExclude = ['হিসাব বিজ্ঞান', 'ফিন্যান্স ও ব্যাংকিং', 'ব্যবসায় উদ্যোগ'];
                                     const subjectsForClass = getSubjects(cls, undefined)
-                                        .filter(subject => !(['9','10'].includes(cls) || ['6','7','8'].includes(cls)) || !(
-                                            (subject.name === 'হিসাব বিজ্ঞান' || subject.name === 'ফিন্যান্স ও ব্যাংকিং' || subject.name === 'ব্যবসায় উদ্যোগ') && ['6','7','8'].includes(cls)
-                                        ))
+                                        .filter(subject => !subjectsToExclude.includes(subject.name))
                                         .sort((a,b) => parseInt(a.code) - parseInt(b.code));
+
+                                    if(cls === '8' || cls === '7' || cls === '6') {
+                                        const hasPE = subjectsForClass.some(s => s.name === 'শারীরিক শিক্ষা');
+                                        if(!hasPE) {
+                                            const pe_subject = { name: 'শারীরিক শিক্ষা', englishName: 'Physical Education', code: '147', practical: false, fullMarks: 100 };
+                                            subjectsForClass.push(pe_subject);
+                                        }
+                                    }
 
                                     if(subjectsForClass.length === 0) return null;
                                     
                                     let rowCount = 0;
                                     const rows = subjectsForClass.map((subject, subjectIndex) => {
-                                        const count = classStats[cls]?.[subject.name] || 0;
+                                        const count = Object.entries(classStats[cls] || {}).reduce((acc, [key, value]) => {
+                                            const normalizedKey = subjectNameNormalization[key] || key;
+                                            if (normalizedKey.includes(subject.name) || subject.name.includes(normalizedKey)) {
+                                                return acc + (value as number);
+                                            }
+                                            return acc;
+                                        }, 0);
                                         rowCount++;
                                         return (
                                             <TableRow key={`${cls}-${subject.name}`} className="border">
@@ -366,16 +380,6 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                             </TableRow>
                                         );
                                     });
-                                     if(cls === '8' || cls === '7' || cls === '6') {
-                                        const physicalEducationCount = classStats[cls]?.[subjectNameNormalization['শারীরিক শিক্ষা']] || 0;
-                                        rows.push(
-                                             <TableRow key={`${cls}-pe`} className="border">
-                                                <TableCell className="border text-center">{(rowCount + 1).toLocaleString('bn-BD')}</TableCell>
-                                                <TableCell className="border">শারীরিক শিক্ষা</TableCell>
-                                                <TableCell className="border text-center">{Math.round(physicalEducationCount).toLocaleString('bn-BD')}</TableCell>
-                                            </TableRow>
-                                        );
-                                    }
                                     return rows;
                                 })}
                             </TableBody>
@@ -508,7 +512,8 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
     if (isTeacherSubjectMismatch) tooltipContent += 'এই বিষয়ের জন্য নির্ধারিত শিক্ষক নন। ';
 
     const { teacher } = parseSubjectTeacher(content);
-    const firstTeacher = teacher ? teacher.split('/')[0].trim() : null;
+    const teachersInCell = teacher ? teacher.split('/').map(t => t.trim()) : [];
+    const firstTeacher = teachersInCell.length > 0 ? teachersInCell[0] : null;
     const color = firstTeacher ? teacherColorMap.get(firstTeacher) : undefined;
 
     const cellContent = isEditMode ? (
