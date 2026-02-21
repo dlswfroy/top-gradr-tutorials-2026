@@ -748,12 +748,12 @@ export default function RoutinesPage() {
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card>
                     <CardHeader>
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                             <div>
                                 <CardTitle>রুটিন</CardTitle>
                                 {isClient && <p className="text-sm text-muted-foreground">শিক্ষাবর্ষ: {selectedYear.toLocaleString('bn-BD')}</p>}
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
                                 {isEditMode ? (
                                     <>
                                         <Button variant="outline" onClick={handleCancelEdit}>বাতিল</Button>
