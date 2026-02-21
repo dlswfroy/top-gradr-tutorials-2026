@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -20,7 +21,7 @@ import { FilePen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { subjectNameNormalization as baseSubjectNameNormalization, getSubjects } from '@/lib/subjects';
 
-const subjectNameNormalization = {
+const subjectNameNormalization: { [key: string]: string } = {
     ...baseSubjectNameNormalization,
     'শারীরিক': 'শারীরিক শিক্ষা',
     'শারীরিক শিক্ষা': 'শারীরিক শিক্ষা',
@@ -30,57 +31,24 @@ const subjectNameNormalization = {
     'ইতিহাস': 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা',
     'ভূগোল': 'ভূগোল ও পরিবেশ',
     'পৌরনীতি': 'পৌরনীতি ও নাগরিকতা',
+    'পৌর': 'পৌরনীতি ও নাগরিকতা',
+    'উচ্চতর গণিত': 'উচ্চতর গণিত',
     'উচ্চতর': 'উচ্চতর গণিত',
     'জীব': 'জীব বিজ্ঞান',
     'কৃষি': 'কৃষি শিক্ষা',
 };
 
 const teacherAllocations: Record<string, Record<string, string[]>> = {
-    'আনিছুর': {
-        'বাংলাদেশ ও বিশ্ব পরিচয়': ['7', '8', '9', '10'],
-        'ধর্ম ও নৈতিক শিক্ষা': ['6', '7']
-    },
-    'নীলা': {
-        'ধর্ম ও নৈতিক শিক্ষা': ['6', '7', '8', '9', '10'],
-        'শারীরিক শিক্ষা': ['8']
-    },
-    'জান্নাতুন': {
-        'বাংলাদেশ ও বিশ্ব পরিচয়': ['6'],
-        'কৃষি শিক্ষা': ['6', '8'],
-        'পৌরনীতি ও নাগরিকতা': ['9', '10'],
-        'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': ['9', '10']
-    },
-    'যুধিষ্ঠির': {
-        'বাংলা দ্বিতীয়': ['6', '7', '8', '9', '10'],
-        'ইংরেজি দ্বিতীয়': ['6', '7']
-    },
-    'ধনঞ্জয়': {
-        'গণিত': ['6', '7', '8', '9', '10'],
-        'রসায়ন': ['9', '10'],
-        'পদার্থ': ['9', '10'],
-        'উচ্চতর গণিত': ['9']
-    },
-    'আরিফুর': {
-        'ইংরেজি প্রথম': ['6', '7', '8', '9', '10'],
-        'ইংরেজি দ্বিতীয়': ['8', '9', '10']
-    },
-    'ওবায়দা': {
-        'বাংলা প্রথম': ['6', '7', '8', '9', '10'],
-        'শারীরিক শিক্ষা': ['7']
-    },
-    'শারমিন': {
-        'তথ্য ও যোগাযোগ প্রযুক্তি': ['6', '7', '8', '9', '10'],
-        'ভূগোল ও পরিবেশ': ['9', '10']
-    },
-    'শান্তি': {
-        'সাধারণ বিজ্ঞান': ['6', '7', '8', '9', '10'],
-        'জীব বিজ্ঞান': ['9', '10']
-    },
-    'মাহাবুব': {
-        'কৃষি শিক্ষা': ['7', '9', '10'],
-        'ধর্ম ও নৈতিক শিক্ষা': ['8', '9', '10'],
-        'শারীরিক শিক্ষা': ['6']
-    }
+    'আনিছুর': { 'বাংলাদেশ ও বিশ্ব পরিচয়': ['7', '8', '9', '10'], 'ধর্ম ও নৈতিক শিক্ষা': ['6', '7'] },
+    'নীলা': { 'ধর্ম ও নৈতিক শিক্ষা': ['6', '7', '8', '9', '10'], 'শারীরিক শিক্ষা': ['8'] },
+    'জান্নাতুন': { 'বাংলাদেশ ও বিশ্ব পরিচয়': ['6'], 'কৃষি শিক্ষা': ['6', '8'], 'পৌরনীতি ও নাগরিকতা': ['9', '10'], 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': ['9', '10'] },
+    'যুধিষ্ঠির': { 'বাংলা দ্বিতীয়': ['6', '7', '8', '9', '10'], 'ইংরেজি দ্বিতীয়': ['6', '7'] },
+    'ধনঞ্জয়': { 'গণিত': ['6', '7', '8', '9', '10'], 'রসায়ন': ['9', '10'], 'পদার্থ': ['9', '10'], 'উচ্চতর গণিত': ['9'] },
+    'আরিফুর': { 'ইংরেজি প্রথম': ['6', '7', '8', '9', '10'], 'ইংরেজি দ্বিতীয়': ['8', '9', '10'] },
+    'ওবায়দা': { 'বাংলা প্রথম': ['6', '7', '8', '9', '10'], 'শারীরিক শিক্ষা': ['7'] },
+    'শারমিন': { 'তথ্য ও যোগাযোগ প্রযুক্তি': ['6', '7', '8', '9', '10'], 'ভূগোল ও পরিবেশ': ['9', '10'] },
+    'শান্তি': { 'সাধারণ বিজ্ঞান': ['6', '7', '8', '9', '10'], 'জীব বিজ্ঞান': ['9', '10'] },
+    'মাহাবুব': { 'কৃষি শিক্ষা': ['7', '9', '10'], 'ধর্ম ও নৈতিক শিক্ষা': ['8', '9', '10'], 'শারীরিক শিক্ষা': ['6'] }
 };
 
 
@@ -178,11 +146,16 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
 
                     dayRoutine.forEach((cell, periodIdx) => {
                         const { subject, teacher } = parseSubjectTeacher(cell);
-                        if(subject) {
-                            const subjectsInCell = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
+                        
+                        const subjectsInCell = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
+                        
+                        subjectsInCell.forEach(s => {
+                            if (!classStats[cls][s]) classStats[cls][s] = 0;
+                            classStats[cls][s] += 1 / subjectsInCell.length;
+                        });
 
+                        if(subject) {
                              subjectsInCell.forEach(s => {
-                                classStats[cls][s] = (classStats[cls][s] || 0) + 1;
                                 if (!subjectCountInDay.has(s)) {
                                    subjectCountInDay.set(s, []);
                                 }
@@ -209,31 +182,41 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                             });
                         }
                          if (subject && teacher) {
-                            const subjectsInCell = subject.split('/').map(s => s.trim()).filter(Boolean);
                             const teachersInCell = teacher.split('/').map(t => t.trim()).filter(Boolean);
 
-                            teachersInCell.forEach(t => {
+                            teachersInCell.forEach((t, teacherIndex) => {
                                 if (!t || !teacherAllocations[t]) {
                                      teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
                                      return;
                                 };
                                 
-                                const isAllocated = subjectsInCell.some(s => {
-                                    const normalizedSubject = subjectNameNormalization[s] || s;
-                                    const teacherAllocationsForT = teacherAllocations[t];
-                                    if (!teacherAllocationsForT) return false;
-                                    
-                                    const classNumber = cls.split('-')[0];
-                                    
-                                    for(const allocatedSubject in teacherAllocationsForT) {
-                                        const normalizedAllocatedSubject = subjectNameNormalization[allocatedSubject] || allocatedSubject;
-                                        if (normalizedAllocatedSubject === normalizedSubject) {
-                                            const classAllocation = teacherAllocationsForT[allocatedSubject];
-                                            return classAllocation && classAllocation.includes(classNumber);
+                                const subjectForThisTeacher = subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null;
+
+                                if (!subjectForThisTeacher) {
+                                    teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
+                                    return;
+                                }
+
+                                const normalizedSubject = subjectNameNormalization[subjectForThisTeacher] || subjectForThisTeacher;
+                                const teacherAllocationsForT = teacherAllocations[t];
+                                if (!teacherAllocationsForT) {
+                                    teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
+                                    return;
+                                };
+                                
+                                let isAllocated = false;
+                                const classNumber = cls.split('-')[0];
+                                
+                                for(const allocatedSubject in teacherAllocationsForT) {
+                                    const normalizedAllocatedSubject = subjectNameNormalization[allocatedSubject] || allocatedSubject;
+                                    if (normalizedAllocatedSubject === normalizedSubject) {
+                                        const classAllocation = teacherAllocationsForT[allocatedSubject];
+                                        if(classAllocation && classAllocation.includes(classNumber)) {
+                                            isAllocated = true;
+                                            break;
                                         }
                                     }
-                                    return false;
-                                });
+                                }
 
                                 if (!isAllocated) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
@@ -371,7 +354,7 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                                                 {subjectIndex === 0 && <TableCell rowSpan={subjectsForClass.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
                                                 <TableCell className="border text-center">{(subjectIndex + 1).toLocaleString('bn-BD')}</TableCell>
                                                 <TableCell className="border">{subject.name}</TableCell>
-                                                <TableCell className="border text-center">{count.toLocaleString('bn-BD')}</TableCell>
+                                                <TableCell className="border text-center">{Math.round(count).toLocaleString('bn-BD')}</TableCell>
                                             </TableRow>
                                         );
                                     });
@@ -530,26 +513,22 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
         );
     }
     
-    const cellWrapper = (
-        <div
-            className={cn("w-full h-full", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
-            style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
-        >
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    {cellContent}
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{tooltipContent}</p>
-                </TooltipContent>
-            </Tooltip>
-        </div>
-    );
-
     return (
         <TableCell className="border-r p-0">
              <TooltipProvider>
-                {cellWrapper}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <div
+                            className={cn("w-full h-full", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
+                            style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
+                        >
+                            {cellContent}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{tooltipContent}</p>
+                    </TooltipContent>
+                </Tooltip>
             </TooltipProvider>
         </TableCell>
     );

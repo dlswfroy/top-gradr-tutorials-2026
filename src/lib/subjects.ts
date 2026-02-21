@@ -35,6 +35,7 @@ const subjectsFor6to8: Subject[] = [
     { name: 'সাধারণ বিজ্ঞান', englishName: 'General Science', code: '127', practical: false, fullMarks: 100 },
     { name: 'বাংলাদেশ ও বিশ্ব পরিচয়', englishName: 'Bangladesh & Global Studies', code: '150', practical: false, fullMarks: 100 },
     { name: 'কৃষি শিক্ষা', englishName: 'Agriculture Studies', code: '134', practical: false, fullMarks: 100 },
+    { name: 'শারীরিক শিক্ষা', englishName: 'Physical Education', code: '147', practical: false, fullMarks: 100 },
 ];
 
 const commonSubjectsFor9to10: Subject[] = [
