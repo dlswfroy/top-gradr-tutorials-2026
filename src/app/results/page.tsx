@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,12 +21,13 @@ import { Trash2, FileUp, Download, FilePen, BookOpen } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, where, orderBy, FirestoreError } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, FirestoreError, writeBatch, doc, Timestamp, WithFieldValue, DocumentData, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type Marks = {
@@ -58,16 +59,15 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
     const groupMap: { [key: string]: string } = { 'science': 'বিজ্ঞান', 'arts': 'মানবিক', 'commerce': 'ব্যবসায় শিক্ষা' };
 
-    const updateSavedResults = async () => {
+    const updateSavedResults = useCallback(async () => {
         if (!db) return;
         const allResults = await getAllResults(db, selectedYear);
         setSavedResults(allResults);
-    }
+    }, [db, selectedYear]);
     
     useEffect(() => {
         updateSavedResults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedYear, db]);
+    }, [updateSavedResults]);
 
     const groupedResults = useMemo(() => {
         if (savedResults.length === 0) return {};
@@ -715,6 +715,10 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
             </TableHeader>
         );
     }, [subjects]);
+    
+    const passedStudentsToPromote = useMemo(() => processedResults.filter(r => r.isPass && r.student.className !== '10'), [processedResults]);
+    const graduatedStudents = useMemo(() => processedResults.filter(r => r.isPass && r.student.className === '10'), [processedResults]);
+    const failedStudents = useMemo(() => processedResults.filter(r => !r.isPass), [processedResults]);
 
 
     return (
@@ -755,20 +759,44 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
                 </div>
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button disabled={isLoading || processedResults.filter(r => r.isPass).length === 0}>
+                        <Button disabled={isLoading || processedResults.length === 0}>
                             পরবর্তী সেশনে উত্তীর্ণ করুন
                         </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="max-w-2xl">
                         <AlertDialogHeader>
-                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            এটি উত্তীর্ণ শিক্ষার্থীদের পরবর্তী শিক্ষাবর্ষ ({String(parseInt(selectedYear, 10) + 1)}) এবং পরবর্তী শ্রেণিতে পাঠাবে। এই কাজটি ফিরিয়ে আনা যাবে না।
-                        </AlertDialogDescription>
+                            <AlertDialogTitle>শিক্ষার্থী উত্তীর্ণের সারাংশ</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                আপনি কি {selectedYear.toLocaleString('bn-BD')} শিক্ষাবর্ষ থেকে {String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')} শিক্ষাবর্ষে শিক্ষার্থীদের উত্তীর্ণ করতে চান?
+                            </AlertDialogDescription>
                         </AlertDialogHeader>
+                        <div className="max-h-[50vh] overflow-y-auto my-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div>
+                                <h4 className="font-semibold mb-2 border-b pb-1 text-green-600">উত্তীর্ণ হবে ({passedStudentsToPromote.length.toLocaleString('bn-BD')} জন)</h4>
+                                {passedStudentsToPromote.length > 0 ? (
+                                    <ul className="text-sm space-y-1 list-decimal list-inside">
+                                        {passedStudentsToPromote.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                    </ul>
+                                ) : <p className="text-sm text-muted-foreground">--</p>}
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-2 border-b pb-1 text-blue-600">গ্র্যাজুয়েট হবে ({graduatedStudents.length.toLocaleString('bn-BD')} জন)</h4>
+                                {graduatedStudents.length > 0 ? (
+                                    <ul className="text-sm space-y-1 list-decimal list-inside">
+                                        {graduatedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                    </ul>
+                                ) : <p className="text-sm text-muted-foreground">--</p>}
+                                <h4 className="font-semibold mt-4 mb-2 border-b pb-1 text-destructive">ফেল করেছে ({failedStudents.length.toLocaleString('bn-BD')} জন)</h4>
+                                {failedStudents.length > 0 ? (
+                                    <ul className="text-sm space-y-1 list-decimal list-inside text-destructive">
+                                        {failedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                    </ul>
+                                ) : <p className="text-sm text-muted-foreground">--</p>}
+                            </div>
+                        </div>
                         <AlertDialogFooter>
-                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                        <AlertDialogAction onClick={handlePromoteStudents}>উত্তীর্ণ করুন</AlertDialogAction>
+                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                            <AlertDialogAction onClick={handlePromoteStudents} disabled={passedStudentsToPromote.length === 0}>উত্তীর্ণ করুন</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -817,6 +845,270 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
         </div>
     );
 };
+
+const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
+    const { toast } = useToast();
+    const { selectedYear } = useAcademicYear();
+    const db = useFirestore();
+
+    const [className, setClassName] = useState('');
+    const [group, setGroup] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [failedStudents, setFailedStudents] = useState<StudentProcessedResult[]>([]);
+    const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+
+    const showGroupSelector = className === '9' || className === '10';
+
+    const handleViewFailedStudents = useCallback(async () => {
+        if (!className || !db) {
+            toast({ variant: 'destructive', title: 'শ্রেণি নির্বাচন করুন' });
+            return;
+        }
+
+        setIsLoading(true);
+
+        const studentsInClass = allStudents.filter(s =>
+            s.academicYear === selectedYear &&
+            s.className === className &&
+            (className < '9' || !group || s.group === group)
+        );
+
+        if (studentsInClass.length === 0) {
+            toast({ title: 'এই শ্রেণিতে কোনো শিক্ষার্থী নেই।' });
+            setFailedStudents([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const allSubjectsForGroup = getSubjects(className, group);
+        const resultsBySubjectPromises = allSubjectsForGroup.map(subject =>
+            getResultsForClass(db, selectedYear, className, subject.name, group)
+        );
+        const resultsBySubject = (await Promise.all(resultsBySubjectPromises)).filter((result): result is ClassResult => result !== undefined);
+
+        const finalResults = processStudentResults(studentsInClass, resultsBySubject, allSubjectsForGroup);
+        const failed = finalResults.filter(r => !r.isPass).sort((a,b) => a.student.roll - b.student.roll);
+        setFailedStudents(failed);
+        setSelectedStudentIds(new Set());
+        setIsLoading(false);
+    }, [className, group, db, allStudents, selectedYear, toast]);
+
+    const handleToggleStudent = (studentId: string) => {
+        const newSelection = new Set(selectedStudentIds);
+        if (newSelection.has(studentId)) {
+            newSelection.delete(studentId);
+        } else {
+            newSelection.add(studentId);
+        }
+        setSelectedStudentIds(newSelection);
+    };
+
+    const handleToggleAll = () => {
+        if (selectedStudentIds.size === failedStudents.length) {
+            setSelectedStudentIds(new Set());
+        } else {
+            const allIds = new Set(failedStudents.map(s => s.student.id));
+            setSelectedStudentIds(allIds);
+        }
+    };
+    
+    const handlePromoteSelected = async () => {
+        if (!db) return;
+        if (selectedStudentIds.size === 0) {
+            toast({ variant: 'destructive', title: 'কোনো শিক্ষার্থী নির্বাচন করা হয়নি' });
+            return;
+        }
+
+        setIsLoading(true);
+        const nextYear = String(parseInt(selectedYear, 10) + 1);
+        const studentsToPromote = failedStudents
+            .filter(r => selectedStudentIds.has(r.student.id))
+            .sort((a,b) => a.student.roll - b.student.roll);
+        
+        const nextClass = String(parseInt(className, 10) + 1);
+
+        const studentsInNextClassQuery = query(
+            collection(db, 'students'),
+            where('academicYear', '==', nextYear),
+            where('className', '==', nextClass),
+            where('group', '==', group || '')
+        );
+
+        let lastRoll = 0;
+        try {
+            const studentsInNextClassSnapshot = await getDocs(studentsInNextClassQuery);
+            studentsInNextClassSnapshot.forEach(doc => {
+                const student = doc.data() as Student;
+                if (student.roll > lastRoll) {
+                    lastRoll = student.roll;
+                }
+            });
+        } catch (e) {
+            console.error("Could not fetch students from next class to determine roll", e);
+        }
+
+        const batch = writeBatch(db);
+
+        studentsToPromote.forEach((result) => {
+            if (result.student.className === '10') return; // Cannot promote class 10 students
+            
+            lastRoll++;
+            const { id, createdAt, updatedAt, ...currentData } = result.student;
+
+            const newStudentData: NewStudentData = {
+                ...currentData,
+                academicYear: nextYear,
+                className: nextClass,
+                roll: lastRoll,
+                group: (nextClass === '9' || nextClass === '10') ? currentData.group : '',
+                optionalSubject: (nextClass === '9' || nextClass === '10') ? currentData.optionalSubject : '',
+            };
+            
+            const newStudentRef = doc(collection(db, 'students'));
+            const dataToSave: WithFieldValue<DocumentData> = {
+                ...newStudentData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+            if (newStudentData.dob) {
+                dataToSave.dob = Timestamp.fromDate(newStudentData.dob);
+            }
+        
+            Object.keys(dataToSave).forEach(key => {
+                if (dataToSave[key] === undefined) {
+                    delete dataToSave[key];
+                }
+            });
+
+            batch.set(newStudentRef, dataToSave);
+        });
+
+        try {
+            await batch.commit();
+            toast({
+                title: "শিক্ষার্থী উত্তীর্ণ করা সম্পন্ন",
+                description: `${studentsToPromote.length} জন শিক্ষার্থীকে বিশেষ বিবেচনায় পরবর্তী শ্রেণিতে উত্তীর্ণ করা হয়েছে।`,
+            });
+            // Reset state
+            setFailedStudents([]);
+            setSelectedStudentIds(new Set());
+        } catch(error) {
+            console.error(error);
+            const permissionError = new FirestorePermissionError({
+                path: 'students',
+                operation: 'create',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const selectedStudentsForDialog = failedStudents.filter(s => selectedStudentIds.has(s.student.id));
+
+    return (
+        <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg w-full">
+                <div className="space-y-2">
+                    <Label htmlFor="class-special-promo"/>
+                    <Select value={className} onValueChange={c => { setClassName(c); setGroup(''); setFailedStudents([]); }}>
+                        <SelectTrigger id="class-special-promo"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="6">৬ষ্ঠ</SelectItem>
+                            <SelectItem value="7">৭ম</SelectItem>
+                            <SelectItem value="8">৮ম</SelectItem>
+                            <SelectItem value="9">৯ম</SelectItem>
+                            <SelectItem value="10">১০ম (উত্তীর্ণ করা যাবে না)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {showGroupSelector && (
+                    <div className="space-y-2">
+                        <Label htmlFor="group-special-promo"/>
+                        <Select value={group} onValueChange={g => { setGroup(g); setFailedStudents([]); }}>
+                            <SelectTrigger id="group-special-promo"><SelectValue placeholder="গ্রুপ নির্বাচন" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="science">বিজ্ঞান</SelectItem>
+                                <SelectItem value="arts">মানবিক</SelectItem>
+                                <SelectItem value="commerce">ব্যবসায় শিক্ষা</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                <Button onClick={handleViewFailedStudents} disabled={isLoading || !className} className={cn("w-full", showGroupSelector ? "lg:col-span-2" : "lg:col-span-3")}>
+                    {isLoading ? 'লোড হচ্ছে...' : 'ফেল করা শিক্ষার্থী দেখুন'}
+                </Button>
+            </div>
+            
+            {failedStudents.length > 0 ? (
+                 <div className="border rounded-md">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="p-2">
+                                    <Checkbox
+                                        checked={selectedStudentIds.size > 0 && selectedStudentIds.size === failedStudents.length}
+                                        onCheckedChange={handleToggleAll}
+                                        aria-label="সকলকে নির্বাচন করুন"
+                                    />
+                                </TableHead>
+                                <TableHead>রোল</TableHead>
+                                <TableHead>নাম</TableHead>
+                                <TableHead>ফেল করা বিষয়ের সংখ্যা</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {failedStudents.map(res => (
+                                <TableRow key={res.student.id} data-state={selectedStudentIds.has(res.student.id) && "selected"}>
+                                    <TableCell className="p-2">
+                                        <Checkbox
+                                            checked={selectedStudentIds.has(res.student.id)}
+                                            onCheckedChange={() => handleToggleStudent(res.student.id)}
+                                            aria-label={`Select student ${res.student.studentNameBn}`}
+                                        />
+                                    </TableCell>
+                                    <TableCell>{res.student.roll.toLocaleString('bn-BD')}</TableCell>
+                                    <TableCell>{res.student.studentNameBn}</TableCell>
+                                    <TableCell>{res.failedSubjectsCount.toLocaleString('bn-BD')}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            ) : (
+                !isLoading && className && <p className="text-center text-muted-foreground p-8">এই শ্রেণিতে ফেল করা কোনো শিক্ষার্থী নেই অথবা আপনি এখনও তালিকা দেখেননি।</p>
+            )}
+            
+            {failedStudents.length > 0 &&
+                <div className="flex justify-end">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button disabled={isLoading || selectedStudentIds.size === 0 || className === '10'}>নির্বাচিতদের উত্তীর্ণ করুন</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    নিম্নলিখিত {selectedStudentIds.size.toLocaleString('bn-BD')} জন শিক্ষার্থীকে বিশেষ বিবেচনায় পরবর্তী সেশনে উত্তীর্ণ করা হবে।
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="max-h-60 overflow-y-auto my-4 border rounded-md p-2">
+                                <ul className="list-disc pl-5">
+                                    {selectedStudentsForDialog.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                </ul>
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                <AlertDialogAction onClick={handlePromoteSelected}>উত্তীর্ণ করুন</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            }
+        </div>
+    );
+};
+
 
 const BulkUploadTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
@@ -1089,8 +1381,7 @@ export default function ResultsPage() {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
 
-    useEffect(() => {
-        setIsClient(true);
+    const fetchAllStudents = useCallback(() => {
         if (!db) return;
         
         const studentsQuery = query(collection(db, "students"));
@@ -1108,8 +1399,19 @@ export default function ResultsPage() {
             setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        return unsubscribe;
     }, [db]);
+
+
+    useEffect(() => {
+        setIsClient(true);
+        const unsubscribe = fetchAllStudents();
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
+    }, [fetchAllStudents]);
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-violet-50">
@@ -1123,9 +1425,10 @@ export default function ResultsPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="management">
-                                <TabsList className="grid w-full grid-cols-3">
+                                <TabsList className="grid w-full grid-cols-4">
                                     <TabsTrigger value="management">নম্বর ব্যবস্থাপনা</TabsTrigger>
                                     <TabsTrigger value="sheet">ফলাফল শিট</TabsTrigger>
+                                    <TabsTrigger value="special-promotion">বিশেষ বিবেচনায় পাশ</TabsTrigger>
                                     <TabsTrigger value="upload">এক্সেল আপলোড</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="management" className="mt-4">
@@ -1133,6 +1436,9 @@ export default function ResultsPage() {
                                 </TabsContent>
                                 <TabsContent value="sheet" className="mt-4">
                                     {isLoading ? <p>লোড হচ্ছে...</p> : <ResultSheetTab allStudents={allStudents} />}
+                                </TabsContent>
+                                <TabsContent value="special-promotion" className="mt-4">
+                                     {isLoading ? <p>লোড হচ্ছে...</p> : <SpecialPromotionTab allStudents={allStudents} />}
                                 </TabsContent>
                                 <TabsContent value="upload" className="mt-4">
                                      {isLoading ? <p>লোড হচ্ছে...</p> : <BulkUploadTab allStudents={allStudents} />}
