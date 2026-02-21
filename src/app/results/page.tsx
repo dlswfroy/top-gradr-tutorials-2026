@@ -1472,10 +1472,11 @@ export default function ResultsPage() {
                             </Tabs>
                         ) : (
                            <div className="space-y-4">
-                               <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                               <div className="grid w-full grid-cols-4 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
+                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                 </div>
                                 <div className="p-4 border rounded-lg">
                                     <Skeleton className="h-24 w-full" />
@@ -1488,5 +1489,3 @@ export default function ResultsPage() {
         </div>
     );
 }
-
-
