@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FilePen, FilePlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { subjectNameNormalization as baseSubjectNameNormalization, getSubjects } from '@/lib/subjects';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const subjectNameNormalization: { [key: string]: string } = {
     ...baseSubjectNameNormalization,
@@ -755,9 +756,27 @@ export default function RoutinesPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <Button variant="outline" onClick={handleCreateBlankRoutine}>
-                                            <FilePlus className="mr-2 h-4 w-4" /> ফাঁকা রুটিন তৈরি করুন
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="outline">
+                                                    <FilePlus className="mr-2 h-4 w-4" /> ফাঁকা রুটিন তৈরি করুন
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        এটি বর্তমান রুটিনের সকল তথ্য মুছে একটি নতুন ফাঁকা রুটিন তৈরি করবে। এই কাজটি ফিরিয়ে আনা যাবে না।
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleCreateBlankRoutine}>
+                                                        এগিয়ে যান
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                         <Button variant="outline" onClick={() => setIsEditMode(true)}><FilePen className="mr-2 h-4 w-4" /> রুটিন এডিট করুন</Button>
                                     </>
                                 )}
