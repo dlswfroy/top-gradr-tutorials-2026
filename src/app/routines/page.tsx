@@ -83,13 +83,34 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
         
         const teacherStats: { [teacher: string]: { total: number, sixthPeriods: { [day: string]: string[] }, daily: { [day: string]: { classes: string[], before: number, after: number }} } } = {};
         const classStats: { [cls: string]: { [subject: string]: number } } = {};
+        
         const allIndividualTeachers = new Set<string>();
+        Object.keys(teacherAllocations).forEach(t => allIndividualTeachers.add(t));
 
         const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
         const classes = Object.keys(routine);
         const periodsCount = 6;
 
-        Object.keys(teacherAllocations).forEach(t => allIndividualTeachers.add(t));
+        classes.forEach(cls => {
+            days.forEach(day => {
+                const dayRoutine = routine[cls]?.[day];
+                if (dayRoutine) {
+                    dayRoutine.forEach(cell => {
+                        if (cell) {
+                            const { teacher } = parseSubjectTeacher(cell);
+                            if (teacher) {
+                                teacher.split('/').forEach(t => {
+                                    const trimmedTeacher = t.trim();
+                                    if (trimmedTeacher) {
+                                        allIndividualTeachers.add(trimmedTeacher);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        });
 
         allIndividualTeachers.forEach(t => {
             teacherStats[t] = { 
@@ -186,58 +207,31 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                 }
                             });
                         }
-                         if (subject && teacher) {
+                        
+                        if (subject && teacher) {
                             const teachersInCell = teacher.split('/').map(t => t.trim()).filter(Boolean);
                             const subjectsInCellNormalized = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
+                            const classNumber = cls.split('-')[0];
 
-                            teachersInCell.forEach((t, teacherIndex) => {
-                                if (!t || !teacherAllocations[t]) {
-                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
-                                     return;
-                                };
-                                
-                                // Simple 1-to-1 mapping for combined classes, or 1-to-many if one teacher for multiple subjects
-                                const subjectForThisTeacher = (subjectsInCellNormalized.length > 1 && teachersInCell.length > 1 && subjectsInCellNormalized.length === teachersInCell.length)
-                                    ? subjectsInCellNormalized[teacherIndex]
-                                    : subjectsInCellNormalized[0];
-
-
-                                if (!subjectForThisTeacher) {
-                                    teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
-                                    return;
-                                }
-                                
+                            teachersInCell.forEach(t => {
                                 const teacherAllocationsForT = teacherAllocations[t];
                                 if (!teacherAllocationsForT) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
-                                    return;
-                                };
+                                    return; 
+                                }
                                 
                                 let isAllocated = false;
-                                const classNumber = cls.split('-')[0];
-                                
-                                // Direct match
-                                if (teacherAllocationsForT[subjectForThisTeacher]?.includes(classNumber)) {
-                                    isAllocated = true;
-                                }
-
-                                // Handle cases like "ধর্ম" where allocations might be more complex
-                                if (!isAllocated && subjectForThisTeacher === 'ধর্ম ও নৈতিক শিক্ষা') {
-                                    if(teacherAllocationsForT['ধর্ম ও নৈতিক শিক্ষা']?.includes(classNumber)) {
+                                for (const subj of subjectsInCellNormalized) {
+                                    if (teacherAllocationsForT[subj]?.includes(classNumber)) {
                                         isAllocated = true;
+                                        break;
                                     }
                                 }
                                 
-                                // If any subject for a teacher is not allocated, mark it.
                                 if (!isAllocated) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
                                 }
                             });
-
-                             // If number of teachers and subjects don't match (and not a 1-to-many case), it's ambiguous
-                            if(teachersInCell.length > 1 && subjectsInCellNormalized.length > 1 && teachersInCell.length !== subjectsInCellNormalized.length) {
-                                teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
-                            }
                         }
                     });
 
