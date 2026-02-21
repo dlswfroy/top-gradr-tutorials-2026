@@ -80,13 +80,30 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
             groups[key].push(res);
         });
 
+        const subjectOrder = [
+            'বাংলা প্রথম', 'বাংলা দ্বিতীয়', 'ইংরেজি প্রথম', 'ইংরেজি দ্বিতীয়', 'গণিত', 'ধর্ম ও নৈতিক শিক্ষা',
+            'তথ্য ও যোগাযোগ প্রযুক্তি', 'সাধারণ বিজ্ঞান', 'বিজ্ঞান', 'বাংলাদেশ ও বিশ্ব পরিচয়', 'কৃষি শিক্ষা',
+            'শারীরিক শিক্ষা', 'পদার্থ', 'রসায়ন', 'জীব বিজ্ঞান', 'উচ্চতর গণিত', 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা',
+            'ভূগোল ও পরিবেশ', 'পৌরনীতি ও নাগরিকতা', 'ব্যবসায় উদ্যোগ', 'হিসাব বিজ্ঞান', 'ফিন্যান্স ও ব্যাংকিং'
+        ];
+
         for (const key in groups) {
             groups[key].sort((a, b) => {
                 const groupA = a.group || '';
                 const groupB = b.group || '';
                 if (groupA !== groupB) {
-                    return groupA.localeCompare(groupB);
+                    return groupA.localeCompare(groupB, 'bn');
                 }
+                
+                const indexA = subjectOrder.indexOf(a.subject);
+                const indexB = subjectOrder.indexOf(b.subject);
+
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB;
+                }
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+
                 return a.subject.localeCompare(b.subject, 'bn');
             });
         }
@@ -487,6 +504,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
+                                                    <TableHead>ক্রমিক নং</TableHead>
                                                     <TableHead>শাখা</TableHead>
                                                     <TableHead>বিষয়</TableHead>
                                                     <TableHead>পূর্ণমান</TableHead>
@@ -496,6 +514,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                             <TableBody>
                                                 {groupedResults[classNameKey].map((res, i) => (
                                                     <TableRow key={`${res.id}-${i}`}>
+                                                        <TableCell>{(i + 1).toLocaleString('bn-BD')}</TableCell>
                                                         <TableCell>{res.group ? groupMap[res.group] : '-'}</TableCell>
                                                         <TableCell>{res.subject}</TableCell>
                                                         <TableCell>{res.fullMarks.toLocaleString('bn-BD')}</TableCell>
