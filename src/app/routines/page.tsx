@@ -17,10 +17,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { getFullRoutine, saveRoutinesBatch, ClassRoutine } from '@/lib/routine-data';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { FilePen, Sparkles } from 'lucide-react';
+import { FilePen, FilePlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { subjectNameNormalization as baseSubjectNameNormalization, getSubjects } from '@/lib/subjects';
-import { generateRoutine } from '@/ai/flows/generate-routine-flow';
 
 const subjectNameNormalization: { [key: string]: string } = {
     ...baseSubjectNameNormalization,
@@ -650,7 +649,6 @@ export default function RoutinesPage() {
     const [routineData, setRoutineData] = useState<Record<string, Record<string, string[]>>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const fetchData = useCallback(async () => {
         if (!db) return;
@@ -724,22 +722,24 @@ export default function RoutinesPage() {
         setIsEditMode(false);
     };
 
-    const handleGenerateRoutine = async () => {
-        setIsGenerating(true);
-        try {
-            const result = await generateRoutine({ teacherAllocations });
-            
-            setRoutineData(result.routine);
-            setOriginalRoutineData(result.routine); // Also update the original to this new baseline
-            setIsEditMode(false); // Exit edit mode after generating
-            toast({ title: 'নতুন রুটিন সফলভাবে তৈরি হয়েছে!' });
+    const handleCreateBlankRoutine = () => {
+        const blankRoutine: Record<string, Record<string, string[]>> = {};
+        const classes = ['6', '7', '8', '9', '10'];
+        const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার"];
+        
+        classes.forEach(cls => {
+            blankRoutine[cls] = {};
+            days.forEach(day => {
+                blankRoutine[cls][day] = Array(6).fill('');
+            });
+        });
 
-        } catch (error) {
-            console.error("Failed to generate routine:", error);
-            toast({ variant: 'destructive', title: 'রুটিন তৈরি করা যায়নি', description: 'কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' });
-        } finally {
-            setIsGenerating(false);
+        setRoutineData(blankRoutine);
+        setOriginalRoutineData(blankRoutine);
+        if (!isEditMode) {
+            setIsEditMode(true);
         }
+        toast({ title: 'ফাঁকা রুটিন তৈরি হয়েছে', description: 'এখন আপনি রুটিনটি পূরণ করতে পারেন।' });
     };
 
     return (
@@ -761,8 +761,8 @@ export default function RoutinesPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <Button variant="outline" onClick={handleGenerateRoutine} disabled={isGenerating}>
-                                            {isGenerating ? 'তৈরি হচ্ছে...' : <><Sparkles className="mr-2 h-4 w-4" /> নতুন রুটিন তৈরি করুন</>}
+                                        <Button variant="outline" onClick={handleCreateBlankRoutine}>
+                                            <FilePlus className="mr-2 h-4 w-4" /> ফাঁকা রুটিন তৈরি করুন
                                         </Button>
                                         <Button variant="outline" onClick={() => setIsEditMode(true)}><FilePen className="mr-2 h-4 w-4" /> রুটিন এডিট করুন</Button>
                                     </>
