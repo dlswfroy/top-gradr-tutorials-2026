@@ -179,27 +179,14 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                     dayRoutine.forEach((cell, periodIdx) => {
                         const { subject, teacher } = parseSubjectTeacher(cell);
                         if(subject) {
-                            const subjectsInCell = subject.split('/').map(s => s.trim()).filter(Boolean);
-                            let normalizedSubjectInCell = subjectsInCell.map(s => subjectNameNormalization[s] || s);
+                            const subjectsInCell = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
 
-                            if(normalizedSubjectInCell.length > 1) { // Handle combined subjects
-                                 const foundSubject = normalizedSubjectInCell.find(ns => subjectsInClass.some(s => s.name === ns));
-                                 if (foundSubject) {
-                                     normalizedSubjectInCell = [foundSubject];
-                                 } else { 
-                                     normalizedSubjectInCell = [normalizedSubjectInCell.join('/')];
-                                 }
-                            }
-                             
-                             normalizedSubjectInCell.forEach(s => {
-                                if(s) {
-                                    const combinedSubjectKey = normalizedSubjectInCell.length > 1 ? subject : s;
-                                    classStats[cls][combinedSubjectKey] = (classStats[cls][combinedSubjectKey] || 0) + 1;
-                                    if (!subjectCountInDay.has(combinedSubjectKey)) {
-                                       subjectCountInDay.set(combinedSubjectKey, []);
-                                    }
-                                    subjectCountInDay.get(combinedSubjectKey)!.push(periodIdx);
+                             subjectsInCell.forEach(s => {
+                                classStats[cls][s] = (classStats[cls][s] || 0) + 1;
+                                if (!subjectCountInDay.has(s)) {
+                                   subjectCountInDay.set(s, []);
                                 }
+                                subjectCountInDay.get(s)!.push(periodIdx);
                              });
                         }
                         if (teacher) {
@@ -372,27 +359,22 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             </TableHeader>
                             <TableBody>
                                 {classes.map(cls => {
-                                    const subjectsForClass = getSubjects(cls);
-                                    let subjectsWithStats = Object.keys(classStats[cls] || {})
-                                        .map(subjectName => {
-                                            const originalSubject = subjectsForClass.find(s => s.name === subjectName || subjectName.startsWith(s.name + ' /'));
-                                            return {
-                                                name: subjectName,
-                                                code: originalSubject?.code || '000',
-                                                count: classStats[cls][subjectName] || 0
-                                            };
-                                        })
-                                        .sort((a,b) => parseInt(a.code) - parseInt(b.code));
+                                    const subjectsForClass = getSubjects(cls, undefined).sort((a,b) => parseInt(a.code) - parseInt(b.code));
 
-                                    if(subjectsWithStats.length === 0) return null;
-                                    return subjectsWithStats.map((subject, subjectIndex) => (
-                                        <TableRow key={`${cls}-${subject.name}`} className="border">
-                                            {subjectIndex === 0 && <TableCell rowSpan={subjectsWithStats.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
-                                            <TableCell className="border text-center">{(subjectIndex + 1).toLocaleString('bn-BD')}</TableCell>
-                                            <TableCell className="border">{subject.name}</TableCell>
-                                            <TableCell className="border text-center">{subject.count.toLocaleString('bn-BD')}</TableCell>
-                                        </TableRow>
-                                    ));
+                                    if(subjectsForClass.length === 0) return null;
+                                    
+                                    return subjectsForClass.map((subject, subjectIndex) => {
+                                        const count = classStats[cls]?.[subject.name] || 0;
+
+                                        return (
+                                            <TableRow key={`${cls}-${subject.name}`} className="border">
+                                                {subjectIndex === 0 && <TableCell rowSpan={subjectsForClass.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
+                                                <TableCell className="border text-center">{(subjectIndex + 1).toLocaleString('bn-BD')}</TableCell>
+                                                <TableCell className="border">{subject.name}</TableCell>
+                                                <TableCell className="border text-center">{count.toLocaleString('bn-BD')}</TableCell>
+                                            </TableRow>
+                                        );
+                                    });
                                 })}
                             </TableBody>
                         </Table>
@@ -548,20 +530,26 @@ const EditableCell = ({ content, isEditMode, onCellChange, conflictKey, conflict
         );
     }
     
-    return (
-        <TableCell 
-            className={cn("border-r p-0", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
+    const cellWrapper = (
+        <div
+            className={cn("w-full h-full", { "bg-red-100 text-red-700": isConflict && !isEditMode })}
             style={!isEditMode && !isConflict && color ? { backgroundColor: color } : {}}
         >
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        {cellContent}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{tooltipContent}</p>
-                    </TooltipContent>
-                </Tooltip>
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    {cellContent}
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{tooltipContent}</p>
+                </TooltipContent>
+            </Tooltip>
+        </div>
+    );
+
+    return (
+        <TableCell className="border-r p-0">
+             <TooltipProvider>
+                {cellWrapper}
             </TooltipProvider>
         </TableCell>
     );
