@@ -43,11 +43,11 @@ const teacherAllocations: Record<string, Record<string, string[]>> = {
     'নীলা': { 'ধর্ম ও নৈতিক শিক্ষা': ['6', '7', '8', '9', '10'], 'শারীরিক শিক্ষা': ['8'] },
     'জান্নাতুন': { 'বাংলাদেশ ও বিশ্ব পরিচয়': ['6'], 'কৃষি শিক্ষা': ['6', '8'], 'পৌরনীতি ও নাগরিকতা': ['9', '10'], 'বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা': ['9', '10'] },
     'যুধিষ্ঠির': { 'বাংলা দ্বিতীয়': ['6', '7', '8', '9', '10'], 'ইংরেজি দ্বিতীয়': ['6', '7'] },
-    'ধনঞ্জয়': { 'গণিত': ['6', '7', '8', '9', '10'], 'রসায়ন': ['9', '10'], 'পদার্থ': ['9', '10'], 'উচ্চতর গণিত': ['9', '10'] },
+    'ধনঞ্জয়': { 'গণিত': ['6', '7', '8', '9', '10'], 'রসায়ন': ['9', '10'], 'পদার্থ': ['9', '10'], 'উচ্চতর গণিত': ['9'] },
     'আরিফুর': { 'ইংরেজি প্রথম': ['6', '7', '8', '9', '10'], 'ইংরেজি দ্বিতীয়': ['8', '9', '10'] },
     'ওবায়দা': { 'বাংলা প্রথম': ['6', '7', '8', '9', '10'], 'শারীরিক শিক্ষা': ['7'] },
     'শারমিন': { 'তথ্য ও যোগাযোগ প্রযুক্তি': ['6', '7', '8', '9', '10'], 'ভূগোল ও পরিবেশ': ['9', '10'] },
-    'শান্তি': { 'সাধারণ বিজ্ঞান': ['6', '7', '8'], 'জীব বিজ্ঞান': ['9', '10'] },
+    'শান্তি': { 'সাধারণ বিজ্ঞান': ['6', '7', '8', '9', '10'], 'জীব বিজ্ঞান': ['9', '10'] },
     'মাহাবুব': { 'কৃষি শিক্ষা': ['7', '9', '10'], 'ধর্ম ও নৈতিক শিক্ষা': ['8', '9', '10'], 'শারীরিক শিক্ষা': ['6'] }
 };
 
@@ -147,13 +147,17 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                     dayRoutine.forEach((cell, periodIdx) => {
                         const { subject, teacher } = parseSubjectTeacher(cell);
                         
-                        const subjectsInCell = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
+                        const subjectsInCell = subject.split('/').map(s => s.trim()).filter(Boolean);
                         
                         subjectsInCell.forEach(s => {
-                             const normSub = subjectNameNormalization[s] || s;
-                            if (!classStats[cls][normSub]) classStats[cls][normSub] = 0;
-                            classStats[cls][normSub] += 1;
+                            const normalizedSubject = subjectNameNormalization[s] || s;
+                            const subjectInfo = subjectsInClass.find(sub => sub.name === normalizedSubject || sub.name === s);
+                            if (subjectInfo) {
+                                if (!classStats[cls][subjectInfo.name]) classStats[cls][subjectInfo.name] = 0;
+                                classStats[cls][subjectInfo.name] += 1;
+                            }
                         });
+
 
                         if(subject) {
                              subjectsInCell.forEach(s => {
@@ -184,6 +188,7 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                         }
                          if (subject && teacher) {
                             const teachersInCell = teacher.split('/').map(t => t.trim()).filter(Boolean);
+                            const subjectsInCellNormalized = subject.split('/').map(s => subjectNameNormalization[s.trim()] || s.trim()).filter(Boolean);
 
                             teachersInCell.forEach((t, teacherIndex) => {
                                 if (!t || !teacherAllocations[t]) {
@@ -191,17 +196,17 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                      return;
                                 };
                                 
-                                const subjectForThisTeacher = subjectsInCell.length > 1 && teachersInCell.length > 1
-                                    ? (subjectsInCell.length > teacherIndex ? subjectsInCell[teacherIndex] : null)
-                                    : subjectsInCell[0];
+                                // Simple 1-to-1 mapping for combined classes, or 1-to-many if one teacher for multiple subjects
+                                const subjectForThisTeacher = (subjectsInCellNormalized.length > 1 && teachersInCell.length > 1 && subjectsInCellNormalized.length === teachersInCell.length)
+                                    ? subjectsInCellNormalized[teacherIndex]
+                                    : subjectsInCellNormalized[0];
 
 
                                 if (!subjectForThisTeacher) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
                                     return;
                                 }
-
-                                const normalizedSubject = subjectNameNormalization[subjectForThisTeacher] || subjectForThisTeacher;
+                                
                                 const teacherAllocationsForT = teacherAllocations[t];
                                 if (!teacherAllocationsForT) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
@@ -211,21 +216,28 @@ const useRoutineAnalysis = (routine: Record<string, Record<string, string[]>>) =
                                 let isAllocated = false;
                                 const classNumber = cls.split('-')[0];
                                 
-                                for(const allocatedSubject in teacherAllocationsForT) {
-                                    const normalizedAllocatedSubject = subjectNameNormalization[allocatedSubject] || allocatedSubject;
-                                    if (normalizedAllocatedSubject === normalizedSubject) {
-                                        const classAllocation = teacherAllocationsForT[allocatedSubject];
-                                        if(classAllocation && classAllocation.includes(classNumber)) {
-                                            isAllocated = true;
-                                            break;
-                                        }
-                                    }
+                                // Direct match
+                                if (teacherAllocationsForT[subjectForThisTeacher]?.includes(classNumber)) {
+                                    isAllocated = true;
                                 }
 
+                                // Handle cases like "ধর্ম" where allocations might be more complex
+                                if (!isAllocated && subjectForThisTeacher === 'ধর্ম ও নৈতিক শিক্ষা') {
+                                    if(teacherAllocationsForT['ধর্ম ও নৈতিক শিক্ষা']?.includes(classNumber)) {
+                                        isAllocated = true;
+                                    }
+                                }
+                                
+                                // If any subject for a teacher is not allocated, mark it.
                                 if (!isAllocated) {
                                     teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
                                 }
                             });
+
+                             // If number of teachers and subjects don't match (and not a 1-to-many case), it's ambiguous
+                            if(teachersInCell.length > 1 && subjectsInCellNormalized.length > 1 && teachersInCell.length !== subjectsInCellNormalized.length) {
+                                teacherSubjectMismatchClashes.add(`${cls}-${day}-${periodIdx}`);
+                            }
                         }
                     });
 
@@ -346,9 +358,9 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
                             </TableHeader>
                             <TableBody>
                                 {classes.map(cls => {
-                                    const subjectsToExclude = ['ব্যবসায় উদ্যোগ', 'হিসাব বিজ্ঞান', 'ফিন্যান্স ও ব্যাংকিং'];
+                                    const subjectsToExcludeForCommerce = ['ব্যবসায় উদ্যোগ', 'হিসাব বিজ্ঞান', 'ফিন্যান্স ও ব্যাংকিং'];
                                     const subjectsForClass = getSubjects(cls, undefined)
-                                        .filter(subject => !subjectsToExclude.includes(subject.name))
+                                        .filter(subject => !subjectsToExcludeForCommerce.includes(subject.name))
                                         .sort((a,b) => parseInt(a.code) - parseInt(b.code));
 
                                     if(['6','7','8'].includes(cls)) {
@@ -361,10 +373,8 @@ const RoutineStatistics = ({ stats }: { stats: any }) => {
 
                                     if(subjectsForClass.length === 0) return null;
                                     
-                                    let rowCount = 0;
                                     const rows = subjectsForClass.map((subject, subjectIndex) => {
                                         const count = classStats[cls]?.[subject.name] || 0;
-                                        rowCount++;
                                         return (
                                             <TableRow key={`${cls}-${subject.name}`} className="border">
                                                 {subjectIndex === 0 && <TableCell rowSpan={subjectsForClass.length} className="font-medium align-top border text-center">{classNamesMap[cls]}</TableCell>}
