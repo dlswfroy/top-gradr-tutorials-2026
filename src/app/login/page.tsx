@@ -109,11 +109,11 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>স্কুল ম্যানেজমেন্ট সিস্টেম</CardTitle>
-                    <CardDescription>আপনার ভূমিকা নির্বাচন করে লগইন বা সাইন আপ করুন</CardDescription>
+                    <CardDescription>লগইন বা সাইন আপ করুন</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="teacher-login">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
                             <TabsTrigger value="teacher-login">শিক্ষক লগইন</TabsTrigger>
                             <TabsTrigger value="admin-login">এডমিন লগইন</TabsTrigger>
                             <TabsTrigger value="signup">সাইন আপ</TabsTrigger>
