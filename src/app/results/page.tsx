@@ -29,6 +29,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/useAuth';
 
 
 type Marks = {
@@ -41,6 +42,8 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { hasPermission } = useAuth();
+    const canManageResults = hasPermission('manage:results');
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -417,17 +420,19 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
             
             {studentsForClass.length > 0 && (
                 <div className="overflow-x-auto border rounded-md">
-                    <div className="flex justify-end p-2 gap-2">
-                         <Button variant="outline" size="sm" onClick={handleDownloadSample}>
-                            <Download className="mr-2 h-4 w-4" />
-                            নমুনা
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                            <FileUp className="mr-2 h-4 w-4" />
-                            আপলোড
-                        </Button>
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls" />
-                    </div>
+                    {canManageResults && (
+                        <div className="flex justify-end p-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={handleDownloadSample}>
+                                <Download className="mr-2 h-4 w-4" />
+                                নমুনা
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                <FileUp className="mr-2 h-4 w-4" />
+                                আপলোড
+                            </Button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls" />
+                        </div>
+                    )}
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -449,6 +454,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                             value={marks.get(student.id)?.written || ''}
                                             onChange={(e) => handleMarkChange(student.id, 'written', e.target.value)}
                                             className="w-24"
+                                            disabled={!canManageResults}
                                         />
                                     </TableCell>
                                      <TableCell>
@@ -457,6 +463,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                             value={marks.get(student.id)?.mcq || ''}
                                             onChange={(e) => handleMarkChange(student.id, 'mcq', e.target.value)}
                                             className="w-24"
+                                            disabled={!canManageResults}
                                         />
                                     </TableCell>
                                     {selectedSubjectInfo?.practical && (
@@ -466,6 +473,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                                                 value={marks.get(student.id)?.practical || ''}
                                                 onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
                                                 className="w-24"
+                                                disabled={!canManageResults}
                                             />
                                         </TableCell>
                                     )}
@@ -473,97 +481,101 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
                             ))}
                         </TableBody>
                     </Table>
-                    <div className="flex justify-end p-4 mt-4 border-t">
-                        <Button onClick={handleSaveResults}>ফলাফল সেভ করুন</Button>
-                    </div>
+                    {canManageResults && (
+                        <div className="flex justify-end p-4 mt-4 border-t">
+                            <Button onClick={handleSaveResults}>ফলাফল সেভ করুন</Button>
+                        </div>
+                    )}
                 </div>
             )}
 
-            <div className="space-y-4">
-                <h3 className="font-semibold text-lg border-b pb-2">সংরক্ষিত ফলাফল (শিক্ষাবর্ষ {selectedYear.toLocaleString('bn-BD')})</h3>
-                {savedResults.length === 0 ? (
-                    <div className="border rounded-md text-center text-muted-foreground py-8">
-                        এই শিক্ষাবর্ষে কোনো ফলাফল সেভ করা হয়নি।
-                    </div>
-                ) : (
-                    <Accordion type="multiple" className="w-full">
-                        {sortedClassKeys.map(classNameKey => (
-                            <AccordionItem value={classNameKey} key={classNameKey}>
-                                <AccordionTrigger>শ্রেণি {classNamesMap[classNameKey] || classNameKey}</AccordionTrigger>
-                                <AccordionContent>
-                                    {(() => {
-                                        const resultsByGroup: Record<string, ClassResult[]> = (groupedResults[classNameKey] || []).reduce((acc, res) => {
-                                            const groupKey = res.group || 'সাধারণ';
-                                            if (!acc[groupKey]) {
-                                                acc[groupKey] = [];
-                                            }
-                                            acc[groupKey].push(res);
-                                            return acc;
-                                        }, {} as Record<string, ClassResult[]>);
+            {canManageResults && savedResults.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-lg border-b pb-2">সংরক্ষিত ফলাফল (শিক্ষাবর্ষ {selectedYear.toLocaleString('bn-BD')})</h3>
+                    {savedResults.length === 0 ? (
+                        <div className="border rounded-md text-center text-muted-foreground py-8">
+                            এই শিক্ষাবর্ষে কোনো ফলাফল সেভ করা হয়নি।
+                        </div>
+                    ) : (
+                        <Accordion type="multiple" className="w-full">
+                            {sortedClassKeys.map(classNameKey => (
+                                <AccordionItem value={classNameKey} key={classNameKey}>
+                                    <AccordionTrigger>শ্রেণি {classNamesMap[classNameKey] || classNameKey}</AccordionTrigger>
+                                    <AccordionContent>
+                                        {(() => {
+                                            const resultsByGroup: Record<string, ClassResult[]> = (groupedResults[classNameKey] || []).reduce((acc, res) => {
+                                                const groupKey = res.group || 'সাধারণ';
+                                                if (!acc[groupKey]) {
+                                                    acc[groupKey] = [];
+                                                }
+                                                acc[groupKey].push(res);
+                                                return acc;
+                                            }, {} as Record<string, ClassResult[]>);
 
-                                        return Object.entries(resultsByGroup).map(([groupKey, results]) => (
-                                            <div key={groupKey} className="mb-6 last:mb-0">
-                                                {(classNameKey === '9' || classNameKey === '10') && (
-                                                    <h4 className="font-semibold text-md mb-2 pl-1">{groupMap[groupKey] || 'সাধারণ শাখা'}</h4>
-                                                )}
-                                                <div className="border rounded-md overflow-x-auto">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>ক্রমিক নং</TableHead>
-                                                                <TableHead>বিষয়</TableHead>
-                                                                <TableHead>পূর্ণমান</TableHead>
-                                                                <TableHead className="text-right">কার্যক্রম</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {results.map((res, i) => (
-                                                                <TableRow key={`${res.id}-${i}`}>
-                                                                    <TableCell>{(i + 1).toLocaleString('bn-BD')}</TableCell>
-                                                                    <TableCell>{res.subject}</TableCell>
-                                                                    <TableCell>{res.fullMarks.toLocaleString('bn-BD')}</TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        <div className="flex justify-end gap-2">
-                                                                            <Button variant="outline" size="icon" onClick={() => handleEditClick(res)}>
-                                                                                <FilePen className="h-4 w-4" />
-                                                                            </Button>
-                                                                            <AlertDialog>
-                                                                                <AlertDialogTrigger asChild>
-                                                                                    <Button variant="destructive" size="icon">
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                </AlertDialogTrigger>
-                                                                                <AlertDialogContent>
-                                                                                    <AlertDialogHeader>
-                                                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                                                        <AlertDialogDescription>
-                                                                                            এই বিষয়ের ফলাফল স্থায়ীভাবে মুছে যাবে।
-                                                                                        </AlertDialogDescription>
-                                                                                    </AlertDialogHeader>
-                                                                                    <AlertDialogFooter>
-                                                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                                                        <AlertDialogAction onClick={() => handleDeleteResult(res)}>
-                                                                                            মুছে ফেলুন
-                                                                                        </AlertDialogAction>
-                                                                                    </AlertDialogFooter>
-                                                                                </AlertDialogContent>
-                                                                            </AlertDialog>
-                                                                        </div>
-                                                                    </TableCell>
+                                            return Object.entries(resultsByGroup).map(([groupKey, results]) => (
+                                                <div key={groupKey} className="mb-6 last:mb-0">
+                                                    {(classNameKey === '9' || classNameKey === '10') && (
+                                                        <h4 className="font-semibold text-md mb-2 pl-1">{groupMap[groupKey] || 'সাধারণ শাখা'}</h4>
+                                                    )}
+                                                    <div className="border rounded-md overflow-x-auto">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>ক্রমিক নং</TableHead>
+                                                                    <TableHead>বিষয়</TableHead>
+                                                                    <TableHead>পূর্ণমান</TableHead>
+                                                                    <TableHead className="text-right">কার্যক্রম</TableHead>
                                                                 </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {results.map((res, i) => (
+                                                                    <TableRow key={`${res.id}-${i}`}>
+                                                                        <TableCell>{(i + 1).toLocaleString('bn-BD')}</TableCell>
+                                                                        <TableCell>{res.subject}</TableCell>
+                                                                        <TableCell>{res.fullMarks.toLocaleString('bn-BD')}</TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <div className="flex justify-end gap-2">
+                                                                                <Button variant="outline" size="icon" onClick={() => handleEditClick(res)}>
+                                                                                    <FilePen className="h-4 w-4" />
+                                                                                </Button>
+                                                                                <AlertDialog>
+                                                                                    <AlertDialogTrigger asChild>
+                                                                                        <Button variant="destructive" size="icon">
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </AlertDialogTrigger>
+                                                                                    <AlertDialogContent>
+                                                                                        <AlertDialogHeader>
+                                                                                            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                                            <AlertDialogDescription>
+                                                                                                এই বিষয়ের ফলাফল স্থায়ীভাবে মুছে যাবে।
+                                                                                            </AlertDialogDescription>
+                                                                                        </AlertDialogHeader>
+                                                                                        <AlertDialogFooter>
+                                                                                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                                            <AlertDialogAction onClick={() => handleDeleteResult(res)}>
+                                                                                                মুছে ফেলুন
+                                                                                            </AlertDialogAction>
+                                                                                        </AlertDialogFooter>
+                                                                                    </AlertDialogContent>
+                                                                                </AlertDialog>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ));
-                                    })()}
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                )}
-            </div>
+                                            ));
+                                        })()}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    )}
+                </div>
+            )}
 
         </div>
     );
@@ -573,6 +585,8 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { hasPermission } = useAuth();
+    const canPromote = hasPermission('promote:students');
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -784,49 +798,51 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
                         {isLoading ? 'লোড হচ্ছে...' : 'ফলাফল দেখুন'}
                     </Button>
                 </div>
-                 <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button disabled={isLoading || processedResults.length === 0}>
-                            পরবর্তী সেশনে উত্তীর্ণ করুন
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-2xl">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>শিক্ষার্থী উত্তীর্ণের সারাংশ</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                আপনি কি {selectedYear.toLocaleString('bn-BD')} শিক্ষাবর্ষ থেকে {String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')} শিক্ষাবর্ষে শিক্ষার্থীদের উত্তীর্ণ করতে চান?
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="max-h-[50vh] overflow-y-auto my-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div>
-                                <h4 className="font-semibold mb-2 border-b pb-1 text-green-600">উত্তীর্ণ হবে ({passedStudentsToPromote.length.toLocaleString('bn-BD')} জন)</h4>
-                                {passedStudentsToPromote.length > 0 ? (
-                                    <ul className="text-sm space-y-1 list-decimal list-inside">
-                                        {passedStudentsToPromote.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
-                                    </ul>
-                                ) : <p className="text-sm text-muted-foreground">--</p>}
+                {canPromote && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button disabled={isLoading || processedResults.length === 0}>
+                                পরবর্তী সেশনে উত্তীর্ণ করুন
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-2xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>শিক্ষার্থী উত্তীর্ণের সারাংশ</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    আপনি কি {selectedYear.toLocaleString('bn-BD')} শিক্ষাবর্ষ থেকে {String(parseInt(selectedYear, 10) + 1).toLocaleString('bn-BD')} শিক্ষাবর্ষে শিক্ষার্থীদের উত্তীর্ণ করতে চান?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="max-h-[50vh] overflow-y-auto my-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                <div>
+                                    <h4 className="font-semibold mb-2 border-b pb-1 text-green-600">উত্তীর্ণ হবে ({passedStudentsToPromote.length.toLocaleString('bn-BD')} জন)</h4>
+                                    {passedStudentsToPromote.length > 0 ? (
+                                        <ul className="text-sm space-y-1 list-decimal list-inside">
+                                            {passedStudentsToPromote.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                        </ul>
+                                    ) : <p className="text-sm text-muted-foreground">--</p>}
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold mb-2 border-b pb-1 text-blue-600">গ্র্যাজুয়েট হবে ({graduatedStudents.length.toLocaleString('bn-BD')} জন)</h4>
+                                    {graduatedStudents.length > 0 ? (
+                                        <ul className="text-sm space-y-1 list-decimal list-inside">
+                                            {graduatedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                        </ul>
+                                    ) : <p className="text-sm text-muted-foreground">--</p>}
+                                    <h4 className="font-semibold mt-4 mb-2 border-b pb-1 text-destructive">ফেল করেছে ({failedStudents.length.toLocaleString('bn-BD')} জন)</h4>
+                                    {failedStudents.length > 0 ? (
+                                        <ul className="text-sm space-y-1 list-decimal list-inside text-destructive">
+                                            {failedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
+                                        </ul>
+                                    ) : <p className="text-sm text-muted-foreground">--</p>}
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-semibold mb-2 border-b pb-1 text-blue-600">গ্র্যাজুয়েট হবে ({graduatedStudents.length.toLocaleString('bn-BD')} জন)</h4>
-                                {graduatedStudents.length > 0 ? (
-                                    <ul className="text-sm space-y-1 list-decimal list-inside">
-                                        {graduatedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
-                                    </ul>
-                                ) : <p className="text-sm text-muted-foreground">--</p>}
-                                <h4 className="font-semibold mt-4 mb-2 border-b pb-1 text-destructive">ফেল করেছে ({failedStudents.length.toLocaleString('bn-BD')} জন)</h4>
-                                {failedStudents.length > 0 ? (
-                                    <ul className="text-sm space-y-1 list-decimal list-inside text-destructive">
-                                        {failedStudents.map(res => <li key={res.student.id}>{res.student.studentNameBn} (রোল: {res.student.roll.toLocaleString('bn-BD')})</li>)}
-                                    </ul>
-                                ) : <p className="text-sm text-muted-foreground">--</p>}
-                            </div>
-                        </div>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                            <AlertDialogAction onClick={handlePromoteStudents} disabled={passedStudentsToPromote.length === 0 && graduatedStudents.length === 0}>উত্তীর্ণ করুন</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                <AlertDialogAction onClick={handlePromoteStudents} disabled={passedStudentsToPromote.length === 0 && graduatedStudents.length === 0}>উত্তীর্ণ করুন</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
             
             {isLoading && <p>ফলাফল লোড হচ্ছে...</p>}
@@ -877,6 +893,8 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { hasPermission } = useAuth();
+    const canPromote = hasPermission('promote:students');
 
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -1106,7 +1124,7 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
                 !isLoading && className && <p className="text-center text-muted-foreground p-8">এই শ্রেণিতে ফেল করা কোনো শিক্ষার্থী নেই অথবা আপনি এখনও তালিকা দেখেননি।</p>
             )}
             
-            {failedStudents.length > 0 &&
+            {canPromote && failedStudents.length > 0 &&
                 <div className="flex justify-end">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -1407,6 +1425,8 @@ export default function ResultsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
+    const { hasPermission } = useAuth();
+    const canPromote = hasPermission('promote:students');
 
     const fetchAllStudents = useCallback(() => {
         if (!db) return;
@@ -1452,10 +1472,10 @@ export default function ResultsPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="management">
-                                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+                                <TabsList className="inline-flex h-auto flex-wrap items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <TabsTrigger value="management">নম্বর ব্যবস্থাপনা</TabsTrigger>
                                     <TabsTrigger value="sheet">ফলাফল শিট</TabsTrigger>
-                                    <TabsTrigger value="special-promotion">বিশেষ বিবেচনায় পাশ</TabsTrigger>
+                                    {canPromote && <TabsTrigger value="special-promotion">বিশেষ বিবেচনায় পাশ</TabsTrigger>}
                                     <TabsTrigger value="upload">এক্সেল আপলোড</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="management" className="mt-4">
@@ -1464,9 +1484,11 @@ export default function ResultsPage() {
                                 <TabsContent value="sheet" className="mt-4">
                                     {isLoading ? <p>লোড হচ্ছে...</p> : <ResultSheetTab allStudents={allStudents} />}
                                 </TabsContent>
-                                <TabsContent value="special-promotion" className="mt-4">
-                                     {isLoading ? <p>লোড হচ্ছে...</p> : <SpecialPromotionTab allStudents={allStudents} />}
-                                </TabsContent>
+                                {canPromote && (
+                                    <TabsContent value="special-promotion" className="mt-4">
+                                        {isLoading ? <p>লোড হচ্ছে...</p> : <SpecialPromotionTab allStudents={allStudents} />}
+                                    </TabsContent>
+                                )}
                                 <TabsContent value="upload" className="mt-4">
                                      {isLoading ? <p>লোড হচ্ছে...</p> : <BulkUploadTab allStudents={allStudents} />}
                                 </TabsContent>

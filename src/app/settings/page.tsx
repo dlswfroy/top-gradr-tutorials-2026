@@ -636,7 +636,7 @@ export default function SettingsPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="profile">
-                                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
+                                <TabsList className="inline-flex h-auto flex-wrap items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <TabsTrigger value="profile">প্রোফাইল</TabsTrigger>
                                     {isAdmin && <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>}
                                     {isAdmin && <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>}

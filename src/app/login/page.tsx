@@ -113,7 +113,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="teacher-login">
-                        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+                        <TabsList className="inline-flex h-auto flex-wrap items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                             <TabsTrigger value="teacher-login">শিক্ষক লগইন</TabsTrigger>
                             <TabsTrigger value="admin-login">এডমিন লগইন</TabsTrigger>
                             <TabsTrigger value="signup">সাইন আপ</TabsTrigger>
