@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,13 +20,14 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    if(loading) {
-        return <div className="flex min-h-screen items-center justify-center">লোড হচ্ছে...</div>
-    }
+    useEffect(() => {
+        if (!loading && user) {
+            router.push('/');
+        }
+    }, [user, loading, router]);
 
-    if(user) {
-        router.push('/');
-        return null;
+    if(loading || user) {
+        return <div className="flex min-h-screen items-center justify-center">লোড হচ্ছে...</div>
     }
 
     const handleAuthAction = async (action: 'signIn' | 'signUp', role: UserRole) => {
@@ -36,7 +37,6 @@ export default function LoginPage() {
                 const result = await signIn(email, password, role);
                 if (result.success) {
                     toast({ title: 'লগইন সফল হয়েছে' });
-                    router.push('/');
                 } else {
                     throw new Error(result.error);
                 }
@@ -44,7 +44,6 @@ export default function LoginPage() {
                 const result = await signUp(email, password);
                  if (result.success) {
                     toast({ title: 'সাইন আপ সফল হয়েছে', description: `আপনাকে একজন ${result.role} হিসেবে নিবন্ধন করা হয়েছে।` });
-                    router.push('/');
                 } else {
                     throw new Error(result.error);
                 }
