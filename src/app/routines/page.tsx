@@ -437,9 +437,6 @@ const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange
          <Card>
             <CardHeader className="no-print">
                 <CardTitle>সকল শ্রেণির সম্মিলিত ক্লাস রুটিন</CardTitle>
-                <CardDescription className="no-print">
-                    অসঙ্গতিপূর্ণ ক্লাসগুলো লাল রঙে হাইলাইট করা হয়েছে। বিস্তারিত জানতে সেলের উপর মাউস রাখুন। এডিট মোডে প্রতিটি সেলে ক্লিক করে পরিবর্তন করা যাবে।
-                </CardDescription>
             </CardHeader>
             <CardContent>
                  <div className="overflow-x-auto">
