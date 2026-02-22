@@ -113,6 +113,7 @@ export default function StaffListPage() {
                             <TableHead>পদবি</TableHead>
                             <TableHead>বিষয়</TableHead>
                             <TableHead>মোবাইল</TableHead>
+                            <TableHead>ইমেইল</TableHead>
                             <TableHead>ধরণ</TableHead>
                             <TableHead className="text-right">কার্যক্রম</TableHead>
                         </TableRow>
@@ -120,13 +121,13 @@ export default function StaffListPage() {
                         <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                     লোড হচ্ছে...
                                 </TableCell>
                             </TableRow>
                         ) : allStaff.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                     কোনো শিক্ষক বা কর্মচারীর তথ্য পাওয়া যায়নি।
                                 </TableCell>
                             </TableRow>
@@ -146,6 +147,7 @@ export default function StaffListPage() {
                                 <TableCell className="whitespace-nowrap">{staff.designation}</TableCell>
                                 <TableCell>{staff.subject || '-'}</TableCell>
                                 <TableCell>{staff.mobile}</TableCell>
+                                <TableCell>{staff.email || '-'}</TableCell>
                                 <TableCell>
                                     <Badge variant={staff.staffType === 'teacher' ? 'default' : 'secondary'}>
                                         {staffTypeMap[staff.staffType]}
@@ -203,6 +205,7 @@ export default function StaffListPage() {
                           <TableHead>পদবি</TableHead>
                           <TableHead>বিষয়</TableHead>
                           <TableHead>মোবাইল</TableHead>
+                           <TableHead>ইমেইল</TableHead>
                            <TableHead>ধরণ</TableHead>
                           <TableHead className="text-right">কার্যক্রম</TableHead>
                         </TableRow>
@@ -215,6 +218,7 @@ export default function StaffListPage() {
                             <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
