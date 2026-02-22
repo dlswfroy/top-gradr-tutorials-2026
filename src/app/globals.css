@@ -3,6 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@page routine {
+  size: legal landscape;
+  margin: 0;
+}
+
 @layer base {
   :root {
     --background: 170 43% 96.1%;
@@ -81,16 +91,6 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  @page {
-    size: A4;
-    margin: 0;
-  }
-  
-  @page routine {
-    size: legal landscape;
-    margin: 0;
   }
 
   @media print {
