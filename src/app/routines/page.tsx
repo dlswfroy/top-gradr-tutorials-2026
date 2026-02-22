@@ -22,6 +22,7 @@ import { subjectNameNormalization as baseSubjectNameNormalization, getSubjects }
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
 
 const subjectNameNormalization: { [key: string]: string } = {
     ...baseSubjectNameNormalization,
@@ -632,6 +633,8 @@ export default function RoutinesPage() {
     const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
     const [targetYear, setTargetYear] = useState('');
     const { schoolInfo, isLoading: isSchoolInfoLoading } = useSchoolInfo();
+    const { hasPermission } = useAuth();
+    const canManageRoutines = hasPermission('manage:routines');
 
     const fetchData = useCallback(async () => {
         if (!db) return;
@@ -784,7 +787,7 @@ export default function RoutinesPage() {
                                 <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
                                     {isClient && !isLoading ? (
                                         <>
-                                            {isEditMode ? (
+                                            {isEditMode && canManageRoutines ? (
                                                 <>
                                                     <Button variant="outline" onClick={handleCancelEdit}>বাতিল</Button>
                                                     <Button onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
@@ -794,60 +797,64 @@ export default function RoutinesPage() {
                                                      <Button variant="outline" onClick={handlePrint} className="no-print">
                                                         <Printer className="mr-2 h-4 w-4" /> রুটিন প্রিন্ট করুন
                                                     </Button>
-                                                    <AlertDialog open={isCopyDialogOpen} onOpenChange={setIsCopyDialogOpen}>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="outline" className="no-print">
-                                                                <Copy className="mr-2 h-4 w-4" /> রুটিন কপি করুন
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>রুটিন কপি করুন</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    বর্তমান শিক্ষাবর্ষ ({selectedYear.toLocaleString('bn-BD')}) এর রুটিনটি অন্য একটি শিক্ষাবর্ষে কপি করুন।
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <div className="py-4">
-                                                                <Label htmlFor="target-year">লক্ষ্য শিক্ষাবর্ষ</Label>
-                                                                <Select value={targetYear} onValueChange={setTargetYear}>
-                                                                    <SelectTrigger id="target-year">
-                                                                        <SelectValue placeholder="শিক্ষাবর্ষ নির্বাচন করুন" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {availableYears.filter(y => y !== selectedYear).map(year => (
-                                                                            <SelectItem key={year} value={year}>{year.toLocaleString('bn-BD')}</SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={handleCopyRoutine}>কপি করুন</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="outline">
-                                                                <FilePlus className="mr-2 h-4 w-4" /> ফাঁকা রুটিন তৈরি করুন
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    এটি বর্তমান রুটিনের সকল তথ্য মুছে একটি নতুন ফাঁকা রুটিন তৈরি করবে। এই কাজটি ফিরিয়ে আনা যাবে না।
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={handleCreateBlankRoutine}>
-                                                                    এগিয়ে যান
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                    <Button variant="outline" onClick={() => setIsEditMode(true)}><FilePen className="mr-2 h-4 w-4" /> রুটিন এডিট করুন</Button>
+                                                    {canManageRoutines && (
+                                                        <>
+                                                        <AlertDialog open={isCopyDialogOpen} onOpenChange={setIsCopyDialogOpen}>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="outline" className="no-print">
+                                                                    <Copy className="mr-2 h-4 w-4" /> রুটিন কপি করুন
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>রুটিন কপি করুন</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        বর্তমান শিক্ষাবর্ষ ({selectedYear.toLocaleString('bn-BD')}) এর রুটিনটি অন্য একটি শিক্ষাবর্ষে কপি করুন।
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <div className="py-4">
+                                                                    <Label htmlFor="target-year">লক্ষ্য শিক্ষাবর্ষ</Label>
+                                                                    <Select value={targetYear} onValueChange={setTargetYear}>
+                                                                        <SelectTrigger id="target-year">
+                                                                            <SelectValue placeholder="শিক্ষাবর্ষ নির্বাচন করুন" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {availableYears.filter(y => y !== selectedYear).map(year => (
+                                                                                <SelectItem key={year} value={year}>{year.toLocaleString('bn-BD')}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={handleCopyRoutine}>কপি করুন</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="outline">
+                                                                    <FilePlus className="mr-2 h-4 w-4" /> ফাঁকা রুটিন তৈরি করুন
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        এটি বর্তমান রুটিনের সকল তথ্য মুছে একটি নতুন ফাঁকা রুটিন তৈরি করবে। এই কাজটি ফিরিয়ে আনা যাবে না।
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={handleCreateBlankRoutine}>
+                                                                        এগিয়ে যান
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                        <Button variant="outline" onClick={() => setIsEditMode(true)}><FilePen className="mr-2 h-4 w-4" /> রুটিন এডিট করুন</Button>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </>
@@ -869,7 +876,7 @@ export default function RoutinesPage() {
                                         <TabsTrigger value="statistics">পরিসংখ্যান</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="class-routine" className="mt-4">
-                                        <ClassRoutineTab routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={handleCellChange} teacherColorMap={teacherColorMap!} isMounted={isMounted} />
+                                        <ClassRoutineTab routineData={routineData} conflicts={conflicts} isEditMode={isEditMode && canManageRoutines} onCellChange={handleCellChange} teacherColorMap={teacherColorMap!} isMounted={isMounted} />
                                     </TabsContent>
                                     <TabsContent value="exam-routine" className="mt-4">
                                         <ExamRoutineTab />

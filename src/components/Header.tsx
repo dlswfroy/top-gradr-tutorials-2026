@@ -123,7 +123,7 @@ export function Header() {
                         নতুন শিক্ষার্থী যোগ
                       </Link>
                     )}
-                     {hasPermission('manage:students') && (
+                     {hasPermission('view:students') && (
                       <Link
                         href="/student-list"
                         className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-rose-100 text-rose-800 hover:bg-rose-200"
@@ -150,7 +150,7 @@ export function Header() {
                         ফলাফল
                       </Link>
                     )}
-                    {hasPermission('manage:accounts') && (
+                    {hasPermission('view:accounts') && (
                       <Link
                         href="/accounts"
                         className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-teal-100 text-teal-800 hover:bg-teal-200"
@@ -159,7 +159,7 @@ export function Header() {
                         হিসাব শাখা
                       </Link>
                     )}
-                    {hasPermission('manage:staff') && (
+                    {hasPermission('view:staff') && (
                       <Link
                         href="/staff"
                         className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-orange-100 text-orange-800 hover:bg-orange-200"
@@ -177,7 +177,7 @@ export function Header() {
                         ডকুমেন্ট
                       </Link>
                     )}
-                    {hasPermission('manage:routines') && (
+                    {hasPermission('view:routines') && (
                       <Link
                         href="/routines"
                         className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200"

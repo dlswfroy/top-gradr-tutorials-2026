@@ -22,6 +22,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from './ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DatePicker } from './ui/date-picker';
+import { useAuth } from '@/hooks/useAuth';
 
 const feeFields: { key: keyof FeeBreakdown; label: string }[] = [
     { key: 'tuitionCurrent', label: 'চলতি' },
@@ -255,6 +256,8 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
+    const { hasPermission } = useAuth();
+    const canManageTransactions = hasPermission('manage:transactions');
 
     const [feeCollections, setFeeCollections] = useState<FeeCollection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -351,7 +354,7 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                                         <TableHead>আদায়ের তারিখ</TableHead>
                                         <TableHead>বিবরণ</TableHead>
                                         <TableHead className="text-right">মোট টাকা</TableHead>
-                                        <TableHead className="text-right">কার্যক্রম</TableHead>
+                                        {canManageTransactions && <TableHead className="text-right">কার্যক্রম</TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -363,26 +366,28 @@ export function StudentFeeDialog({ student, open, onOpenChange, onFeeCollected }
                                                 <TableCell>{format(collection.collectionDate, "PP", { locale: bn })}</TableCell>
                                                 <TableCell>{collection.description || 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-medium">{collection.totalAmount.toLocaleString('bn-BD')} ৳</TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex gap-2 justify-end">
-                                                        <Button variant="outline" size="icon" onClick={() => handleEdit(collection)}>
-                                                            <FilePen className="h-4 w-4" />
-                                                        </Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>এই লেনদেনটি স্থায়ীভাবে মুছে যাবে। এটি ক্যাশবুক থেকেও মুছে যাবে।</AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDelete(collection)}>মুছে ফেলুন</AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                </TableCell>
+                                                {canManageTransactions && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex gap-2 justify-end">
+                                                            <Button variant="outline" size="icon" onClick={() => handleEdit(collection)}>
+                                                                <FilePen className="h-4 w-4" />
+                                                            </Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>এই লেনদেনটি স্থায়ীভাবে মুছে যাবে। এটি ক্যাশবুক থেকেও মুছে যাবে।</AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleDelete(collection)}>মুছে ফেলুন</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))
                                     )}

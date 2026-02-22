@@ -29,6 +29,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { StudentFeeDialog } from '@/components/StudentFeeDialog';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useAuth } from '@/hooks/useAuth';
 
 
 // Fee Collection Component
@@ -246,6 +247,8 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
 const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Transaction[], isLoading: boolean, refetch: () => void }) => {
     const db = useFirestore();
     const { toast } = useToast();
+    const { hasPermission } = useAuth();
+    const canManageTransactions = hasPermission('manage:transactions');
 
     const sortedTransactions = useMemo(() => {
         return [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -289,14 +292,14 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
                                 <TableHead className="text-right">আয়</TableHead>
                                 <TableHead className="text-right">ব্যয়</TableHead>
                                 <TableHead className="text-right">ব্যালেন্স</TableHead>
-                                <TableHead className="text-right">কার্যক্রম</TableHead>
+                                {canManageTransactions && <TableHead className="text-right">কার্যক্রম</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={6} className="text-center p-8">লোড হচ্ছে...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canManageTransactions ? 6 : 5} className="text-center p-8">লোড হচ্ছে...</TableCell></TableRow>
                             ) : cashbookData.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center p-8">কোনো লেনদেন পাওয়া যায়নি।</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canManageTransactions ? 6 : 5} className="text-center p-8">কোনো লেনদেন পাওয়া যায়নি।</TableCell></TableRow>
                             ) : (
                                 cashbookData.map(tx => (
                                     <TableRow key={tx.id}>
@@ -308,23 +311,25 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
                                         <TableCell className="text-right text-green-600">{tx.type === 'income' ? tx.amount.toLocaleString('bn-BD') : '-'}</TableCell>
                                         <TableCell className="text-right text-red-600">{tx.type === 'expense' ? tx.amount.toLocaleString('bn-BD') : '-'}</TableCell>
                                         <TableCell className="text-right font-semibold">{tx.balance.toLocaleString('bn-BD')}</TableCell>
-                                        <TableCell className="text-right">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="icon" disabled={!!tx.feeCollectionId}><Trash2 className="h-4 w-4" /></Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                        <AlertDialogDescription>এই লেনদেনটি স্থায়ীভাবে মুছে যাবে।</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(tx.id)}>মুছে ফেলুন</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </TableCell>
+                                        {canManageTransactions && (
+                                            <TableCell className="text-right">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon" disabled={!!tx.feeCollectionId}><Trash2 className="h-4 w-4" /></Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                            <AlertDialogDescription>এই লেনদেনটি স্থায়ীভাবে মুছে যাবে।</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(tx.id)}>মুছে ফেলুন</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             )}
@@ -416,6 +421,9 @@ export default function AccountsPage() {
   const { selectedYear } = useAcademicYear();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { hasPermission } = useAuth();
+  const canCollectFees = hasPermission('collect:fees');
+  const canManageTransactions = hasPermission('manage:transactions');
 
   const fetchTransactions = useCallback(async () => {
     if (!db) return;
@@ -430,6 +438,13 @@ export default function AccountsPage() {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  const tabs = [];
+  if (canCollectFees) tabs.push({ value: "fee-collection", label: "বেতন আদায়" });
+  tabs.push({ value: "cashbook", label: "ক্যাশবুক" });
+  tabs.push({ value: "ledger", label: "খতিয়ান" });
+  if (canManageTransactions) tabs.push({ value: "new-transaction", label: "নতুন লেনদেন" });
+
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-teal-50">
       <Header />
@@ -441,25 +456,26 @@ export default function AccountsPage() {
           </CardHeader>
           <CardContent>
              {isClient ? (
-                <Tabs defaultValue="fee-collection">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="fee-collection">বেতন আদায়</TabsTrigger>
-                    <TabsTrigger value="cashbook">ক্যাশবুক</TabsTrigger>
-                    <TabsTrigger value="ledger">খতিয়ান</TabsTrigger>
-                    <TabsTrigger value="new-transaction">নতুন লেনদেন</TabsTrigger>
+                <Tabs defaultValue={tabs[0]?.value || 'cashbook'}>
+                  <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
+                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
                   </TabsList>
-                  <TabsContent value="fee-collection" className="mt-4">
-                    <FeeCollectionTab onFeeCollected={fetchTransactions} />
-                  </TabsContent>
+                  {canCollectFees && (
+                    <TabsContent value="fee-collection" className="mt-4">
+                      <FeeCollectionTab onFeeCollected={fetchTransactions} />
+                    </TabsContent>
+                  )}
                    <TabsContent value="cashbook" className="mt-4">
                     <CashbookTab transactions={transactions} isLoading={isLoading} refetch={fetchTransactions} />
                   </TabsContent>
                    <TabsContent value="ledger" className="mt-4">
                     <LedgerTab transactions={transactions} isLoading={isLoading} />
                   </TabsContent>
-                   <TabsContent value="new-transaction" className="mt-4">
-                    <NewTransactionTab onTransactionAdded={fetchTransactions} />
-                  </TabsContent>
+                   {canManageTransactions && (
+                    <TabsContent value="new-transaction" className="mt-4">
+                      <NewTransactionTab onTransactionAdded={fetchTransactions} />
+                    </TabsContent>
+                   )}
                 </Tabs>
              ) : (
                 <div>
