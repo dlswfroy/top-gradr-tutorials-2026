@@ -36,6 +36,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
+import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
@@ -43,10 +45,27 @@ export function Header() {
   const { selectedYear, setSelectedYear, availableYears } = useAcademicYear();
   const { schoolInfo, isLoading: isSchoolInfoLoading } = useSchoolInfo();
   const { user, loading: authLoading, hasPermission } = useAuth();
+  const db = useFirestore();
+  const [teacherPhoto, setTeacherPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (user?.role === 'teacher' && user.email && db) {
+      const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email), limit(1));
+      getDocs(staffQuery).then(snapshot => {
+        if (!snapshot.empty) {
+          setTeacherPhoto(snapshot.docs[0].data().photoUrl);
+        } else {
+          setTeacherPhoto(null);
+        }
+      });
+    } else {
+      setTeacherPhoto(null);
+    }
+  }, [user, db]);
 
   const handleLogout = async () => {
     await signOut();
@@ -222,6 +241,9 @@ export function Header() {
         {authLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : user ? (
           <>
             <Avatar className="h-10 w-10 border-2 border-white">
+              {teacherPhoto ? (
+                <AvatarImage src={teacherPhoto} alt={user.email || 'user'} />
+              ) : null}
               <AvatarFallback>{user.email ? user.email.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
             </Avatar>
             <Button onClick={handleLogout} variant="ghost" size="icon" className="text-white hover:bg-primary/80 hover:text-white">

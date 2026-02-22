@@ -157,7 +157,7 @@ function SchoolInfoSettings() {
               </div>
             </CardContent>
             <CardFooter className="border-t justify-end pt-6">
-                <Button variant="secondary" onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
+                <Button onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
             </CardFooter>
         </Card>
     );
@@ -254,7 +254,7 @@ function HolidaySettings() {
                             onChange={(e) => setNewHolidayDescription(e.target.value)}
                         />
                     </div>
-                    <Button variant="secondary" onClick={handleAddHoliday} className="w-full sm:w-auto">যোগ করুন</Button>
+                    <Button onClick={handleAddHoliday} className="w-full sm:w-auto">যোগ করুন</Button>
                 </div>
 
                 <div>
@@ -596,7 +596,7 @@ function ProfileSettings() {
                         </div>
                     </CardContent>
                     <CardFooter className="border-t pt-6">
-                        <Button variant="secondary" type="submit" disabled={isSaving}>{isSaving ? 'সেভ হচ্ছে...' : 'পাসওয়ার্ড সেভ করুন'}</Button>
+                        <Button type="submit" disabled={isSaving}>{isSaving ? 'সেভ হচ্ছে...' : 'পাসওয়ার্ড সেভ করুন'}</Button>
                     </CardFooter>
                 </form>
             </Card>
@@ -625,7 +625,7 @@ export default function SettingsPage() {
                     <CardContent>
                         {isClient ? (
                             <Tabs defaultValue="profile">
-                                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1'}`}>
+                                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
                                     <TabsTrigger value="profile">প্রোফাইল</TabsTrigger>
                                     {isAdmin && <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>}
                                     {isAdmin && <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>}

@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useSchoolInfo } from '@/context/SchoolInfoContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +38,7 @@ export default function LoginPage() {
     const { toast } = useToast();
     const router = useRouter();
     const { user, loading } = useAuth();
+    const { schoolInfo, isLoading: isSchoolInfoLoading } = useSchoolInfo();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -80,7 +84,28 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4">
+            <div className="mb-8 flex flex-col items-center gap-4 text-center">
+                {isSchoolInfoLoading ? (
+                    <>
+                        <Skeleton className="h-20 w-20 rounded-full" />
+                        <Skeleton className="h-8 w-64" />
+                    </>
+                ) : (
+                    <>
+                        {schoolInfo.logoUrl && (
+                            <Image
+                                src={schoolInfo.logoUrl}
+                                alt="School Logo"
+                                width={80}
+                                height={80}
+                                className="rounded-full object-contain"
+                            />
+                        )}
+                        <h1 className="text-2xl font-bold text-primary">{schoolInfo.name}</h1>
+                    </>
+                )}
+            </div>
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>স্কুল ম্যানেজমেন্ট সিস্টেম</CardTitle>
@@ -88,7 +113,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="teacher-login">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
                             <TabsTrigger value="teacher-login">শিক্ষক লগইন</TabsTrigger>
                             <TabsTrigger value="admin-login">এডমিন লগইন</TabsTrigger>
                             <TabsTrigger value="signup">সাইন আপ</TabsTrigger>
