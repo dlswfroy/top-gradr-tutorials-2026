@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2, Upload } from 'lucide-react';
@@ -95,10 +95,10 @@ function SchoolInfoSettings() {
                             <Skeleton className="h-10 w-32" />
                         </div>
                     </div>
-                    <div className="flex justify-end pt-4 border-t mt-4">
-                        <Skeleton className="h-10 w-36" />
-                    </div>
                 </CardContent>
+                <CardFooter className="justify-end">
+                    <Skeleton className="h-10 w-36" />
+                </CardFooter>
             </Card>
         )
     }
@@ -155,12 +155,10 @@ function SchoolInfoSettings() {
                         </div>
                     </div>
               </div>
-
-              <div className="flex justify-end pt-4 border-t mt-4">
-                <Button onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
-              </div>
-
             </CardContent>
+            <CardFooter className="border-t justify-end pt-6">
+                <Button onClick={handleSaveChanges}>পরিবর্তন সেভ করুন</Button>
+            </CardFooter>
         </Card>
     );
 }
@@ -579,10 +577,10 @@ function ProfileSettings() {
                 </CardContent>
             </Card>
              <Card>
-                <CardHeader>
-                    <CardTitle>পাসওয়ার্ড পরিবর্তন করুন</CardTitle>
-                </CardHeader>
                 <form onSubmit={handleSubmit}>
+                    <CardHeader>
+                        <CardTitle>পাসওয়ার্ড পরিবর্তন করুন</CardTitle>
+                    </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="currentPassword">বর্তমান পাসওয়ার্ড</Label>
@@ -597,9 +595,9 @@ function ProfileSettings() {
                             <Input id="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
                         </div>
                     </CardContent>
-                    <CardContent>
+                    <CardFooter>
                         <Button type="submit" disabled={isSaving}>{isSaving ? 'সেভ হচ্ছে...' : 'পাসওয়ার্ড সেভ করুন'}</Button>
-                    </CardContent>
+                    </CardFooter>
                 </form>
             </Card>
         </div>

@@ -11,6 +11,26 @@ import { signIn, signUp } from '@/lib/auth';
 import type { UserRole } from '@/lib/user';
 import { useAuth } from '@/hooks/useAuth';
 
+function AuthFormFields({ email, password, setEmail, setPassword }: {
+    email: string;
+    password: string;
+    setEmail: (value: string) => void;
+    setPassword: (value: string) => void;
+}) {
+    return (
+        <>
+            <div className="space-y-2">
+                <Label htmlFor="email">ইমেইল</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="password">পাসওয়ার্ড</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+        </>
+    );
+}
+
 export default function LoginPage() {
     const { toast } = useToast();
     const router = useRouter();
@@ -76,21 +96,21 @@ export default function LoginPage() {
 
                         <TabsContent value="teacher-login">
                             <form onSubmit={(e) => { e.preventDefault(); handleAuthAction('signIn', 'teacher'); }} className="space-y-4 pt-4">
-                                <AuthFormFields />
+                                <AuthFormFields email={email} password={password} setEmail={setEmail} setPassword={setPassword} />
                                 <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'লোড হচ্ছে...' : 'শিক্ষক হিসেবে লগইন'}</Button>
                             </form>
                         </TabsContent>
                         
                         <TabsContent value="admin-login">
                            <form onSubmit={(e) => { e.preventDefault(); handleAuthAction('signIn', 'admin'); }} className="space-y-4 pt-4">
-                                <AuthFormFields />
+                                <AuthFormFields email={email} password={password} setEmail={setEmail} setPassword={setPassword} />
                                 <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'লোড হচ্ছে...' : 'এডমিন হিসেবে লগইন'}</Button>
                             </form>
                         </TabsContent>
                         
                         <TabsContent value="signup">
                             <form onSubmit={(e) => { e.preventDefault(); handleAuthAction('signUp', 'teacher'); }} className="space-y-4 pt-4">
-                                <AuthFormFields />
+                                <AuthFormFields email={email} password={password} setEmail={setEmail} setPassword={setPassword} />
                                 <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'লোড হচ্ছে...' : 'সাইন আপ'}</Button>
                             </form>
                         </TabsContent>
@@ -99,19 +119,4 @@ export default function LoginPage() {
             </Card>
         </div>
     );
-
-    function AuthFormFields() {
-        return (
-            <>
-                <div className="space-y-2">
-                    <Label htmlFor="email">ইমেইল</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password">পাসওয়ার্ড</Label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-            </>
-        );
-    }
 }
