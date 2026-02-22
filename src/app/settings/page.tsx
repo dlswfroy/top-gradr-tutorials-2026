@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2, Upload } from 'lucide-react';
@@ -21,10 +21,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, orderBy, FirestoreError, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/lib/user';
+import { getUsers } from '@/lib/user-management';
+import { changePassword } from '@/lib/auth';
+import { Badge } from '@/components/ui/badge';
 
 
 function SchoolInfoSettings() {
@@ -313,12 +318,162 @@ function HolidaySettings() {
     );
 }
 
+function UserManagementSettings() {
+    const db = useFirestore();
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!db) return;
+        setIsLoading(true);
+        getUsers(db).then((data) => {
+            setUsers(data);
+            setIsLoading(false);
+        }).catch(() => {
+            const permissionError = new FirestorePermissionError({
+                path: 'users',
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            setIsLoading(false);
+        });
+    }, [db]);
+
+    const roleMap: { [key: string]: string } = { admin: 'এডমিন', teacher: 'শিক্ষক' };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>ব্যবহারকারী ম্যানেজমেন্ট</CardTitle>
+                <CardDescription>সিস্টেমের সকল ব্যবহারকারীর তালিকা দেখুন।</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="border rounded-md overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ইমেইল</TableHead>
+                                <TableHead>ভূমিকা (Role)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                             {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell>
+                                </TableRow>
+                            ) : users.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                                        কোনো ব্যবহারকারী পাওয়া যায়নি।
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                users.map(user => (
+                                    <TableRow key={user.uid}>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+                                                {roleMap[user.role] || user.role}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                 </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ProfileSettings() {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            toast({ variant: 'destructive', title: 'পাসওয়ার্ড মিলেনি', description: 'নতুন পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড একই হতে হবে।' });
+            return;
+        }
+        if (newPassword.length < 6) {
+             toast({ variant: 'destructive', title: 'পাসওয়ার্ডটি খুবই দুর্বল', description: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' });
+            return;
+        }
+
+        setIsSaving(true);
+        const result = await changePassword(currentPassword, newPassword);
+        setIsSaving(false);
+
+        if (result.success) {
+            toast({ title: 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।'});
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } else {
+            toast({ variant: 'destructive', title: 'একটি ত্রুটি ঘটেছে', description: result.error });
+        }
+    }
+    
+    return (
+        <div className="grid gap-8 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>প্রোফাইল তথ্য</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div>
+                        <Label>ইমেইল</Label>
+                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    </div>
+                     <div>
+                        <Label>ভূমিকা (Role)</Label>
+                        <p className="text-sm text-muted-foreground">{user?.role === 'admin' ? 'এডমিন' : 'শিক্ষক'}</p>
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>পাসওয়ার্ড পরিবর্তন করুন</CardTitle>
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="currentPassword">বর্তমান পাসওয়ার্ড</Label>
+                            <Input id="currentPassword" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="newPassword">নতুন পাসওয়ার্ড</Label>
+                            <Input id="newPassword" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">নতুন পাসওয়ার্ড নিশ্চিত করুন</Label>
+                            <Input id="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                        </div>
+                    </CardContent>
+                    <CardContent>
+                        <Button type="submit" disabled={isSaving}>{isSaving ? 'সেভ হচ্ছে...' : 'পাসওয়ার্ড সেভ করুন'}</Button>
+                    </CardContent>
+                </form>
+            </Card>
+        </div>
+    );
+}
+
 export default function SettingsPage() {
     const [isClient, setIsClient] = useState(false);
+    const { user } = useAuth();
 
     useEffect(() => {
         setIsClient(true);
     }, []);
+
+    const isAdmin = user?.role === 'admin';
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-indigo-50">
@@ -330,23 +485,36 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent>
                         {isClient ? (
-                            <Tabs defaultValue="school-info">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>
-                                    <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>
+                            <Tabs defaultValue="profile">
+                                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                                    <TabsTrigger value="profile">প্রোফাইল</TabsTrigger>
+                                    {isAdmin && <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>}
+                                    {isAdmin && <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>}
+                                    {isAdmin && <TabsTrigger value="user-management">ব্যবহারকারী</TabsTrigger>}
                                 </TabsList>
-                                <TabsContent value="school-info" className="pt-4">
-                                    <SchoolInfoSettings />
+                                <TabsContent value="profile" className="pt-4">
+                                    <ProfileSettings />
                                 </TabsContent>
-                                <TabsContent value="holidays" className="pt-4">
-                                   <HolidaySettings />
-                                </TabsContent>
+                                {isAdmin && (
+                                    <>
+                                        <TabsContent value="school-info" className="pt-4">
+                                            <SchoolInfoSettings />
+                                        </TabsContent>
+                                        <TabsContent value="holidays" className="pt-4">
+                                           <HolidaySettings />
+                                        </TabsContent>
+                                        <TabsContent value="user-management" className="pt-4">
+                                            <UserManagementSettings />
+                                        </TabsContent>
+                                    </>
+                                )}
                             </Tabs>
                         ) : (
                             <div className="space-y-4">
-                                <div className="grid w-full grid-cols-2 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                                <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
                                     <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
+                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
                                 </div>
                                 <SchoolInfoSettings />
                             </div>

@@ -1,9 +1,13 @@
+
 'use client';
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -90,4 +94,29 @@ export async function signIn(email: string, password: string, role: UserRole): P
 export async function signOut() {
   const auth = getAuth();
   return firebaseSignOut(auth);
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user || !user.email) {
+    return { success: false, error: 'ব্যবহারকারী লগইন করা নেই।' };
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+    return { success: true };
+  } catch (error: any) {
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      return { success: false, error: 'আপনার বর্তমান পাসওয়ার্ডটি ভুল।' };
+    }
+    if (error.code === 'auth/weak-password') {
+        return { success: false, error: 'নতুন পাসওয়ার্ডটি খুবই দুর্বল।' };
+    }
+    console.error("Password change error:", error);
+    return { success: false, error: 'পাসওয়ার্ড পরিবর্তন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।' };
+  }
 }
