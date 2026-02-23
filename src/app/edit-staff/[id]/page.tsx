@@ -225,8 +225,20 @@ export default function EditStaffPage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="nameEn">নাম (ইংরেজি)</Label>
-                          <Input id="nameEn" name="nameEn" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
+                          <Input id="nameEn" name="nameEn" value={staff.nameEn || ''} onChange={e => handleInputChange('nameEn', e.target.value)} />
                       </div>
+                      <div className="space-y-2">
+                            <Label htmlFor="fatherNameBn">পিতার নাম</Label>
+                            <Input id="fatherNameBn" name="fatherNameBn" value={staff.fatherNameBn || ''} onChange={e => handleInputChange('fatherNameBn', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="motherNameBn">মাতার নাম</Label>
+                            <Input id="motherNameBn" name="motherNameBn" value={staff.motherNameBn || ''} onChange={e => handleInputChange('motherNameBn', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="dob">জন্ম তারিখ</Label>
+                            <DatePicker value={staff.dob ? new Date(staff.dob) : undefined} onChange={date => handleInputChange('dob', date)} placeholder="জন্ম তারিখ" />
+                        </div>
                        <div className="space-y-2">
                             <Label htmlFor="designation">পদবি</Label>
                             <Select required value={staff.designation} onValueChange={handleDesignationChange}>
@@ -247,7 +259,7 @@ export default function EditStaffPage() {
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="joinDate">যোগদানের তারিখ</Label>
-                          <DatePicker value={staff.joinDate} onChange={date => handleInputChange('joinDate', date as Date)} placeholder="যোগদানের তারিখ" />
+                          <DatePicker value={staff.joinDate ? new Date(staff.joinDate) : undefined} onChange={date => handleInputChange('joinDate', date as Date)} placeholder="যোগদানের তারিখ" />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="education">শিক্ষাগত যোগ্যতা</Label>
@@ -328,3 +340,4 @@ export default function EditStaffPage() {
     </div>
   );
 }
+

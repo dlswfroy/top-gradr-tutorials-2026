@@ -63,6 +63,9 @@
         "employeeId": { "type": "string", "description": "The auto-generated 6-digit employee ID (YYYYSS)." },
         "nameBn": { "type": "string" },
         "nameEn": { "type": "string" },
+        "fatherNameBn": { "type": "string" },
+        "motherNameBn": { "type": "string" },
+        "dob": { "type": "string", "format": "date-time" },
         "designation": {
           "type": "string",
           "enum": [

@@ -23,6 +23,9 @@ export type Staff = {
   employeeId: string;
   nameBn: string;
   nameEn?: string;
+  fatherNameBn?: string;
+  motherNameBn?: string;
+  dob?: Date;
   designation: string;
   subject?: string;
   mobile: string;
@@ -49,6 +52,7 @@ export const staffFromDoc = (doc: DocumentData): Staff => {
         id: doc.id,
         ...data,
         joinDate: data.joinDate instanceof Timestamp ? data.joinDate.toDate() : data.joinDate,
+        dob: data.dob instanceof Timestamp ? data.dob.toDate() : data.dob,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
     } as Staff;
@@ -98,6 +102,9 @@ export const addStaff = async (db: Firestore, staffData: NewStaffData) => {
   };
   if (staffData.joinDate) {
     dataToSave.joinDate = Timestamp.fromDate(staffData.joinDate);
+  }
+  if (staffData.dob) {
+    dataToSave.dob = Timestamp.fromDate(staffData.dob);
   }
 
   Object.keys(dataToSave).forEach(key => {
@@ -155,6 +162,12 @@ export const updateStaff = async (db: Firestore, id: string, staffData: UpdateSt
     dataToUpdate.joinDate = Timestamp.fromDate(staffData.joinDate);
   } else if (staffData.hasOwnProperty('joinDate') && staffData.joinDate === undefined) {
     dataToUpdate.joinDate = null;
+  }
+  
+  if (staffData.dob) {
+    dataToUpdate.dob = Timestamp.fromDate(staffData.dob);
+  } else if (staffData.hasOwnProperty('dob') && staffData.dob === undefined) {
+    dataToUpdate.dob = null;
   }
 
   Object.keys(dataToUpdate).forEach(key => {

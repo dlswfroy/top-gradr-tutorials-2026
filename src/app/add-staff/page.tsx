@@ -21,6 +21,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 const initialStaffState: Omit<NewStaffData, 'employeeId'> = {
   nameBn: '',
   nameEn: '',
+  fatherNameBn: '',
+  motherNameBn: '',
+  dob: undefined,
   designation: '',
   subject: '',
   mobile: '',
@@ -163,7 +166,19 @@ export default function AddStaffPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="nameEn">নাম (ইংরেজি)</Label>
-                            <Input id="nameEn" name="nameEn" value={staff.nameEn} onChange={e => handleInputChange('nameEn', e.target.value)} />
+                            <Input id="nameEn" name="nameEn" value={staff.nameEn || ''} onChange={e => handleInputChange('nameEn', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fatherNameBn">পিতার নাম</Label>
+                            <Input id="fatherNameBn" name="fatherNameBn" value={staff.fatherNameBn || ''} onChange={e => handleInputChange('fatherNameBn', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="motherNameBn">মাতার নাম</Label>
+                            <Input id="motherNameBn" name="motherNameBn" value={staff.motherNameBn || ''} onChange={e => handleInputChange('motherNameBn', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="dob">জন্ম তারিখ</Label>
+                            <DatePicker value={staff.dob} onChange={date => handleInputChange('dob', date)} placeholder="জন্ম তারিখ" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="designation">পদবি</Label>
@@ -247,7 +262,7 @@ export default function AddStaffPage() {
                 <div className="space-y-4">
                     <Skeleton className="h-7 w-48" />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        {[...Array(9)].map((_, i) => (
+                        {[...Array(12)].map((_, i) => (
                           <div key={i} className="space-y-2">
                             <Skeleton className="h-5 w-20" />
                             <Skeleton className="h-10 w-full" />

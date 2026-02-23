@@ -265,6 +265,9 @@ export default function StaffListPage() {
                         <div className="space-y-4 py-4 text-sm">
                             <p><span className="font-medium text-muted-foreground">কর্মচারী আইডি:</span> {staffToView.employeeId || 'N/A'}</p>
                             <p><span className="font-medium text-muted-foreground">নাম (ইংরেজি):</span> {staffToView.nameEn || 'N/A'}</p>
+                            <p><span className="font-medium text-muted-foreground">পিতার নাম:</span> {staffToView.fatherNameBn || 'N/A'}</p>
+                            <p><span className="font-medium text-muted-foreground">মাতার নাম:</span> {staffToView.motherNameBn || 'N/A'}</p>
+                            <p><span className="font-medium text-muted-foreground">জন্ম তারিখ:</span> {staffToView.dob ? format(new Date(staffToView.dob), "d MMMM yyyy", { locale: bn }) : 'N/A'}</p>
                             <p><span className="font-medium text-muted-foreground">বিষয়:</span> {staffToView.subject || 'N/A'}</p>
                             <p><span className="font-medium text-muted-foreground">মোবাইল:</span> {staffToView.mobile}</p>
                             <p><span className="font-medium text-muted-foreground">ইমেইল:</span> {staffToView.email || 'N/A'}</p>
