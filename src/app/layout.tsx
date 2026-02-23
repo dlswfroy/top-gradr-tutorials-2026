@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: defaultSchoolInfo.logoUrl,
+    shortcut: defaultSchoolInfo.logoUrl,
     apple: defaultSchoolInfo.logoUrl,
   }
 };

@@ -1,10 +1,10 @@
 
 import { MetadataRoute } from 'next'
 import { defaultSchoolInfo } from '@/lib/school-info'
-
-const baseIconUrl = defaultSchoolInfo.logoUrl;
  
 export default function manifest(): MetadataRoute.Manifest {
+  const iconUrl = 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-07-27T08:12:08.571Z/user_uploads/b7b9f36b-d897-40f4-8092-dbe1197779de/image.png';
+  
   return {
     name: defaultSchoolInfo.name,
     short_name: 'School Navigator',
@@ -15,19 +15,19 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#2f2a8a',
     icons: [
       {
-        src: baseIconUrl,
+        src: iconUrl,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: baseIconUrl,
+        src: iconUrl,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
       },
        {
-        src: baseIconUrl,
+        src: iconUrl,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
