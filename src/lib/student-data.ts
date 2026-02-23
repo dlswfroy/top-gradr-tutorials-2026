@@ -63,9 +63,20 @@ export type UpdateStudentData = Partial<NewStudentData>;
 // To handle data from Firestore
 export const studentFromDoc = (doc: DocumentData): Student => {
     const data = doc.data();
+    let generatedId = data.generatedId;
+
+    // Generate ID on the fly if it's missing
+    if (!generatedId && data.academicYear && data.className && data.roll) {
+      const year = String(data.academicYear).slice(-2);
+      const classNum = String(data.className).padStart(2, '0');
+      const studentSerial = data.roll.toString().padStart(4, '0');
+      generatedId = `${year}${classNum}${studentSerial}`;
+    }
+
     return {
         id: doc.id,
         ...data,
+        generatedId,
         dob: data.dob instanceof Timestamp ? data.dob.toDate() : data.dob,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,

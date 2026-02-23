@@ -132,7 +132,7 @@ export const updateStaff = async (db: Firestore, id: string, staffData: UpdateSt
   if (existingDoc.exists() && !existingDoc.data().employeeId) {
      const joinDate = staffData.joinDate || existingDoc.data().joinDate?.toDate();
      if (joinDate) {
-        const year = joinDate.getFullYear();
+        const year = new Date(joinDate).getFullYear();
         const startOfYear = new Date(year, 0, 1);
         const endOfYear = new Date(year + 1, 0, 1);
 

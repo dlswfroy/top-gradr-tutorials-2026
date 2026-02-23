@@ -217,7 +217,7 @@ export default function EditStaffPage() {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
                           <Label htmlFor="employeeId">কর্মচারী আইডি</Label>
-                          <Input id="employeeId" name="employeeId" value={staff.employeeId || 'সংরক্ষণ করার পর তৈরি হবে'} disabled />
+                          <Input id="employeeId" name="employeeId" value={staff.employeeId || 'স্বয়ংক্রিয়ভাবে তৈরি হবে'} disabled />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="nameBn">নাম (বাংলা)</Label>
