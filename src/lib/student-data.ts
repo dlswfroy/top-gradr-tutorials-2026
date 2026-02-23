@@ -139,23 +139,19 @@ export const updateStudent = async (db: Firestore, id: string, studentData: Upda
     updatedAt: serverTimestamp(),
   };
 
-  const studentToUpdateHasId = 'generatedId' in studentData && studentData.generatedId;
-  if (!studentToUpdateHasId) {
-    const existingDoc = await getDoc(docRef);
-    if (existingDoc.exists() && !existingDoc.data().generatedId) {
-      const acadYear = studentData.academicYear || existingDoc.data().academicYear;
-      const clsName = studentData.className || existingDoc.data().className;
-      const rollNum = studentData.roll || existingDoc.data().roll;
-      
-      if (acadYear && clsName && rollNum) {
-          const year = String(acadYear).slice(-2);
-          const classNum = String(clsName).padStart(2, '0');
-          const studentSerial = rollNum.toString().padStart(4, '0');
-          dataToUpdate.generatedId = `${year}${classNum}${studentSerial}`;
-      }
-    }
+  // Always regenerate ID to ensure it is correct based on current data,
+  // or add it if it's missing.
+  const existingDoc = await getDoc(docRef);
+  const acadYear = studentData.academicYear || existingDoc.data()?.academicYear;
+  const clsName = studentData.className || existingDoc.data()?.className;
+  const rollNum = studentData.roll || existingDoc.data()?.roll;
+  
+  if (acadYear && clsName && rollNum) {
+      const year = String(acadYear).slice(-2);
+      const classNum = String(clsName).padStart(2, '0');
+      const studentSerial = rollNum.toString().padStart(4, '0');
+      dataToUpdate.generatedId = `${year}${classNum}${studentSerial}`;
   }
-
 
   if (studentData.dob) {
     dataToUpdate.dob = Timestamp.fromDate(studentData.dob);

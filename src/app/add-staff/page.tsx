@@ -38,7 +38,7 @@ export default function AddStaffPage() {
     const { toast } = useToast();
     const db = useFirestore();
     
-    const [staff, setStaff] = useState<Omit<NewStaffData, 'employeeId'>>(initialStaffState);
+    const [staff, setStaff] = useState<NewStaffData>(initialStaffState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
 
@@ -46,7 +46,7 @@ export default function AddStaffPage() {
         setIsClient(true);
     }, []);
 
-    const handleInputChange = (field: keyof Omit<NewStaffData, 'employeeId'>, value: string | Date | boolean | undefined) => {
+    const handleInputChange = (field: keyof NewStaffData, value: string | Date | boolean | undefined) => {
         setStaff(prev => ({...prev, [field]: value}));
     };
 

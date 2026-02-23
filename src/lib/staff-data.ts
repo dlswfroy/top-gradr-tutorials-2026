@@ -39,8 +39,8 @@ export type Staff = {
 };
 
 // Data from form won't have id or timestamps
-export type NewStaffData = Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateStaffData = Partial<NewStaffData>;
+export type NewStaffData = Omit<Staff, 'id' | 'createdAt' | 'updatedAt' | 'employeeId'>;
+export type UpdateStaffData = Partial<Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>>;
 
 // To handle data from Firestore
 export const staffFromDoc = (doc: DocumentData): Staff => {
@@ -79,7 +79,7 @@ export const getStaffById = async (db: Firestore, id: string): Promise<Staff | u
     }
 };
 
-export const addStaff = async (db: Firestore, staffData: Omit<NewStaffData, 'employeeId'>) => {
+export const addStaff = async (db: Firestore, staffData: NewStaffData) => {
   const year = staffData.joinDate.getFullYear();
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year + 1, 0, 1);
@@ -121,10 +121,28 @@ export const addStaff = async (db: Firestore, staffData: Omit<NewStaffData, 'emp
 
 export const updateStaff = async (db: Firestore, id: string, staffData: UpdateStaffData) => {
   const docRef = doc(db, 'staff', id);
+
   const dataToUpdate: WithFieldValue<DocumentData> = {
     ...staffData,
     updatedAt: serverTimestamp(),
   };
+
+  // Generate ID only if it's missing
+  const existingDoc = await getDoc(docRef);
+  if (existingDoc.exists() && !existingDoc.data().employeeId) {
+     const joinDate = staffData.joinDate || existingDoc.data().joinDate?.toDate();
+     if (joinDate) {
+        const year = joinDate.getFullYear();
+        const startOfYear = new Date(year, 0, 1);
+        const endOfYear = new Date(year + 1, 0, 1);
+
+        const q = query(collection(db, 'staff'), where('joinDate', '>=', startOfYear), where('joinDate', '<', endOfYear));
+        const querySnapshot = await getDocs(q);
+        const count = querySnapshot.size;
+        const serial = (count + 1).toString().padStart(2, '0');
+        dataToUpdate.employeeId = `${year}${serial}`;
+     }
+  }
 
   if (staffData.joinDate) {
     dataToUpdate.joinDate = Timestamp.fromDate(staffData.joinDate);

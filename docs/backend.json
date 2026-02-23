@@ -84,7 +84,7 @@
         "isActive": { "type": "boolean" },
         "staffType": { "type": "string", "enum": ["teacher", "staff"] }
       },
-      "required": ["employeeId", "nameBn", "designation", "mobile", "joinDate", "photoUrl", "staffType", "isActive"]
+      "required": ["nameBn", "designation", "mobile", "joinDate", "photoUrl", "staffType", "isActive"]
     },
     "schoolInfo": {
       "title": "School Information",
@@ -325,5 +325,3 @@
     }
   }
 }
-
-    
