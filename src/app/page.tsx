@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, UserX, GraduationCap } from 'lucide-react';
+import { Users, UserCheck, UserX, GraduationCap, Clock } from 'lucide-react';
 import { Student } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { getAttendanceForDate } from '@/lib/attendance-data';
+import { getFullRoutine, ClassRoutine } from '@/lib/routine-data';
 import { format } from 'date-fns';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, FirestoreError } from 'firebase/firestore';
@@ -15,6 +16,155 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+
+
+const parseTeacherName = (cell: string): string => {
+    if (!cell || !cell.includes(' - ')) return 'N/A';
+    const parts = cell.split(' - ');
+    return parts.pop()?.trim() || 'N/A';
+};
+
+const periodTimes = [
+  { name: "১ম", start: { h: 10, m: 30 }, end: { h: 11, m: 20 } },
+  { name: "২য়", start: { h: 11, m: 20 }, end: { h: 12, m: 10 } },
+  { name: "৩য়", start: { h: 12, m: 10 }, end: { h: 13, m: 0 } },
+  { name: "বিরতি", start: { h: 13, m: 0 }, end: { h: 13, m: 40 } },
+  { name: "৪র্থ", start: { h: 13, m: 40 }, end: { h: 14, m: 30 } },
+  { name: "৫ম", start: { h: 14, m: 30 }, end: { h: 15, m: 20 } },
+  { name: "৬ষ্ঠ", start: { h: 15, m: 20 }, end: { h: 16, m: 10 } },
+];
+
+const dayMap = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+const classNamesMap: { [key: string]: string } = {
+    '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম',
+};
+
+const LiveRoutineCard = () => {
+    const db = useFirestore();
+    const { selectedYear } = useAcademicYear();
+    const [fullRoutine, setFullRoutine] = useState<ClassRoutine[]>([]);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!db) return;
+        setIsLoading(true);
+        getFullRoutine(db, selectedYear).then(data => {
+            setFullRoutine(data);
+            setIsLoading(false);
+        });
+    }, [db, selectedYear]);
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const getCurrentPeriodInfo = () => {
+        const now = currentTime;
+        const currentDayName = dayMap[now.getDay()];
+        
+        if (currentDayName === 'শুক্রবার' || currentDayName === 'শনিবার') {
+            return { status: 'আজ সাপ্তাহিক ছুটি।', runningClasses: [] };
+        }
+
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        let periodIndex = -1;
+        let status = 'ক্লাস চলছে';
+        
+        for(let i=0; i<periodTimes.length; i++) {
+            const period = periodTimes[i];
+            const startMinutes = period.start.h * 60 + period.start.m;
+            const endMinutes = period.end.h * 60 + period.end.m;
+
+            if(currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+                if (period.name === 'বিরতি') {
+                    return { status: 'এখন টিফিনের বিরতি চলছে।', runningClasses: [] };
+                }
+                if (i < 3) periodIndex = i;
+                if (i > 3) periodIndex = i - 1;
+                break;
+            }
+        }
+        
+        if (periodIndex === -1) {
+             return { status: 'এখন কোনো ক্লাস চলছে না।', runningClasses: [] };
+        }
+
+        const runningClasses = fullRoutine
+            .filter(r => r.day === currentDayName)
+            .map(r => {
+                const periodContent = r.periods[periodIndex];
+                if (periodContent) {
+                    const adjustedPeriodIndex = periodIndex + (periodIndex >= 3 ? 1 : 0);
+                    const periodInfo = periodTimes[adjustedPeriodIndex];
+                    return {
+                        className: classNamesMap[r.className] || r.className,
+                        teacher: parseTeacherName(periodContent),
+                        period: periodInfo.name,
+                        time: `${periodInfo.start.h.toString().padStart(2, '0')}:${periodInfo.start.m.toString().padStart(2, '0')} - ${periodInfo.end.h.toString().padStart(2, '0')}:${periodInfo.end.m.toString().padStart(2, '0')}`
+                    };
+                }
+                return null;
+            })
+            .filter((c): c is NonNullable<typeof c> => c !== null);
+
+        if (runningClasses.length === 0 && status === 'ক্লাস চলছে') {
+            status = 'এখন কোনো ক্লাস চলছে না।';
+        }
+
+        return { status, runningClasses };
+    };
+
+    const { status, runningClasses } = getCurrentPeriodInfo();
+
+    return (
+        <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">লাইভ ক্লাস রুটিন</CardTitle>
+                 <Badge variant="outline" className="flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    {currentTime.toLocaleTimeString('bn-BD', { hour: 'numeric', minute: 'numeric' })}
+                </Badge>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="space-y-2 pt-4">
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                    </div>
+                ) : runningClasses.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>সময়</TableHead>
+                                <TableHead>শিক্ষক</TableHead>
+                                <TableHead>শ্রেণি</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {runningClasses.map((rc, index) => (
+                                <TableRow key={index}>
+                                    <TableCell className="text-xs">{rc.time}</TableCell>
+                                    <TableCell className="font-medium">{rc.teacher}</TableCell>
+                                    <TableCell>{rc.className}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <div className="flex items-center justify-center h-24">
+                        <p className="text-muted-foreground">{status}</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -165,6 +315,9 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <LiveRoutineCard />
         </div>
       </main>
     </div>
