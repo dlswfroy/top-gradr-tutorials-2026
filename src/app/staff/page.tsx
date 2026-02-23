@@ -57,7 +57,7 @@ export default function StaffListPage() {
     if (!db) return;
     setIsLoading(true);
 
-    const staffQuery = query(collection(db, "staff"), orderBy("nameBn"));
+    const staffQuery = query(collection(db, "staff"), orderBy("joinDate", "desc"));
 
     const unsubscribe = onSnapshot(staffQuery, (querySnapshot) => {
       const staffData = querySnapshot.docs.map(doc => ({
@@ -114,12 +114,13 @@ export default function StaffListPage() {
                     <Table>
                         <TableHeader>
                         <TableRow>
+                            <TableHead>ক্রমিক নং</TableHead>
                             <TableHead>ছবি</TableHead>
+                            <TableHead>কর্মচারী আইডি</TableHead>
                             <TableHead>নাম</TableHead>
                             <TableHead>পদবি</TableHead>
                             <TableHead>বিষয়</TableHead>
                             <TableHead>মোবাইল</TableHead>
-                            <TableHead>ইমেইল</TableHead>
                             <TableHead>ধরণ</TableHead>
                             <TableHead className="text-right">কার্যক্রম</TableHead>
                         </TableRow>
@@ -127,19 +128,20 @@ export default function StaffListPage() {
                         <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                                     লোড হচ্ছে...
                                 </TableCell>
                             </TableRow>
                         ) : allStaff.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                                     কোনো শিক্ষক বা কর্মচারীর তথ্য পাওয়া যায়নি।
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            allStaff.map((staff) => (
+                            allStaff.map((staff, index) => (
                             <TableRow key={staff.id}>
+                                <TableCell>{(index + 1).toLocaleString('bn-BD')}</TableCell>
                                 <TableCell>
                                 <Image
                                     src={staff.photoUrl}
@@ -149,11 +151,11 @@ export default function StaffListPage() {
                                     className="rounded-full object-cover"
                                 />
                                 </TableCell>
+                                <TableCell>{staff.employeeId}</TableCell>
                                 <TableCell className="whitespace-nowrap font-medium">{staff.nameBn}</TableCell>
                                 <TableCell className="whitespace-nowrap">{staff.designation}</TableCell>
                                 <TableCell>{staff.subject || '-'}</TableCell>
                                 <TableCell>{staff.mobile}</TableCell>
-                                <TableCell>{staff.email || '-'}</TableCell>
                                 <TableCell>
                                     <Badge variant={staff.staffType === 'teacher' ? 'default' : 'secondary'}>
                                         {staffTypeMap[staff.staffType]}
@@ -210,12 +212,13 @@ export default function StaffListPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>ক্রমিক নং</TableHead>
                           <TableHead>ছবি</TableHead>
+                          <TableHead>কর্মচারী আইডি</TableHead>
                           <TableHead>নাম</TableHead>
                           <TableHead>পদবি</TableHead>
                           <TableHead>বিষয়</TableHead>
                           <TableHead>মোবাইল</TableHead>
-                           <TableHead>ইমেইল</TableHead>
                            <TableHead>ধরণ</TableHead>
                           <TableHead className="text-right">কার্যক্রম</TableHead>
                         </TableRow>
@@ -223,12 +226,13 @@ export default function StaffListPage() {
                       <TableBody>
                         {[...Array(5)].map((_, i) => (
                           <TableRow key={i}>
+                            <TableCell><Skeleton className="h-6 w-12" /></TableCell>
                             <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
@@ -263,6 +267,7 @@ export default function StaffListPage() {
                     </DialogHeader>
                     <div className="max-h-[60vh] overflow-y-auto pr-4">
                         <div className="space-y-4 py-4 text-sm">
+                            <p><span className="font-medium text-muted-foreground">কর্মচারী আইডি:</span> {staffToView.employeeId}</p>
                             <p><span className="font-medium text-muted-foreground">নাম (ইংরেজি):</span> {staffToView.nameEn || 'N/A'}</p>
                             <p><span className="font-medium text-muted-foreground">বিষয়:</span> {staffToView.subject || 'N/A'}</p>
                             <p><span className="font-medium text-muted-foreground">মোবাইল:</span> {staffToView.mobile}</p>
@@ -280,3 +285,5 @@ export default function StaffListPage() {
     </>
   );
 }
+
+    

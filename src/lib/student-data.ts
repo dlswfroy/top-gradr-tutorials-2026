@@ -20,6 +20,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export type Student = {
   id: string; // Firestore IDs are strings
+  generatedId?: string;
   roll: number;
   className: string;
   academicYear: string;
@@ -97,8 +98,14 @@ export const getStudentById = async (db: Firestore, id: string): Promise<Student
 };
 
 export const addStudent = async (db: Firestore, studentData: NewStudentData) => {
+  const year = String(studentData.academicYear).slice(-2);
+  const classNum = String(studentData.className).padStart(2, '0');
+  const studentSerial = (studentData.roll as number).toString().padStart(4, '0');
+  const generatedId = `${year}${classNum}${studentSerial}`;
+  
   const dataToSave: WithFieldValue<DocumentData> = {
     ...studentData,
+    generatedId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -131,6 +138,24 @@ export const updateStudent = async (db: Firestore, id: string, studentData: Upda
     ...studentData,
     updatedAt: serverTimestamp(),
   };
+
+  const studentToUpdateHasId = 'generatedId' in studentData && studentData.generatedId;
+  if (!studentToUpdateHasId) {
+    const existingDoc = await getDoc(docRef);
+    if (existingDoc.exists() && !existingDoc.data().generatedId) {
+      const acadYear = studentData.academicYear || existingDoc.data().academicYear;
+      const clsName = studentData.className || existingDoc.data().className;
+      const rollNum = studentData.roll || existingDoc.data().roll;
+      
+      if (acadYear && clsName && rollNum) {
+          const year = String(acadYear).slice(-2);
+          const classNum = String(clsName).padStart(2, '0');
+          const studentSerial = rollNum.toString().padStart(4, '0');
+          dataToUpdate.generatedId = `${year}${classNum}${studentSerial}`;
+      }
+    }
+  }
+
 
   if (studentData.dob) {
     dataToUpdate.dob = Timestamp.fromDate(studentData.dob);
@@ -170,3 +195,5 @@ export const deleteStudent = async (db: Firestore, id: string) => {
         throw permissionError;
     });
 };
+
+    

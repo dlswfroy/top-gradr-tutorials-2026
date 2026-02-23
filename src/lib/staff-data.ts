@@ -12,7 +12,8 @@ import {
   getDoc,
   getDocs,
   query,
-  orderBy
+  orderBy,
+  where
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -78,9 +79,20 @@ export const getStaffById = async (db: Firestore, id: string): Promise<Staff | u
     }
 };
 
-export const addStaff = async (db: Firestore, staffData: NewStaffData) => {
+export const addStaff = async (db: Firestore, staffData: Omit<NewStaffData, 'employeeId'>) => {
+  const year = staffData.joinDate.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const endOfYear = new Date(year + 1, 0, 1);
+
+  const q = query(collection(db, 'staff'), where('joinDate', '>=', startOfYear), where('joinDate', '<', endOfYear));
+  const querySnapshot = await getDocs(q);
+  const count = querySnapshot.size;
+  const serial = (count + 1).toString().padStart(2, '0');
+  const employeeId = `${year}${serial}`;
+  
   const dataToSave: WithFieldValue<DocumentData> = {
     ...staffData,
+    employeeId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -152,3 +164,5 @@ export const deleteStaff = async (db: Firestore, id: string) => {
         throw permissionError;
     });
 };
+
+    

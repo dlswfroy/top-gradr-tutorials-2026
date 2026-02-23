@@ -18,8 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const initialStaffState: NewStaffData = {
-  employeeId: '',
+const initialStaffState: Omit<NewStaffData, 'employeeId'> = {
   nameBn: '',
   nameEn: '',
   designation: '',
@@ -39,7 +38,7 @@ export default function AddStaffPage() {
     const { toast } = useToast();
     const db = useFirestore();
     
-    const [staff, setStaff] = useState<NewStaffData>(initialStaffState);
+    const [staff, setStaff] = useState<Omit<NewStaffData, 'employeeId'>>(initialStaffState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
 
@@ -47,7 +46,7 @@ export default function AddStaffPage() {
         setIsClient(true);
     }, []);
 
-    const handleInputChange = (field: keyof NewStaffData, value: string | Date | boolean | undefined) => {
+    const handleInputChange = (field: keyof Omit<NewStaffData, 'employeeId'>, value: string | Date | boolean | undefined) => {
         setStaff(prev => ({...prev, [field]: value}));
     };
 
@@ -158,10 +157,6 @@ export default function AddStaffPage() {
                 <div className="space-y-4">
                     <h3 className="font-semibold text-lg border-b pb-2">সাধারণ তথ্য</h3>
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        <div className="space-y-2">
-                            <Label htmlFor="employeeId">কর্মচারী আইডি</Label>
-                            <Input id="employeeId" name="employeeId" required value={staff.employeeId} onChange={e => handleInputChange('employeeId', e.target.value)} />
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="nameBn">নাম (বাংলা)</Label>
                             <Input id="nameBn" name="nameBn" required value={staff.nameBn} onChange={e => handleInputChange('nameBn', e.target.value)} />
@@ -286,3 +281,5 @@ export default function AddStaffPage() {
     </div>
   );
 }
+
+    

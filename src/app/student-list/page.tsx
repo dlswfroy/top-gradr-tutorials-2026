@@ -155,6 +155,7 @@ export default function StudentListPage() {
                                   <TableHead>ক্রমিক নং</TableHead>
                                   <TableHead>ছবি</TableHead>
                                   <TableHead>রোল</TableHead>
+                                  <TableHead>আইডি</TableHead>
                                   <TableHead>শিক্ষার্থীর নাম</TableHead>
                                   <TableHead>পিতার নাম</TableHead>
                                   <TableHead>মোবাইল নম্বর</TableHead>
@@ -164,13 +165,13 @@ export default function StudentListPage() {
                               <TableBody>
                                 {isLoading ? (
                                    <TableRow>
-                                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                           লোড হচ্ছে...
                                       </TableCell>
                                    </TableRow>
                                 ) : getStudentsByClass(className).length === 0 ? (
                                    <TableRow>
-                                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                           এই শ্রেণিতে কোনো শিক্ষার্থী নেই।
                                       </TableCell>
                                    </TableRow>
@@ -188,6 +189,7 @@ export default function StudentListPage() {
                                       />
                                     </TableCell>
                                     <TableCell>{student.roll.toLocaleString('bn-BD')}</TableCell>
+                                    <TableCell>{student.generatedId || '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{student.studentNameBn}</TableCell>
                                     <TableCell className="whitespace-nowrap">{student.fatherNameBn}</TableCell>
                                     <TableCell>
@@ -261,6 +263,7 @@ export default function StudentListPage() {
                           <TableHead>ক্রমিক নং</TableHead>
                           <TableHead>ছবি</TableHead>
                           <TableHead>রোল</TableHead>
+                          <TableHead>আইডি</TableHead>
                           <TableHead>শিক্ষার্থীর নাম</TableHead>
                           <TableHead>পিতার নাম</TableHead>
                           <TableHead>মোবাইল নম্বর</TableHead>
@@ -273,6 +276,7 @@ export default function StudentListPage() {
                             <TableCell><Skeleton className="h-6 w-10" /></TableCell>
                             <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-10" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                             <TableCell><Skeleton className="h-6 w-24" /></TableCell>
@@ -314,6 +318,7 @@ export default function StudentListPage() {
                             <div>
                                 <h3 className="font-semibold text-lg mb-2 border-b pb-1">ব্যক্তিগত তথ্য</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                                    <p><span className="font-medium text-muted-foreground">শিক্ষার্থী আইডি:</span> {studentToView.generatedId || 'N/A'}</p>
                                     <p><span className="font-medium text-muted-foreground">নাম (ইংরেজি):</span> {studentToView.studentNameEn || 'N/A'}</p>
                                     <p><span className="font-medium text-muted-foreground">জন্ম তারিখ:</span> {studentToView.dob ? new Date(studentToView.dob).toLocaleDateString('bn-BD') : 'N/A'}</p>
                                     <p><span className="font-medium text-muted-foreground">জন্ম নিবন্ধন:</span> {studentToView.birthRegNo || 'N/A'}</p>
@@ -386,3 +391,5 @@ export default function StudentListPage() {
     </>
   );
 }
+
+    

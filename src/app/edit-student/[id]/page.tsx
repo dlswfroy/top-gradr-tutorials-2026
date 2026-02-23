@@ -265,6 +265,10 @@ export default function EditStudentPage() {
                           <Input id="roll" name="roll" type="number" required value={student.roll || ''} onChange={e => handleInputChange('roll', e.target.value)} />
                       </div>
                       <div className="space-y-2">
+                          <Label htmlFor="generatedId">শিক্ষার্থী আইডি</Label>
+                          <Input id="generatedId" name="generatedId" value={student.generatedId || 'সংরক্ষণ করার পর তৈরি হবে'} disabled />
+                      </div>
+                      <div className="space-y-2">
                           <Label htmlFor="academic-year">শিক্ষাবর্ষ</Label>
                           <Select required value={student.academicYear || ''} onValueChange={value => handleInputChange('academicYear', value)}>
                               <SelectTrigger id="academic-year" name="academic-year">
@@ -604,3 +608,5 @@ export default function EditStudentPage() {
     </div>
   );
 }
+
+    

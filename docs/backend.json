@@ -21,6 +21,7 @@
       "description": "A student in the school",
       "type": "object",
       "properties": {
+        "generatedId": { "type": "string", "description": "The auto-generated 8-digit student ID (YYCCRRRR)." },
         "roll": { "type": "number" },
         "className": { "type": "string" },
         "academicYear": { "type": "string" },
@@ -59,7 +60,7 @@
       "description": "A teacher or staff member of the school.",
       "type": "object",
       "properties": {
-        "employeeId": { "type": "string" },
+        "employeeId": { "type": "string", "description": "The auto-generated 6-digit employee ID (YYYYSS)." },
         "nameBn": { "type": "string" },
         "nameEn": { "type": "string" },
         "designation": {
@@ -324,3 +325,5 @@
     }
   }
 }
+
+    
