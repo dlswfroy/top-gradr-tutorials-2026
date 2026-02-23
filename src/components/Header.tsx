@@ -38,6 +38,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
@@ -239,18 +247,29 @@ export function Header() {
       
       <div className="flex items-center gap-4">
         {authLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : user ? (
-          <>
-            <Avatar className="h-10 w-10 border-2 border-white">
-              {teacherPhoto ? (
-                <AvatarImage src={teacherPhoto} alt={user.email || 'user'} />
-              ) : null}
-              <AvatarFallback>{user.email ? user.email.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
-            </Avatar>
-            <Button onClick={handleLogout} variant="ghost" size="icon" className="text-white hover:bg-primary/80 hover:text-white">
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">লগ আউট</span>
-            </Button>
-          </>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-10 w-10 border-2 border-white cursor-pointer">
+                {teacherPhoto ? (
+                  <AvatarImage src={teacherPhoto} alt={user.email || 'user'} />
+                ) : null}
+                <AvatarFallback>{user.email ? user.email.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                {user.email && <DropdownMenuLabel>{user.email}</DropdownMenuLabel>}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>প্রোফাইল সেটিংস</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>লগ আউট</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <Link href="/login">
             <Button variant="secondary">লগইন করুন</Button>
