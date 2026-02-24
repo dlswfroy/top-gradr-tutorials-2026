@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { isHoliday, Holiday } from '@/lib/holiday-data';
 
 
 const parseTeacherName = (cell: string): string => {
@@ -47,14 +48,22 @@ const LiveRoutineCard = () => {
     const [fullRoutine, setFullRoutine] = useState<ClassRoutine[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isLoading, setIsLoading] = useState(true);
+    const [activeHoliday, setActiveHoliday] = useState<Holiday | undefined>(undefined);
 
     useEffect(() => {
         if (!db) return;
         setIsLoading(true);
-        getFullRoutine(db, selectedYear).then(data => {
-            setFullRoutine(data);
+        const fetchData = async () => {
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            const [routineData, holidayInfo] = await Promise.all([
+                getFullRoutine(db, selectedYear),
+                isHoliday(db, todayStr),
+            ]);
+            setFullRoutine(routineData);
+            setActiveHoliday(holidayInfo);
             setIsLoading(false);
-        });
+        };
+        fetchData();
     }, [db, selectedYear]);
 
     useEffect(() => {
@@ -65,6 +74,10 @@ const LiveRoutineCard = () => {
     const getCurrentPeriodInfo = () => {
         const now = currentTime;
         const currentDayName = dayMap[now.getDay()];
+
+        if (activeHoliday) {
+            return { status: `আজ ${activeHoliday.description} উপলক্ষে ছুটি।`, runningClasses: [] };
+        }
         
         if (currentDayName === 'শুক্রবার' || currentDayName === 'শনিবার') {
             return { status: 'আজ সাপ্তাহিক ছুটি।', runningClasses: [] };
