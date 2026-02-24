@@ -19,7 +19,7 @@ export const defaultSchoolInfo: SchoolInfo = {
     eiin: '123456',
     code: '7890',
     address: 'Upazila: Birganj, Post: Birganj, Zila: Dinajpur',
-    logoUrl: 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-07-27T08:12:08.571Z/user_uploads/b7b9f36b-d897-40f4-8092-dbe1197779de/image.png?v=12'
+    logoUrl: 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-07-27T08:12:08.571Z/user_uploads/b7b9f36b-d897-40f4-8092-dbe1197779de/image.png?v=13'
 };
 
 const SCHOOL_INFO_DOC_PATH = 'school/info';

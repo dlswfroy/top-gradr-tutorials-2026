@@ -44,8 +44,8 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            // This header tells the browser to always check with the server for a new version.
-            value: 'public, max-age=0, must-revalidate',
+            // This is the most aggressive cache-busting strategy.
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },
