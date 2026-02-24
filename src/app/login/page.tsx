@@ -108,7 +108,6 @@ export default function LoginPage() {
             </div>
             <Card className="w-full max-w-md">
                 <CardHeader>
-                    <CardTitle>স্কুল ম্যানেজমেন্ট সিস্টেম</CardTitle>
                     <CardDescription>লগইন বা সাইন আপ করুন</CardDescription>
                 </CardHeader>
                 <CardContent>
