@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, UserX, GraduationCap, Clock } from 'lucide-react';
+import { Users, GraduationCap, Clock } from 'lucide-react';
 import { Student } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { getAttendanceForDate } from '@/lib/attendance-data';
@@ -185,9 +185,9 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [totalStudents, setTotalStudents] = useState(0);
-  const [presentStudents, setPresentStudents] = useState(0);
-  const [absentStudents, setAbsentStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
+  const [classAttendance, setClassAttendance] = useState<Record<string, { present: number; absent: number; total: number }>>({});
+  const [attendanceTaken, setAttendanceTaken] = useState(false);
   const { selectedYear } = useAcademicYear();
   const db = useFirestore();
   
@@ -202,39 +202,52 @@ export default function Home() {
 
       const studentsQuery = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
       
-      const unsubscribeStudents = onSnapshot(studentsQuery, (querySnapshot) => {
-        const studentsForYear = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
+      const unsubscribeStudents = onSnapshot(studentsQuery, async (studentsSnapshot) => {
+        const studentsForYear = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
         setTotalStudents(studentsForYear.length);
         
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const classMap: Record<string, { present: number; absent: number; total: number }> = {
+            '6': { present: 0, absent: 0, total: 0 },
+            '7': { present: 0, absent: 0, total: 0 },
+            '8': { present: 0, absent: 0, total: 0 },
+            '9': { present: 0, absent: 0, total: 0 },
+            '10': { present: 0, absent: 0, total: 0 },
+        };
 
-        const fetchAttendance = async () => {
-            if (!db) return;
-            const todaysAttendance = await getAttendanceForDate(db, todayStr, selectedYear);
-            
-            let present = 0;
-            let absent = 0;
-            
-            if (todaysAttendance.length > 0) {
-              const studentIdsForYear = new Set(studentsForYear.map(s => s.id));
-              todaysAttendance.forEach(classAttendance => {
-                  classAttendance.attendance.forEach(studentAttendance => {
-                      if (studentIdsForYear.has(studentAttendance.studentId)) {
-                        if (studentAttendance.status === 'present') {
-                            present++;
-                        } else {
-                            absent++;
-                        }
-                      }
-                  });
-              });
+        studentsForYear.forEach(student => {
+            if (classMap[student.className]) {
+                classMap[student.className].total++;
             }
+        });
 
-            setPresentStudents(present);
-            setAbsentStudents(absent);
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const todaysAttendance = await getAttendanceForDate(db, todayStr, selectedYear);
+        setAttendanceTaken(todaysAttendance.length > 0);
+
+        if (todaysAttendance.length > 0) {
+            todaysAttendance.forEach(classAttendanceRecord => {
+                const className = classAttendanceRecord.className;
+                if (classMap[className]) {
+                    let presentCount = 0;
+                    let absentCount = 0;
+                    
+                    classAttendanceRecord.attendance.forEach(studentAttendance => {
+                        const studentExistsInYear = studentsForYear.some(s => s.id === studentAttendance.studentId && s.className === className);
+                        if (studentExistsInYear) {
+                            if (studentAttendance.status === 'present') {
+                                presentCount++;
+                            } else {
+                                absentCount++;
+                            }
+                        }
+                    });
+                    classMap[className].present = presentCount;
+                    classMap[className].absent = absentCount;
+                }
+            });
         }
-
-        fetchAttendance();
+        
+        setClassAttendance(classMap);
       },
       async (error: FirestoreError) => {
         const permissionError = new FirestorePermissionError({
@@ -290,32 +303,38 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-emerald-100 border-emerald-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-emerald-800">
-                উপস্থিত
-              </CardTitle>
-              <UserCheck className="h-4 w-4 text-emerald-700" />
+          
+          <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle>আজকের হাজিরা</CardTitle>
+                <CardDescription>
+                    {attendanceTaken ? 'শ্রেণিভিত্তিক আজকের উপস্থিতির সারসংক্ষেপ' : 'আজ এখনও কোনো শ্রেণির হাজিরা নেওয়া হয়নি।'}
+                </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-emerald-900">{presentStudents.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-emerald-600">
-                আজকে উপস্থিত
-              </p>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>শ্রেণি</TableHead>
+                            <TableHead className="text-center">মোট</TableHead>
+                            <TableHead className="text-center">উপস্থিত</TableHead>
+                            <TableHead className="text-center">অনুপস্থিত</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Object.entries(classAttendance).map(([className, data]) => (
+                            <TableRow key={className}>
+                                <TableCell className="font-medium">{classNamesMap[className]} শ্রেণি</TableCell>
+                                <TableCell className="text-center">{data.total.toLocaleString('bn-BD')}</TableCell>
+                                <TableCell className="text-center text-emerald-600 font-semibold">{data.present.toLocaleString('bn-BD')}</TableCell>
+                                <TableCell className="text-center text-rose-600 font-semibold">{data.absent.toLocaleString('bn-BD')}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </CardContent>
           </Card>
-          <Card className="bg-rose-100 border-rose-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-rose-800">অনুপস্থিত</CardTitle>
-              <UserX className="h-4 w-4 text-rose-700" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-rose-900">{absentStudents.toLocaleString('bn-BD')}</div>
-              <p className="text-xs text-rose-600">
-                আজকে অনুপস্থিত
-              </p>
-            </CardContent>
-          </Card>
+
           <Card className="bg-amber-100 border-amber-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-amber-800">
