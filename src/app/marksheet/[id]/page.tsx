@@ -156,7 +156,7 @@ export default function MarksheetPage() {
             <div className="fixed top-4 right-4 no-print">
                 <Button onClick={() => window.print()}>
                     <Printer className="mr-2 h-4 w-4" />
-                    Print Marksheet
+                    মার্কশিট প্রিন্ট করুন
                 </Button>
             </div>
             <div className="w-[210mm] h-[297mm] bg-white mx-auto p-8 shadow-lg printable-area relative">
@@ -287,6 +287,12 @@ export default function MarksheetPage() {
                         </div>
                     </footer>
                 </div>
+            </div>
+            <div className="flex justify-center mt-4 no-print">
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    মার্কশিট প্রিন্ট করুন
+                </Button>
             </div>
         </div>
     );

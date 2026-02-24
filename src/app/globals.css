@@ -99,23 +99,15 @@
       print-color-adjust: exact;
       background-color: white;
     }
-    .printable-area {
-        display: block !important;
-    }
     .no-print, .no-print * {
       display: none !important;
-      visibility: hidden !important;
     }
-    
-    body > *:not(.printable-area) {
-        display: none !important;
-        visibility: hidden !important;
+    body * {
+      visibility: hidden;
     }
-
     .printable-area, .printable-area * {
       visibility: visible;
     }
-
     .printable-area {
       position: absolute;
       left: 0;
