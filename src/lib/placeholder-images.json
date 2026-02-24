@@ -1,10 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "profile-photo",
-      "description": "Profile photo of a key school representative",
-      "imageUrl": "https://images.unsplash.com/photo-1595152772105-20504a6dd660?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzb3V0aCUyMGFzaWFuJTIwbWFufGVufDB8fHx8fDE3MjE4MzU4NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "man portrait"
-    }
-  ]
+  "placeholderImages": []
 }
