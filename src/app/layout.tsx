@@ -9,12 +9,12 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthProvider } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
-const iconUrlWithVersion = 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-08-02T19:39:10.570Z/user_uploads/c9e99a77-400e-4363-9562-b13c321484f9/school-logo.png?v=17';
+const iconUrlWithVersion = 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-08-02T19:39:10.570Z/user_uploads/c9e99a77-400e-4363-9562-b13c321484f9/school-logo.png?v=18';
 
 export const metadata: Metadata = {
   title: 'My School',
   description: 'A central hub for school management.',
-  manifest: '/manifest.webmanifest?v=17',
+  manifest: '/manifest.webmanifest?v=18',
   icons: {
     icon: iconUrlWithVersion,
     shortcut: iconUrlWithVersion,
