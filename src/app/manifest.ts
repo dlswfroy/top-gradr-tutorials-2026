@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   
   return {
     name: defaultSchoolInfo.name,
-    short_name: 'School Navigator',
+    short_name: 'My School',
     description: 'A central hub for school management.',
     start_url: '/',
     display: 'standalone',
