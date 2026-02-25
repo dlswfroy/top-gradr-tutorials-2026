@@ -1,4 +1,4 @@
-/** @type {import('postcss-load-config').Config} */
+git add ./** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
     tailwindcss: {},
@@ -6,3 +6,4 @@ const config = {
 };
 
 export default config;
+git commit -m "update message"
