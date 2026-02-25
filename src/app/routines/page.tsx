@@ -435,48 +435,41 @@ const CombinedRoutineTable = ({ routineData, conflicts, isEditMode, onCellChange
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
     return (
-         <Card>
-            <CardHeader className="no-print">
-                <CardTitle>সকল শ্রেণির সম্মিলিত ক্লাস রুটিন</CardTitle>
-            </CardHeader>
-            <CardContent>
-                 <div className="overflow-x-auto">
-                    <Table className="border">
-                         <TableHeader>
-                            <TableRow>
-                                <TableHead className="border-r font-bold align-middle text-center min-w-[100px]">বার</TableHead>
-                                <TableHead className="border-r font-bold align-middle text-center min-w-[80px]">শ্রেণি</TableHead>
-                                {periods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold min-w-[150px]">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
-                                <TableHead className="border-r text-center font-semibold bg-gray-100 min-w-[100px]">বিরতি<br/><span className="font-normal text-xs">০১:০০ - ০১:৪০</span></TableHead>
-                                {postBreakPeriods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold min-w-[150px]">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {days.map((day) => (
-                                classes.map((cls, classIndex) => (
-                                    <TableRow key={`${day}-${cls}`}>
-                                        {classIndex === 0 && (
-                                             <TableCell className="font-semibold border-r align-middle text-center" rowSpan={classes.length}>{day}</TableCell>
-                                        )}
-                                        <TableCell className="font-semibold border-r text-center">{classNamesMap[cls]}</TableCell>
-                                        {[...Array(3)].map((_, periodIdx) => {
-                                            const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
-                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} isMounted={isMounted} />;
-                                        })}
-                                        <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
-                                        {[...Array(3)].map((_, i) => {
-                                            const periodIdx = i + 3;
-                                            const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
-                                            return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} isMounted={isMounted} />;
-                                        })}
-                                    </TableRow>
-                                ))
-                            ))}
-                        </TableBody>
-                    </Table>
-                 </div>
-            </CardContent>
-        </Card>
+        <div className="overflow-x-auto">
+           <Table className="border">
+                <TableHeader>
+                   <TableRow>
+                       <TableHead className="border-r font-bold align-middle text-center min-w-[100px]">বার</TableHead>
+                       <TableHead className="border-r font-bold align-middle text-center min-w-[80px]">শ্রেণি</TableHead>
+                       {periods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold min-w-[150px]">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
+                       <TableHead className="border-r text-center font-semibold bg-gray-100 min-w-[100px]">বিরতি<br/><span className="font-normal text-xs">০১:০০ - ০১:৪০</span></TableHead>
+                       {postBreakPeriods.map(p => <TableHead key={p.name} className="border-r text-center font-semibold min-w-[150px]">{p.name} পিরিয়ড<br/><span className="font-normal text-xs">{p.time}</span></TableHead>)}
+                   </TableRow>
+               </TableHeader>
+               <TableBody>
+                   {days.map((day) => (
+                       classes.map((cls, classIndex) => (
+                           <TableRow key={`${day}-${cls}`}>
+                               {classIndex === 0 && (
+                                    <TableCell className="font-semibold border-r align-middle text-center" rowSpan={classes.length}>{day}</TableCell>
+                               )}
+                               <TableCell className="font-semibold border-r text-center">{classNamesMap[cls]}</TableCell>
+                               {[...Array(3)].map((_, periodIdx) => {
+                                   const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
+                                   return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} isMounted={isMounted} />;
+                               })}
+                               <TableCell className="border-r text-center bg-muted font-semibold">টিফিন</TableCell>
+                               {[...Array(3)].map((_, i) => {
+                                   const periodIdx = i + 3;
+                                   const cellContent = (routineData[cls]?.[day] || [])[periodIdx] || '';
+                                   return <EditableCell key={`${day}-${cls}-${periodIdx}`} content={cellContent} isEditMode={isEditMode} onCellChange={(value) => onCellChange(cls, day, periodIdx, value)} conflictKey={`${cls}-${day}-${periodIdx}`} conflicts={conflicts} teacherColorMap={teacherColorMap} isMounted={isMounted} />;
+                               })}
+                           </TableRow>
+                       ))
+                   ))}
+               </TableBody>
+           </Table>
+        </div>
     );
 };
 
@@ -547,7 +540,7 @@ const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange, tea
     
     return (
         <div className="space-y-6">
-             <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg items-end">
+             <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg items-end no-print">
                 <div className="space-y-2 flex-1">
                     <Label htmlFor="class-name">শ্রেণি</Label>
                     <Select value={className} onValueChange={setClassName}>
@@ -565,7 +558,14 @@ const ClassRoutineTab = ({ routineData, conflicts, isEditMode, onCellChange, tea
             </div>
             
             {className === 'all' ? (
-                <CombinedRoutineTable routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={onCellChange} teacherColorMap={teacherColorMap} isMounted={isMounted} />
+                 <Card>
+                    <CardHeader className="no-print">
+                        <CardTitle>সকল শ্রেণির সম্মিলিত ক্লাস রুটিন</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CombinedRoutineTable routineData={routineData} conflicts={conflicts} isEditMode={isEditMode} onCellChange={onCellChange} teacherColorMap={teacherColorMap} isMounted={isMounted} />
+                    </CardContent>
+                </Card>
             ) : (
                 <RoutineTable 
                     className={className} 
@@ -906,7 +906,7 @@ export default function RoutinesPage() {
                     {isLoading || isSchoolInfoLoading ? (
                         <div className="flex items-center justify-center h-full">লোড হচ্ছে...</div>
                     ) : (
-                        <div className="p-4">
+                        <>
                              <header className="flex items-center gap-4 mb-2">
                                 {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="School Logo" width={50} height={50} className="object-contain" />}
                                 <div className="text-center flex-grow">
@@ -926,7 +926,7 @@ export default function RoutinesPage() {
                                 teacherColorMap={teacherColorMap}
                                 isMounted={isMounted}
                             />
-                        </div>
+                        </>
                     )}
                 </div>
             )}
