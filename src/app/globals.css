@@ -133,10 +133,17 @@
         page: routine;
         padding: 0.5cm;
         box-sizing: border-box;
-        position: static !important;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    .routine-print-container div.overflow-x-auto {
+        overflow: visible !important;
     }
     .routine-print-container table {
-        font-size: 8px;
+        font-size: 7.5px;
         line-height: 1.1;
         width: 100%;
         table-layout: fixed;
@@ -147,9 +154,13 @@
         overflow-wrap: break-word;
         text-align: center;
     }
-    .routine-print-container table .min-w-\[150px\],
-    .routine-print-container table .min-w-\[100px\],
-    .routine-print-container table .min-w-\[80px\] {
+    /* This removes the extra padding from the div inside the table cell */
+    .routine-print-container table td div {
+      padding: 0 !important;
+    }
+    .routine-print-container .min-w-\[150px\],
+    .routine-print-container .min-w-\[100px\],
+    .routine-print-container .min-w-\[80px\] {
         min-width: auto !important;
     }
      .routine-print-container [data-radix-tooltip-content] {
