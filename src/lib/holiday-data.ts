@@ -60,14 +60,20 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
     ];
 
     holidayRangesFor2026.forEach(range => {
-        let currentDate = new Date(range.start + 'T00:00:00'); // Ensure UTC parsing
-        const endDate = new Date(range.end + 'T00:00:00');
+        // Use UTC date methods to avoid timezone issues.
+        const startDate = new Date(range.start);
+        startDate.setUTCHours(12); // Use noon to avoid timezone boundary issues
+        const endDate = new Date(range.end);
+        endDate.setUTCHours(12);
+
+        let currentDate = startDate;
+
         while (currentDate <= endDate) {
             holidaysFor2026.push({
                 date: currentDate.toISOString().split('T')[0],
                 description: range.description,
             });
-            currentDate.setDate(currentDate.getDate() + 1);
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
         }
     });
 
