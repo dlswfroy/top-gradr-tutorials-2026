@@ -180,10 +180,18 @@ function HolidaySettings() {
         if (!db) return;
         setIsLoading(true);
         const holidaysQuery = query(collection(db, 'holidays'), orderBy('date'));
+        
+        let initialCheckDone = false;
+        
         const unsubscribe = onSnapshot(holidaysQuery, (snapshot) => {
-            const holidaysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Holiday));
-            setHolidays(holidaysData);
-            setIsLoading(false);
+            if (snapshot.empty && !initialCheckDone) {
+                initialCheckDone = true;
+                getHolidays(db); // This will create initial holidays and trigger the listener again.
+            } else {
+                const holidaysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Holiday));
+                setHolidays(holidaysData);
+                setIsLoading(false);
+            }
         }, async (error: FirestoreError) => {
             const permissionError = new FirestorePermissionError({
                 path: 'holidays',
@@ -338,7 +346,7 @@ function HolidaySettings() {
                                 ) : (
                                     holidays.map((holiday) => (
                                         <TableRow key={holiday.id}>
-                                            <TableCell>{format(new Date(holiday.date), "d MMMM yyyy", { locale: bn })}</TableCell>
+                                            <TableCell>{format(new Date(holiday.date.replace(/-/g, '/')), "d MMMM yyyy", { locale: bn })}</TableCell>
                                             <TableCell>{holiday.description}</TableCell>
                                             <TableCell className="text-right">
                                                 <AlertDialog>
