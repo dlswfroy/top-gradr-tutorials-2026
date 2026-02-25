@@ -13,7 +13,7 @@ import { Trash2, Upload } from 'lucide-react';
 import { format } from "date-fns";
 import { bn } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast";
-import { addHoliday, getHolidays, deleteHoliday, Holiday, NewHolidayData } from '@/lib/holiday-data';
+import { addHoliday, getHolidays, deleteHoliday, Holiday, NewHolidayData, createInitialHolidays } from '@/lib/holiday-data';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
 import type { SchoolInfo } from '@/lib/school-info';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -180,12 +180,10 @@ function HolidaySettings() {
         if (!db) return;
         setIsLoading(true);
         try {
-            // getHolidays will create the initial list if it's empty
             const data = await getHolidays(db);
             setHolidays(data);
         } catch (e) {
             console.error("Failed to fetch holidays", e);
-            // errorEmitter should be called within getHolidays, so no need to do it here
         } finally {
             setIsLoading(false);
         }
@@ -280,6 +278,21 @@ function HolidaySettings() {
             // Error handled by listener
         });
     };
+
+    const handleResetHolidays = async () => {
+        if (!db) return;
+        setIsLoading(true);
+        try {
+            const defaultHolidays = await createInitialHolidays(db);
+            setHolidays(defaultHolidays);
+            toast({ title: "ছুটির তালিকা রিসেট হয়েছে", description: "তালিকাটি ডিফল্ট ছুটিতে রিসেট করা হয়েছে।" });
+        } catch (e) {
+            console.error("Failed to reset holidays", e);
+            toast({ variant: 'destructive', title: 'রিসেট করা যায়নি' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
     
     return (
         <div className="space-y-8">
@@ -315,6 +328,7 @@ function HolidaySettings() {
             <Card>
                 <CardHeader>
                     <CardTitle>ছুটির তালিকা</CardTitle>
+                    <CardDescription>সরকারি এবং অন্যান্য সকল ছুটির তালিকা। তালিকাটি ভুল দেখালে রিসেট করতে পারেন।</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md overflow-x-auto">
@@ -374,6 +388,27 @@ function HolidaySettings() {
                         </Table>
                     </div>
                 </CardContent>
+                <CardFooter className="border-t pt-6 justify-end">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" disabled={!canManageSettings}>তালিকা রিসেট করুন</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    এটি ডাটাবেস থেকে ২০২৬ সালের সকল ছুটি মুছে ফেলে ডিফল্ট তালিকা দিয়ে প্রতিস্থাপন করবে। এই কাজটি ফিরিয়ে আনা যাবে না।
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetHolidays}>
+                                    রিসেট করুন
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
             </Card>
         </div>
     );

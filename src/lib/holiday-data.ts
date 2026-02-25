@@ -24,7 +24,7 @@ export type NewHolidayData = Omit<Holiday, 'id'>;
 
 const HOLIDAYS_COLLECTION_PATH = 'holidays';
 
-const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
+export const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
     const holidaysFor2026: NewHolidayData[] = [
         { date: '2026-01-17', description: 'শব-ই-মিরাজ' },
         { date: '2026-01-23', description: 'শ্রী শ্রী সরস্বতী পূজা' },
@@ -60,17 +60,14 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
     ];
 
     holidayRangesFor2026.forEach(range => {
-        // Use UTC date methods to avoid timezone issues.
-        const startDate = new Date(range.start);
-        startDate.setUTCHours(12); // Use noon to avoid timezone boundary issues
-        const endDate = new Date(range.end);
-        endDate.setUTCHours(12);
+        const startDate = new Date(`${range.start}T12:00:00Z`); // Explicitly parse as UTC noon
+        const endDate = new Date(`${range.end}T12:00:00Z`);   // Explicitly parse as UTC noon
 
-        let currentDate = startDate;
+        let currentDate = new Date(startDate);
 
         while (currentDate <= endDate) {
             holidaysFor2026.push({
-                date: currentDate.toISOString().split('T')[0],
+                date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD format
                 description: range.description,
             });
             currentDate.setUTCDate(currentDate.getUTCDate() + 1);
@@ -82,6 +79,19 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
 
     const batch = writeBatch(db);
     const holidaysWithIds: Holiday[] = [];
+    
+    // First, delete all existing holidays for 2026 to ensure a clean slate
+    const existingHolidaysQuery = query(collection(db, HOLIDAYS_COLLECTION_PATH), where("date", ">=", "2026-01-01"), where("date", "<=", "2026-12-31"));
+    try {
+        const existingDocsSnapshot = await getDocs(existingHolidaysQuery);
+        existingDocsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+    } catch (e) {
+        // If querying fails, we might still proceed, but the commit might fail if we don't have read access.
+        // The global error handler will catch this.
+        console.error("Error querying existing holidays for deletion:", e);
+    }
 
     uniqueHolidays.forEach(holiday => {
         const docRef = doc(collection(db, HOLIDAYS_COLLECTION_PATH));
@@ -91,7 +101,7 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
 
     try {
         await batch.commit();
-        return holidaysWithIds;
+        return holidaysWithIds.sort((a,b) => a.date.localeCompare(b.date));
     } catch (e) {
         console.error("Error creating initial holidays:", e);
         const permissionError = new FirestorePermissionError({
@@ -99,7 +109,7 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
             operation: 'write',
         });
         errorEmitter.emit('permission-error', permissionError);
-        return [];
+        throw permissionError;
     }
 }
 
