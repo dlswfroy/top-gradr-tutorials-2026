@@ -176,32 +176,24 @@ function HolidaySettings() {
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [newHolidayDescription, setNewHolidayDescription] = useState('');
 
-    useEffect(() => {
+    const fetchHolidays = useCallback(async () => {
         if (!db) return;
         setIsLoading(true);
-        const holidaysQuery = query(collection(db, 'holidays'), orderBy('date'));
-        
-        let initialCheckDone = false;
-        
-        const unsubscribe = onSnapshot(holidaysQuery, (snapshot) => {
-            if (snapshot.empty && !initialCheckDone) {
-                initialCheckDone = true;
-                getHolidays(db); // This will create initial holidays and trigger the listener again.
-            } else {
-                const holidaysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Holiday));
-                setHolidays(holidaysData);
-                setIsLoading(false);
-            }
-        }, async (error: FirestoreError) => {
-            const permissionError = new FirestorePermissionError({
-                path: 'holidays',
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        try {
+            // getHolidays will create the initial list if it's empty
+            const data = await getHolidays(db);
+            setHolidays(data);
+        } catch (e) {
+            console.error("Failed to fetch holidays", e);
+            // errorEmitter should be called within getHolidays, so no need to do it here
+        } finally {
             setIsLoading(false);
-        });
-        return () => unsubscribe();
+        }
     }, [db]);
+
+    useEffect(() => {
+        fetchHolidays();
+    }, [fetchHolidays]);
 
     const handleAddHolidays = async () => {
         if (!db) return;
@@ -265,6 +257,7 @@ function HolidaySettings() {
                 setStartDate(undefined);
                 setEndDate(undefined);
                 setNewHolidayDescription('');
+                fetchHolidays(); // Refetch
             } else if (duplicateCount > 0) {
                 toastTitle = 'ছুটি যোগ করা যায়নি';
                 toastDescription = `আপনি যে তারিখগুলো দিয়েছেন, সেগুলোতে ইতিমধ্যে ছুটি রয়েছে।`;
@@ -282,6 +275,7 @@ function HolidaySettings() {
             toast({
                 title: 'ছুটি মুছে ফেলা হয়েছে',
             });
+            fetchHolidays(); // Refetch
         }).catch(() => {
             // Error handled by listener
         });
@@ -296,7 +290,7 @@ function HolidaySettings() {
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 items-end gap-4">
                         <div className="w-full space-y-2">
-                            <Label htmlFor="holiday-start-date">শুরুর তারিখ</Label>
+                            <Label htmlFor="holiday-start-date">შুরুর তারিখ</Label>
                             <DatePicker value={startDate} onChange={setStartDate} />
                         </div>
                         <div className="w-full space-y-2">
