@@ -40,6 +40,7 @@ const createInitialHolidays = async (db: Firestore): Promise<Holiday[]> => {
         { date: '2026-05-01', description: 'মে দিবস ও বুদ্ধ পূর্ণিমা' },
         { date: '2026-06-26', description: 'পবিত্র আশুরা (মহররম)' },
         { date: '2026-07-29', description: 'আষাঢ়ী পূর্ণিমা' },
+        { date: '2026-08-05', description: 'জুলাই গণঅভ্যুত্থান দিবস' },
         { date: '2026-08-12', description: 'আখেরী চাহার সোম্বা' },
         { date: '2026-08-26', description: 'ঈদ-ই-মিলাদুন্নবী (সা.)' },
         { date: '2026-09-04', description: 'শুভ জন্মাষ্টমী' },
