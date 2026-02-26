@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -28,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, NewTransactionData, addTransaction, getTransactions, deleteTransaction, TransactionType } from '@/lib/transactions-data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/Accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { StudentFeeDialog } from '@/components/StudentFeeDialog';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAuth } from '@/hooks/useAuth';
@@ -110,7 +109,7 @@ const FeeCollectionTab = ({ studentsForYear, isLoading, onFeeCollected }: { stud
     )
 }
 
-// Collection Report Component
+// Collection Report Tab Component
 const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
