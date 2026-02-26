@@ -4,7 +4,7 @@
 
 @page {
   size: A4;
-  margin: 0;
+  margin: 5mm;
 }
 
 @page routine {
@@ -66,6 +66,7 @@
     body {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+      background: white !important;
     }
     
     .no-print,
@@ -88,12 +89,28 @@
       position: absolute;
       left: 0;
       top: 0;
-      width: 100%;
+      width: 210mm;
       height: auto;
       margin: 0 !important;
       padding: 0 !important;
       box-shadow: none !important;
       border: none !important;
+    }
+
+    .admit-card-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+      width: 100% !important;
+    }
+
+    .admit-card {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+      height: 135mm !important;
+      width: 100% !important;
+      border: 1.5px solid black !important;
+      margin-bottom: 5px !important;
     }
 
     .no-print-outline {
@@ -120,10 +137,6 @@
     .routine-print-container table td {
         padding: 1px;
         text-align: center;
-    }
-    .admit-card {
-        break-inside: avoid;
-        page-break-after: always;
     }
   }
 }

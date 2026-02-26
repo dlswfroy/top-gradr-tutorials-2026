@@ -38,7 +38,9 @@ const AdmitCardGeneratorPage = () => {
         if (!db || !isMounted) return;
         setIsFetchingExams(true);
         getExams(db, selectedYear).then(data => {
-            setExams(data);
+            // Remove duplicates just in case they exist in DB
+            const uniqueExams = Array.from(new Map(data.map(item => [item.name, item])).values());
+            setExams(uniqueExams);
             setIsFetchingExams(false);
         }).catch(() => {
             setIsFetchingExams(false);
@@ -168,7 +170,7 @@ const AdmitCardGeneratorPage = () => {
             </div>
             {studentsInClass.length > 0 && selectedExam && (
                 <div className="printable-area bg-white">
-                    <div className="grid grid-cols-2 gap-4 p-4">
+                    <div className="admit-card-grid p-2">
                         {studentsInClass.map(student => (
                             <AdmitCard key={student.id} student={student} schoolInfo={schoolInfo} examName={selectedExam.name} />
                         ))}

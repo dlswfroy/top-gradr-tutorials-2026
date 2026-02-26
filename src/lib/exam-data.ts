@@ -29,21 +29,24 @@ export const createInitialExams = async (db: Firestore, academicYear: string): P
     const batch = writeBatch(db);
     const examsWithIds: Exam[] = [];
 
-    defaultExams.forEach(exam => {
-        const docRef = doc(collection(db, EXAMS_COLLECTION));
+    for (const exam of defaultExams) {
+        // Use a deterministic ID based on name and year to prevent duplicates
+        const examSlug = exam.name.replace(/[^\p{L}\p{N}]+/gu, '-');
+        const docId = `${academicYear}_${examSlug}`;
+        const docRef = doc(db, EXAMS_COLLECTION, docId);
+        
         const examData = {
             ...exam,
             academicYear: academicYear
         };
-        batch.set(docRef, examData);
-        examsWithIds.push({ id: docRef.id, ...examData });
-    });
+        batch.set(docRef, examData, { merge: true });
+        examsWithIds.push({ id: docId, ...examData });
+    }
 
     try {
         await batch.commit();
         return examsWithIds;
     } catch (e) {
-        // Silently fail if not admin - this prevents the black error popup for teachers
         console.warn("Could not seed initial exams. This is normal if you are not an admin.");
         return defaultExams.map((e, idx) => ({ id: `temp-${idx}`, ...e, academicYear }));
     }
