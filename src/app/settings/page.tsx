@@ -27,10 +27,10 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { User } from '@/lib/user';
-import { getUsers, updateUserPermissions, deleteUserRecord } from '@/lib/user-management';
+import { updateUserPermissions, deleteUserRecord } from '@/lib/user-management';
 import { changePassword } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { availablePermissions, defaultPermissions } from '@/lib/permissions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -503,17 +503,15 @@ function UserManagementSettings() {
     const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
 
     const fetchData = useCallback(async () => {
-        if (!db) return;
+        if (!db || !currentUser || currentUser.role !== 'admin') return;
         setIsLoading(true);
         try {
-            // Fetch users with real-time updates for status
             const usersRef = collection(db, 'users');
             const unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
                 const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
                 setUsers(usersData.sort((a, b) => (a.email || '').localeCompare(b.email || '')));
             });
 
-            // Fetch staff to map names
             const staffQuery = query(collection(db, 'staff'));
             const staffSnap = await getDocs(staffQuery);
             const staffData = staffSnap.docs.map(staffFromDoc);
@@ -525,13 +523,12 @@ function UserManagementSettings() {
         } finally {
             setIsLoading(false);
         }
-    }, [db]);
+    }, [db, currentUser]);
     
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // Create a lookup map for email to staff name
     const staffNameMap = useMemo(() => {
         const map = new Map<string, string>();
         allStaff.forEach(s => {
@@ -548,10 +545,8 @@ function UserManagementSettings() {
         try {
             await deleteUserRecord(db, userToDelete.uid);
             toast({ title: 'ব্যবহারকারী মুছে ফেলা হয়েছে'});
-            fetchData(); // Refresh the list
-        } catch (error) {
-             // Error is handled in deleteUserRecord
-        }
+            fetchData();
+        } catch (error) {}
     }
     
     const openPermissionDialog = (user: User) => {
@@ -684,7 +679,7 @@ function ProfileSettings() {
         
         if (user && db) {
           if (user.role === 'teacher' && user.email) {
-            const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email), limit(1));
+            const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email.toLowerCase()), limit(1));
             const unsubscribe = onSnapshot(staffQuery, (snapshot) => {
               if (!snapshot.empty) {
                 setDisplayName(snapshot.docs[0].data().nameBn);
@@ -702,7 +697,7 @@ function ProfileSettings() {
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            if (file.size > 2 * 1024 * 1024) {
                 toast({
                     variant: "destructive",
                     title: "ফাইল ತುಂಬಾ বড়",
@@ -724,15 +719,13 @@ function ProfileSettings() {
         setIsPhotoSaving(true);
         try {
             const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, { photoUrl: photoPreview });
+            await setDoc(userRef, { photoUrl: photoPreview }, { merge: true });
             toast({ title: 'প্রোফাইল ছবি আপডেট হয়েছে' });
         } catch (e) {
-            const permissionError = new FirestorePermissionError({
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: `users/${user.uid}`,
                 operation: 'update',
-                requestResourceData: { photoUrl: '...truncated...' },
-            });
-            errorEmitter.emit('permission-error', permissionError);
+            }));
         } finally {
             setIsPhotoSaving(false);
         }
@@ -741,11 +734,11 @@ function ProfileSettings() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
-            toast({ variant: 'destructive', title: 'পাসওয়ার্ড মিলেনি', description: 'নতুন পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড একই হতে হবে।' });
+            toast({ variant: 'destructive', title: 'পাসওয়ার্ড মিলেনি' });
             return;
         }
         if (newPassword.length < 6) {
-             toast({ variant: 'destructive', title: 'পাসওয়ার্ডটি খুবই দুর্বল', description: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' });
+             toast({ variant: 'destructive', title: 'পাসওয়ার্ডটি খুবই দুর্বল' });
             return;
         }
 
@@ -883,12 +876,8 @@ export default function SettingsPage() {
                             </Tabs>
                         ) : (
                             <div className="space-y-4">
-                                <div className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-                                    <div className="inline-flex items-center justify-center rounded-sm bg-background shadow-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
-                                    <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
-                                     <div className="inline-flex items-center justify-center rounded-sm h-8 w-full"><Skeleton className="h-4 w-24" /></div>
-                                </div>
-                                <SchoolInfoSettings />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-48 w-full" />
                             </div>
                         )}
                     </CardContent>

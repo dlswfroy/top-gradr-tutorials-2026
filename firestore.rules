@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,6 +24,10 @@ service cloud.firestore {
       allow create: if isAuthed() && request.auth.uid == userId;
       allow update: if isAuthed() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
+    }
+
+    match /emailLogs/{id} {
+      allow read, write: if isAuthed() && (isAdmin() || isTeacher());
     }
 
     match /staff/{id} {

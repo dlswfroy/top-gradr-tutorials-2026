@@ -37,13 +37,11 @@ export async function signUp(email: string, password: string): Promise<{ success
     let displayName = '';
 
     if (adminSnapshot.empty) {
-      // First user becomes admin
       role = 'admin';
       displayName = 'Super Admin';
     } else {
-      // Check if email exists in staff collection as a teacher
       const staffRef = collection(db, 'staff');
-      const teacherQuery = query(staffRef, where('email', '==', email), where('staffType', '==', 'teacher'), limit(1));
+      const teacherQuery = query(staffRef, where('email', '==', email.toLowerCase()), where('staffType', '==', 'teacher'), limit(1));
       const teacherSnapshot = await getDocs(teacherQuery);
 
       if (teacherSnapshot.empty) {
@@ -51,7 +49,7 @@ export async function signUp(email: string, password: string): Promise<{ success
       }
       role = 'teacher';
       const staffData = teacherSnapshot.docs[0].data();
-      displayName = staffData.nameBn || ''; // Set teacher's name from staff list
+      displayName = staffData.nameBn || '';
     }
 
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -91,8 +89,7 @@ export async function signIn(email: string, password: string, role: UserRole): P
       return { success: false, error: 'আপনার ভূমিকা (role) সঠিক নয় অথবা ব্যবহারকারী পাওয়া যায়নি।' };
     }
 
-    // Set online status
-    await updateDoc(userDocRef, { isOnline: true });
+    await setDoc(userDocRef, { isOnline: true }, { merge: true });
 
     return { success: true };
   } catch (error: any) {
@@ -111,7 +108,7 @@ export async function signOut() {
   if (user) {
     const userDocRef = doc(db, 'users', user.uid);
     try {
-      await updateDoc(userDocRef, { isOnline: false });
+      await setDoc(userDocRef, { isOnline: false }, { merge: true });
     } catch (e) {
       console.error("Error setting offline status on logout:", e);
     }

@@ -11,6 +11,7 @@ export interface User {
   photoUrl?: string;
   displayName?: string;
   isOnline?: boolean;
+  permissions?: string[];
 }
 
 export const userFromDoc = (doc: DocumentData): User => {
@@ -22,5 +23,6 @@ export const userFromDoc = (doc: DocumentData): User => {
         photoUrl: data.photoUrl,
         displayName: data.displayName,
         isOnline: data.isOnline || false,
+        permissions: data.permissions || [],
     } as User;
 }

@@ -20,6 +20,20 @@
       },
       "required": ["uid", "email", "role"]
     },
+    "emailLog": {
+      "title": "Email Log",
+      "description": "A record of an email sent through the system.",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string" },
+        "subject": { "type": "string" },
+        "body": { "type": "string" },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "senderUid": { "type": "string" },
+        "recipientType": { "type": "string" }
+      },
+      "required": ["to", "subject", "body", "sentAt", "senderUid"]
+    },
     "student": {
       "title": "Student",
       "description": "A student in the school",
@@ -304,6 +318,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/user" },
       "description": "Stores user profile information, including their role."
+    },
+    "/emailLogs/{id}": {
+      "schema": { "$ref": "#/entities/emailLog" },
+      "description": "Stores logs of sent emails."
     },
     "/students/{studentId}": {
       "schema": { "$ref": "#/entities/student" },
