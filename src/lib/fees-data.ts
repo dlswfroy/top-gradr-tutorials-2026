@@ -1,4 +1,3 @@
-
 'use client';
 import {
   collection,
@@ -96,17 +95,18 @@ const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | n
 }
 
 export const getFeeCollectionsForStudent = async (db: Firestore, studentId: string, academicYear: string): Promise<FeeCollection[]> => {
+  // Removed server-side orderBy to avoid composite index requirements for prototyping.
   const q = query(
     collection(db, FEE_COLLECTION_PATH),
     where("studentId", "==", studentId),
-    where("academicYear", "==", academicYear),
-    orderBy("collectionDate", "desc")
+    where("academicYear", "==", academicYear)
   );
   try {
     const querySnapshot = await getDocs(q);
     const collections = querySnapshot.docs
         .map(feeCollectionFromDoc)
-        .filter((item): item is FeeCollection => item !== null);
+        .filter((item): item is FeeCollection => item !== null)
+        .sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime()); // Sort client-side
 
     return collections;
   } catch (e) {

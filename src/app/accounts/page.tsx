@@ -121,10 +121,11 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     useEffect(() => {
         if (!db) return;
         setIsLoading(true);
+        // Removed server-side orderBy to avoid composite index requirements for MVP prototyping.
+        // We will sort client-side.
         const q = query(
             collection(db, 'feeCollections'),
-            where('academicYear', '==', selectedYear),
-            orderBy('collectionDate', 'desc')
+            where('academicYear', '==', selectedYear)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -135,7 +136,8 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
                     ...d,
                     collectionDate: d.collectionDate?.toDate() || new Date()
                 } as FeeCollection;
-            });
+            }).sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime()); // Client-side sort
+            
             setCollections(data);
             setIsLoading(false);
         }, (error) => {
@@ -331,7 +333,7 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
     )
 }
 
-// Cashbook Component
+// Cashbook Tab Component
 const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Transaction[], isLoading: boolean, refetch: () => void }) => {
     const db = useFirestore();
     const { toast } = useToast();
@@ -429,7 +431,7 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
     )
 }
 
-// Ledger Component
+// Ledger Tab Component
 const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], isLoading: boolean }) => {
     
     const ledgerData = useMemo(() => {

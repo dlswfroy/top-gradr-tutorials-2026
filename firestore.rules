@@ -29,7 +29,7 @@ service cloud.firestore {
       allow list: if isAdmin();
     }
 
-    match /staff/{staffId} {
+    match /staff/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
@@ -39,47 +39,47 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /students/{document=**} {
+    match /students/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
 
-    match /attendance/{document=**} {
+    match /attendance/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin() || isTeacher();
     }
     
-    match /results/{document=**} {
+    match /results/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin() || isTeacher();
     }
 
-    match /feeCollections/{document=**} {
+    match /feeCollections/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin() || isTeacher();
     }
 
-    match /transactions/{document=**} {
+    match /transactions/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin() || isTeacher();
     }
 
-    match /holidays/{document=**} {
+    match /holidays/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
 
-    match /classRoutines/{document=**} {
+    match /classRoutines/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
     
-    match /examRoutines/{document=**} {
+    match /examRoutines/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
 
-    match /exams/{examId} {
+    match /exams/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
