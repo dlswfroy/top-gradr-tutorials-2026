@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -18,60 +19,25 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Trash2, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { bn } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, NewTransactionData, addTransaction, getTransactions, deleteTransaction, TransactionType } from '@/lib/transactions-data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/Accordion";
 import { StudentFeeDialog } from '@/components/StudentFeeDialog';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAuth } from '@/hooks/useAuth';
+import { FeeCollection } from '@/lib/fees-data';
 
 
 // Fee Collection Component
-const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) => {
-    const [allStudents, setAllStudents] = useState<Student[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const { selectedYear } = useAcademicYear();
-    const db = useFirestore();
+const FeeCollectionTab = ({ studentsForYear, isLoading, onFeeCollected }: { studentsForYear: Student[], isLoading: boolean, onFeeCollected: () => void }) => {
     const [feeStudent, setFeeStudent] = useState<Student | null>(null);
-
-    useEffect(() => {
-        if (!db) return;
-        setIsLoading(true);
-
-        const studentsQuery = query(
-        collection(db, "students"), 
-        orderBy("roll")
-        );
-
-        const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
-        const studentsData = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            dob: doc.data().dob?.toDate(),
-        })) as Student[];
-        setAllStudents(studentsData);
-        setIsLoading(false);
-        }, async (error: FirestoreError) => {
-        const permissionError = new FirestorePermissionError({
-            path: 'students',
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [db]);
-
-    const studentsForYear = useMemo(() => {
-        return allStudents.filter(student => student.academicYear === selectedYear);
-    }, [allStudents, selectedYear]);
 
     const classes = ['6', '7', '8', '9', '10'];
     const classNamesMap: { [key: string]: string } = {
@@ -143,6 +109,129 @@ const FeeCollectionTab = ({ onFeeCollected }: { onFeeCollected: () => void }) =>
         </>
     )
 }
+
+// Collection Report Component
+const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
+    const db = useFirestore();
+    const { selectedYear } = useAcademicYear();
+    const [collections, setCollections] = useState<FeeCollection[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+    const [collectorFilter, setCollectorFilter] = useState<string>('all');
+
+    useEffect(() => {
+        if (!db) return;
+        setIsLoading(true);
+        const q = query(
+            collection(db, 'feeCollections'),
+            where('academicYear', '==', selectedYear),
+            orderBy('collectionDate', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    id: doc.id,
+                    ...d,
+                    collectionDate: d.collectionDate?.toDate() || new Date()
+                } as FeeCollection;
+            });
+            setCollections(data);
+            setIsLoading(false);
+        }, (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'feeCollections', operation: 'list' }));
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [db, selectedYear]);
+
+    const studentMap = useMemo(() => {
+        const map = new Map<string, Student>();
+        allStudents.forEach(s => map.set(s.id, s));
+        return map;
+    }, [allStudents]);
+
+    const uniqueCollectors = useMemo(() => {
+        const collectors = new Set<string>();
+        collections.forEach(c => {
+            if (c.collectorName) collectors.add(c.collectorName);
+        });
+        return Array.from(collectors).sort();
+    }, [collections]);
+
+    const filteredCollections = useMemo(() => {
+        return collections.filter(c => {
+            const matchesCollector = collectorFilter === 'all' || c.collectorName === collectorFilter;
+            const matchesDate = !dateFilter || format(c.collectionDate, 'yyyy-MM-dd') === format(dateFilter, 'yyyy-MM-dd');
+            return matchesCollector && matchesDate;
+        });
+    }, [collections, collectorFilter, dateFilter]);
+
+    const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>বেতন আদায়ের রিপোর্ট</CardTitle>
+                <div className="flex flex-col md:flex-row gap-4 mt-4">
+                    <div className="space-y-2 flex-1">
+                        <Label>তারিখ দিয়ে ফিল্টার</Label>
+                        <DatePicker value={dateFilter} onChange={setDateFilter} placeholder="তারিখ নির্বাচন করুন" />
+                    </div>
+                    <div className="space-y-2 flex-1">
+                        <Label>আদায়কারী</Label>
+                        <Select value={collectorFilter} onValueChange={setCollectorFilter}>
+                            <SelectTrigger><SelectValue placeholder="সকল আদায়কারী" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">সকল আদায়কারী</SelectItem>
+                                {uniqueCollectors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>তারিখ</TableHead>
+                                <TableHead>রোল</TableHead>
+                                <TableHead>নাম</TableHead>
+                                <TableHead>শ্রেণি</TableHead>
+                                <TableHead className="text-right">মোট আদায়</TableHead>
+                                <TableHead>আদায়কারী</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow><TableCell colSpan={6} className="text-center py-8">লোড হচ্ছে...</TableCell></TableRow>
+                            ) : filteredCollections.length === 0 ? (
+                                <TableRow><TableCell colSpan={6} className="text-center py-8">কোনো রেকর্ড পাওয়া যায়নি।</TableCell></TableRow>
+                            ) : (
+                                filteredCollections.map(c => {
+                                    const student = studentMap.get(c.studentId);
+                                    return (
+                                        <TableRow key={c.id}>
+                                            <TableCell>{format(c.collectionDate, 'PP', { locale: bn })}</TableCell>
+                                            <TableCell>{student?.roll.toLocaleString('bn-BD') || '-'}</TableCell>
+                                            <TableCell>{student?.studentNameBn || '-'}</TableCell>
+                                            <TableCell>{student ? (classNamesMap[student.className] || student.className) : '-'}</TableCell>
+                                            <TableCell className="text-right font-semibold">{c.totalAmount.toLocaleString('bn-BD')} ৳</TableCell>
+                                            <TableCell>{c.collectorName || '-'}</TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
 // New Transaction Component
 const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => void }) => {
@@ -303,7 +392,7 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
                             ) : (
                                 cashbookData.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell>{format(new Date(tx.date), 'PP')}</TableCell>
+                                        <TableCell>{format(new Date(tx.date), 'PP', { locale: bn })}</TableCell>
                                         <TableCell>
                                             <p className="font-medium">{tx.accountHead}</p>
                                             {tx.description && <p className="text-sm text-muted-foreground">{tx.description}</p>}
@@ -396,7 +485,7 @@ const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], i
                                         <TableBody>
                                             {data.transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(tx => (
                                                 <TableRow key={tx.id}>
-                                                    <TableCell>{format(new Date(tx.date), 'PP')}</TableCell>
+                                                    <TableCell>{format(new Date(tx.date), 'PP', { locale: bn })}</TableCell>
                                                     <TableCell>{tx.description || '-'}</TableCell>
                                                     <TableCell className="text-right text-green-600">{tx.type === 'income' ? tx.amount.toLocaleString('bn-BD') : '-'}</TableCell>
                                                     <TableCell className="text-right text-red-600">{tx.type === 'expense' ? tx.amount.toLocaleString('bn-BD') : '-'}</TableCell>
@@ -420,7 +509,9 @@ export default function AccountsPage() {
   const db = useFirestore();
   const { selectedYear } = useAcademicYear();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
   const { hasPermission } = useAuth();
   const canCollectFees = hasPermission('collect:fees');
   const canManageTransactions = hasPermission('manage:transactions');
@@ -433,13 +524,41 @@ export default function AccountsPage() {
     setIsLoading(false);
   }, [db, selectedYear]);
 
+  const fetchStudents = useCallback(() => {
+    if (!db) return;
+    setIsLoadingStudents(true);
+    const studentsQuery = query(collection(db, "students"), orderBy("roll"));
+    const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
+        const studentsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            dob: doc.data().dob?.toDate(),
+        })) as Student[];
+        setAllStudents(studentsData);
+        setIsLoadingStudents(false);
+    }, (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'students', operation: 'list' }));
+        setIsLoadingStudents(false);
+    });
+    return unsubscribe;
+  }, [db]);
+
   useEffect(() => {
     setIsClient(true);
     fetchTransactions();
-  }, [fetchTransactions]);
+    const unsubStudents = fetchStudents();
+    return () => unsubStudents?.();
+  }, [fetchTransactions, fetchStudents]);
+
+  const studentsForYear = useMemo(() => {
+    return allStudents.filter(student => student.academicYear === selectedYear);
+  }, [allStudents, selectedYear]);
 
   const tabs = [];
-  if (canCollectFees) tabs.push({ value: "fee-collection", label: "বেতন আদায়" });
+  if (canCollectFees) {
+      tabs.push({ value: "fee-collection", label: "বেতন আদায়" });
+      tabs.push({ value: "collection-report", label: "আদায়ের রিপোর্ট" });
+  }
   tabs.push({ value: "cashbook", label: "ক্যাশবুক" });
   tabs.push({ value: "ledger", label: "খতিয়ান" });
   if (canManageTransactions) tabs.push({ value: "new-transaction", label: "নতুন লেনদেন" });
@@ -461,9 +580,14 @@ export default function AccountsPage() {
                     {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
                   </TabsList>
                   {canCollectFees && (
-                    <TabsContent value="fee-collection" className="mt-4">
-                      <FeeCollectionTab onFeeCollected={fetchTransactions} />
-                    </TabsContent>
+                    <>
+                        <TabsContent value="fee-collection" className="mt-4">
+                            <FeeCollectionTab studentsForYear={studentsForYear} isLoading={isLoadingStudents} onFeeCollected={fetchTransactions} />
+                        </TabsContent>
+                        <TabsContent value="collection-report" className="mt-4">
+                            <CollectionReportTab allStudents={allStudents} />
+                        </TabsContent>
+                    </>
                   )}
                    <TabsContent value="cashbook" className="mt-4">
                     <CashbookTab transactions={transactions} isLoading={isLoading} refetch={fetchTransactions} />
@@ -478,8 +602,7 @@ export default function AccountsPage() {
                    )}
                 </Tabs>
              ) : (
-                <div>
-                  {/* Skeleton Loader */}
+                <div className="space-y-4">
                   <div className="grid w-full grid-cols-4 h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground mb-4">
                     {[...Array(4)].map((_, i) => (
                       <div key={i} className="flex justify-center"><Skeleton className="h-8 w-[80%]" /></div>
