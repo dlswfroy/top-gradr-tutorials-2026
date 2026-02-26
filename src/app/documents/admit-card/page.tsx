@@ -11,7 +11,7 @@ import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestor
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { Exam, getExams } from '@/lib/exam-data';
 import { AdmitCard } from '@/components/AdmitCard';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
 
 const AdmitCardGeneratorPage = () => {
@@ -25,10 +25,15 @@ const AdmitCardGeneratorPage = () => {
     const [allStudents, setAllStudents] = useState<Student[]>([]);
     const [studentsInClass, setStudentsInClass] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetchingExams, setIsFetchingExams] = useState(true);
 
     useEffect(() => {
         if (!db) return;
-        getExams(db, selectedYear).then(setExams);
+        setIsFetchingExams(true);
+        getExams(db, selectedYear).then(data => {
+            setExams(data);
+            setIsFetchingExams(false);
+        });
     }, [db, selectedYear]);
 
     useEffect(() => {
@@ -72,6 +77,7 @@ const AdmitCardGeneratorPage = () => {
                                 <div className="space-y-2 flex-1">
                                     <Label htmlFor="exam-name">পরীক্ষা</Label>
                                     <Select 
+                                        disabled={isFetchingExams}
                                         onValueChange={(examId) => {
                                             const exam = exams.find(e => e.id === examId);
                                             setSelectedExam(exam || null);
@@ -79,7 +85,9 @@ const AdmitCardGeneratorPage = () => {
                                             setStudentsInClass([]);
                                         }}
                                     >
-                                        <SelectTrigger id="exam-name"><SelectValue placeholder="পরীক্ষা নির্বাচন করুন" /></SelectTrigger>
+                                        <SelectTrigger id="exam-name">
+                                            <SelectValue placeholder={isFetchingExams ? "লোড হচ্ছে..." : "পরীক্ষা নির্বাচন করুন"} />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {exams.map(exam => <SelectItem key={exam.id} value={exam.id}>{exam.name}</SelectItem>)}
                                         </SelectContent>
@@ -92,23 +100,42 @@ const AdmitCardGeneratorPage = () => {
                                         onValueChange={setSelectedClass}
                                         disabled={!selectedExam}
                                     >
-                                        <SelectTrigger id="class-name"><SelectValue placeholder="শ্রেণি নির্বাচন করুন" /></SelectTrigger>
+                                        <SelectTrigger id="class-name">
+                                            <SelectValue placeholder="শ্রেণি নির্বাচন করুন" />
+                                        </SelectTrigger>
                                         <SelectContent>
-                                            {selectedExam?.classes.map(cls => <SelectItem key={cls} value={cls}>{classNamesMap[cls] || cls}</SelectItem>)}
+                                            {selectedExam?.classes.map(cls => (
+                                                <SelectItem key={cls} value={cls}>{classNamesMap[cls] || `${cls}ম শ্রেণি`}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <Button onClick={handleGenerate} disabled={!selectedExam || !selectedClass || isLoading}>
-                                    {isLoading ? 'জেনারেট হচ্ছে...' : 'প্রবেশপত্র দেখুন'}
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            জেনারেট হচ্ছে...
+                                        </>
+                                    ) : 'প্রবেশপত্র দেখুন'}
                                 </Button>
                             </div>
+                            
                             {studentsInClass.length > 0 && (
-                                <div className="text-center">
-                                     <Button onClick={() => window.print()} size="lg">
+                                <div className="text-center p-4 bg-muted rounded-lg">
+                                    <p className="mb-4 font-medium text-sm text-muted-foreground">
+                                        মোট {studentsInClass.length.toLocaleString('bn-BD')} জন শিক্ষার্থীর প্রবেশপত্র তৈরি হয়েছে।
+                                    </p>
+                                     <Button onClick={() => window.print()} size="lg" className="w-full sm:w-auto">
                                         <Printer className="mr-2 h-5 w-5" />
                                         সকল প্রবেশপত্র প্রিন্ট করুন
                                     </Button>
                                 </div>
+                            )}
+
+                            {selectedClass && studentsInClass.length === 0 && !isLoading && (
+                                <p className="text-center text-muted-foreground py-8">
+                                    এই শ্রেণিতে কোনো শিক্ষার্থীর তথ্য পাওয়া যায়নি।
+                                </p>
                             )}
                         </CardContent>
                     </Card>
