@@ -37,7 +37,7 @@ import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,7 @@ export function Header() {
   const { user, loading: authLoading, hasPermission } = useAuth();
   const db = useFirestore();
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -63,25 +64,29 @@ export function Header() {
   useEffect(() => {
     if (!user || !db) {
         setDisplayPhoto(null);
+        setDisplayName(null);
         return;
     }
 
     let unsubscribe: (() => void) | undefined;
     
     if (user.role === 'teacher' && user.email) {
-      // For teachers, photo is in the 'staff' collection. Listen for changes.
+      // For teachers, fetch photo and name from the 'staff' collection.
       const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email), limit(1));
       unsubscribe = onSnapshot(staffQuery, (snapshot) => {
         if (!snapshot.empty) {
-          setDisplayPhoto(snapshot.docs[0].data().photoUrl);
+          const staffData = snapshot.docs[0].data();
+          setDisplayPhoto(staffData.photoUrl);
+          setDisplayName(staffData.nameBn);
         } else {
-          setDisplayPhoto(null); // No staff record found for teacher
+          setDisplayPhoto(null);
+          setDisplayName(user.displayName || null);
         }
       });
     } else {
-      // For admin, the photoUrl is on the user object itself.
-      // AuthContext already listens for changes on the user doc.
+      // For admin
       setDisplayPhoto(user.photoUrl || null);
+      setDisplayName(user.displayName || 'Super Admin');
     }
 
     return () => {
@@ -189,7 +194,7 @@ export function Header() {
                         href="/results"
                         className="flex items-center gap-3 rounded-lg border px-3 py-2 transition-all bg-violet-100 text-violet-800 hover:bg-violet-200"
                       >
-                        <BookMarked className="h-5 w-5" />
+                        < BookMarked className="h-5 w-5" />
                         ফলাফল
                       </Link>
                     )}
@@ -271,7 +276,12 @@ export function Header() {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-                {user.email && <DropdownMenuLabel>{user.email}</DropdownMenuLabel>}
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{displayName || 'ব্যবহারকারী'}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />

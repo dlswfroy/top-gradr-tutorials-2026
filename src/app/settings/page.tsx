@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, orderBy, FirestoreError, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, FirestoreError, doc, updateDoc, where, limit } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -630,10 +630,27 @@ function ProfileSettings() {
     const [isSaving, setIsSaving] = useState(false);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [isPhotoSaving, setIsPhotoSaving] = useState(false);
+    const [displayName, setDisplayName] = useState<string | null>(null);
 
     useEffect(() => {
         setPhotoPreview(user?.photoUrl || null);
-    }, [user]);
+        
+        if (user && db) {
+          if (user.role === 'teacher' && user.email) {
+            const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email), limit(1));
+            const unsubscribe = onSnapshot(staffQuery, (snapshot) => {
+              if (!snapshot.empty) {
+                setDisplayName(snapshot.docs[0].data().nameBn);
+              } else {
+                setDisplayName(user.displayName || null);
+              }
+            });
+            return () => unsubscribe();
+          } else {
+            setDisplayName(user.displayName || 'Super Admin');
+          }
+        }
+    }, [user, db]);
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -708,7 +725,7 @@ function ProfileSettings() {
                 <CardContent className="space-y-4">
                      <div>
                         <Label>নাম</Label>
-                        <p className="text-sm text-muted-foreground">{user?.displayName || '-'}</p>
+                        <p className="text-sm text-muted-foreground">{displayName || '-'}</p>
                     </div>
                      <div>
                         <Label>ইমেইল</Label>

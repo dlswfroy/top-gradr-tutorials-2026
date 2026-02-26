@@ -9,7 +9,6 @@ export interface User {
   role: UserRole;
   photoUrl?: string;
   displayName?: string;
-  permissions?: string[];
 }
 
 export const userFromDoc = (doc: DocumentData): User => {
@@ -20,6 +19,5 @@ export const userFromDoc = (doc: DocumentData): User => {
         role: data.role,
         photoUrl: data.photoUrl,
         displayName: data.displayName,
-        permissions: data.permissions,
     } as User;
 }

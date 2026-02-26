@@ -49,7 +49,7 @@ export async function signUp(email: string, password: string): Promise<{ success
       }
       role = 'teacher';
       const staffData = teacherSnapshot.docs[0].data();
-      displayName = staffData.nameBn || '';
+      displayName = staffData.nameBn || ''; // Set teacher's name from staff list
     }
 
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
