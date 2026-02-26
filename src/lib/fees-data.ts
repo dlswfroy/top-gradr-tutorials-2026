@@ -43,7 +43,7 @@ export type FeeCollection = {
 
 const FEE_COLLECTION_PATH = 'feeCollections';
 
-const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | null => {
+export const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | null => {
     const data = docSnap.data();
     if (!data) return null;
 

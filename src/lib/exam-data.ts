@@ -61,7 +61,7 @@ export const getExams = async (db: Firestore, academicYear: string): Promise<Exa
             exams = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
         }
         
-        // Final safeguard against duplicates based on name
+        // Deduplicate based on name
         const seen = new Set();
         return exams.filter(exam => {
             const duplicate = seen.has(exam.name);

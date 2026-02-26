@@ -30,7 +30,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { StudentFeeDialog } from '@/components/StudentFeeDialog';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAuth } from '@/hooks/useAuth';
-import { FeeCollection } from '@/lib/fees-data';
+import { FeeCollection, feeCollectionFromDoc } from '@/lib/fees-data';
 
 
 // Fee Collection Component
@@ -126,24 +126,10 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => {
-                const d = doc.data();
-                let collectionDate = new Date();
-                if (d.collectionDate) {
-                    if (typeof d.collectionDate.toDate === 'function') collectionDate = d.collectionDate.toDate();
-                    else if (d.collectionDate instanceof Timestamp) collectionDate = d.collectionDate.toDate();
-                    else if (d.collectionDate.seconds !== undefined) collectionDate = new Timestamp(d.collectionDate.seconds, d.collectionDate.nanoseconds || 0).toDate();
-                    else {
-                        const p = new Date(d.collectionDate);
-                        if (!isNaN(p.getTime())) collectionDate = p;
-                    }
-                }
-                return {
-                    id: doc.id,
-                    ...d,
-                    collectionDate: collectionDate
-                } as FeeCollection;
-            }).sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime());
+            const data = snapshot.docs
+                .map(doc => feeCollectionFromDoc(doc))
+                .filter((c): c is FeeCollection => c !== null)
+                .sort((a, b) => b.collectionDate.getTime() - a.collectionDate.getTime());
             
             setCollections(data);
             setIsLoading(false);
