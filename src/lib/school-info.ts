@@ -14,7 +14,7 @@ export interface SchoolInfo {
 }
 
 // আপনার অ্যাপের আইকন পরিবর্তন করতে নিচের লিঙ্কটি পরিবর্তন করুন
-export const APP_ICON_URL = 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-08-02T19:39:10.570Z/user_uploads/c9e99a77-400e-4363-9562-b13c321484f9/school-logo.png?v=19';
+export const APP_ICON_URL = 'https://ibb.co.com/5hfyXHWq';
 
 export const defaultSchoolInfo: SchoolInfo = {
     name: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়',
