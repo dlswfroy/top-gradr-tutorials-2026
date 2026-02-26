@@ -41,10 +41,6 @@ export type FeeCollection = {
   updatedAt?: Timestamp;
 };
 
-export type NewFeeCollectionData = Omit<FeeCollection, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateFeeCollectionData = Partial<Omit<FeeCollection, 'id'| 'createdAt' | 'updatedAt'>>;
-
-
 const FEE_COLLECTION_PATH = 'feeCollections';
 
 const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | null => {
@@ -54,7 +50,6 @@ const feeCollectionFromDoc = (docSnap: QueryDocumentSnapshot): FeeCollection | n
     let collectionDate: Date | null = null;
 
     if (data.collectionDate) {
-        // Handle various date formats from Firestore
         if (typeof data.collectionDate.toDate === 'function') {
             collectionDate = data.collectionDate.toDate();
         } else if (data.collectionDate instanceof Timestamp) {
