@@ -13,7 +13,7 @@ const iconUrlWithVersion = 'https://storage.googleapis.com/project-spark-348216.
 export const metadata: Metadata = {
   title: 'My School',
   description: 'A central hub for school management.',
-  manifest: '/manifest.webmanifest?v=19',
+  manifest: `/manifest.webmanifest?v=19`,
   icons: {
     icon: iconUrlWithVersion,
     shortcut: iconUrlWithVersion,

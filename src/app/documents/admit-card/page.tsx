@@ -7,18 +7,21 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { Exam, getExams } from '@/lib/exam-data';
 import { AdmitCard } from '@/components/AdmitCard';
 import { Printer, Loader2 } from 'lucide-react';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const AdmitCardGeneratorPage = () => {
     const db = useFirestore();
     const { schoolInfo } = useSchoolInfo();
     const { selectedYear } = useAcademicYear();
     
+    const [isMounted, setIsMounted] = useState(false);
     const [exams, setExams] = useState<Exam[]>([]);
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
     const [selectedClass, setSelectedClass] = useState<string>('');
@@ -28,16 +31,22 @@ const AdmitCardGeneratorPage = () => {
     const [isFetchingExams, setIsFetchingExams] = useState(true);
 
     useEffect(() => {
-        if (!db) return;
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!db || !isMounted) return;
         setIsFetchingExams(true);
         getExams(db, selectedYear).then(data => {
             setExams(data);
             setIsFetchingExams(false);
+        }).catch(() => {
+            setIsFetchingExams(false);
         });
-    }, [db, selectedYear]);
+    }, [db, selectedYear, isMounted]);
 
     useEffect(() => {
-        if (!db) return;
+        if (!db || !isMounted) return;
         const studentsQuery = query(
             collection(db, "students"),
             where("academicYear", "==", selectedYear)
@@ -45,10 +54,10 @@ const AdmitCardGeneratorPage = () => {
         const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
             setAllStudents(querySnapshot.docs.map(studentFromDoc));
         }, (error) => {
-            console.error("Error fetching students:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'students', operation: 'list' }));
         });
         return () => unsubscribe();
-    }, [db, selectedYear]);
+    }, [db, selectedYear, isMounted]);
 
     const handleGenerate = () => {
         if (!selectedExam || !selectedClass) return;
@@ -61,6 +70,22 @@ const AdmitCardGeneratorPage = () => {
     };
 
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
+
+    if (!isMounted) {
+        return (
+            <div className="flex min-h-screen w-full flex-col bg-slate-100">
+                <Header />
+                <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>প্রবেশ পত্র জেনারেটর</CardTitle>
+                        </CardHeader>
+                        <CardContent className="py-8 text-center text-muted-foreground">লোড হচ্ছে...</CardContent>
+                    </Card>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <>
