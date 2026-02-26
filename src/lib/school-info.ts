@@ -13,13 +13,16 @@ export interface SchoolInfo {
   logoUrl: string;
 }
 
+// আপনার অ্যাপের আইকন পরিবর্তন করতে নিচের লিঙ্কটি পরিবর্তন করুন
+export const APP_ICON_URL = 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-08-02T19:39:10.570Z/user_uploads/c9e99a77-400e-4363-9562-b13c321484f9/school-logo.png?v=19';
+
 export const defaultSchoolInfo: SchoolInfo = {
     name: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়',
     nameEn: 'Birganj Pouro High School',
     eiin: '123456',
     code: '7890',
     address: 'Upazila: Birganj, Post: Birganj, Zila: Dinajpur',
-    logoUrl: 'https://storage.googleapis.com/project-spark-348216.appspot.com/2024-08-02T19:39:10.570Z/user_uploads/c9e99a77-400e-4363-9562-b13c321484f9/school-logo.png?v=19'
+    logoUrl: APP_ICON_URL // ডিফল্ট লোগো হিসেবে আইকনটি ব্যবহার করা হচ্ছে
 };
 
 const SCHOOL_INFO_DOC_PATH = 'school/info';
@@ -31,8 +34,6 @@ export const getSchoolInfo = async (db: Firestore): Promise<SchoolInfo> => {
         if (docSnap.exists()) {
             return { id: docSnap.id, ...defaultSchoolInfo, ...docSnap.data() } as SchoolInfo;
         } else {
-            // If doc doesn't exist, return default but don't try to save automatically
-            // to avoid permission errors for non-admin users.
             return defaultSchoolInfo;
         }
     } catch (e) {
