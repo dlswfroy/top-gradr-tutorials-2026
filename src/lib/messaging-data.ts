@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
   deleteDoc,
   getDocs,
   query,
@@ -21,6 +22,7 @@ export interface MessageLog {
   type: 'all' | 'class' | 'individual' | 'absent' | 'call';
   className?: string;
   content: string;
+  notes?: string;
   sentAt: Date;
   senderUid: string;
   senderName: string;
@@ -51,6 +53,16 @@ export const logMessage = async (db: Firestore, logData: NewMessageLog) => {
         errorEmitter.emit('permission-error', permissionError);
         throw permissionError;
     }
+    throw serverError;
+  }
+};
+
+export const updateMessageNote = async (db: Firestore, id: string, notes: string) => {
+  const docRef = doc(db, MESSAGES_COLLECTION, id);
+  try {
+    return await updateDoc(docRef, { notes });
+  } catch (serverError: any) {
+    console.error("Error updating message note:", serverError);
     throw serverError;
   }
 };

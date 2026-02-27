@@ -16,14 +16,15 @@ import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Send, Users, Smartphone, History, Clock, Trash2, Phone } from 'lucide-react';
+import { MessageSquare, Send, Users, Smartphone, History, Clock, Trash2, Phone, FileText, Check } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { logMessage, getMessageLogs, MessageLog, deleteMessageLog } from '@/lib/messaging-data';
+import { logMessage, getMessageLogs, MessageLog, deleteMessageLog, updateMessageNote } from '@/lib/messaging-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 export default function MessagingPage() {
@@ -41,6 +42,9 @@ export default function MessagingPage() {
     const [messageContent, setMessageContent] = useState('');
     const [selectedClass, setSelectedClass] = useState<string>('');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+    
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [tempNote, setTempNote] = useState('');
 
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
@@ -124,7 +128,7 @@ export default function MessagingPage() {
             return;
         }
 
-        // Open dialer first
+        // Open dialer
         window.location.href = `tel:${cleanNumber}`;
 
         // Then log the call record in history
@@ -133,7 +137,7 @@ export default function MessagingPage() {
                 await logMessage(db, {
                     recipientsCount: 1,
                     type: 'call',
-                    content: `${student.studentNameBn} (রোল: ${student.roll.toLocaleString('bn-BD')}) - মোবাইল: ${mobile} - কল করা হয়েছে`,
+                    content: `${student.studentNameBn} (রোল: ${student.roll.toLocaleString('bn-BD')}) - মোবাইল: ${mobile}`,
                     senderUid: user.uid,
                     senderName: user.displayName || user.email || 'Admin'
                 });
@@ -230,6 +234,18 @@ export default function MessagingPage() {
             fetchLogs();
         } catch (e) {
             // Error handled by FirebaseErrorListener
+        }
+    };
+
+    const handleSaveNote = async (id: string) => {
+        if (!db) return;
+        try {
+            await updateMessageNote(db, id, tempNote);
+            toast({ title: 'নোট আপডেট হয়েছে' });
+            setEditingNoteId(null);
+            fetchLogs();
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'নোট সেভ করা যায়নি' });
         }
     };
 
@@ -552,8 +568,37 @@ export default function MessagingPage() {
                                                     </div>
                                                 </div>
                                                 <p className="text-sm font-medium line-clamp-3 mb-2 text-foreground">{log.content}</p>
+                                                
+                                                {/* Display and Edit Notes (For Manual Duration/Outcome) */}
+                                                <div className="bg-muted/50 rounded-md p-2 mb-2 text-[11px] border border-dashed">
+                                                    {editingNoteId === log.id ? (
+                                                        <div className="flex gap-1">
+                                                            <Input 
+                                                                value={tempNote} 
+                                                                onChange={e => setTempNote(e.target.value)} 
+                                                                className="h-7 text-[11px] py-0"
+                                                                placeholder="কথোপকথনের তথ্য (উদা: ২ মিনিট)"
+                                                                autoFocus
+                                                            />
+                                                            <Button size="icon" className="h-7 w-7" onClick={() => handleSaveNote(log.id)}><Check className="h-3 w-3" /></Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-between items-center group/note">
+                                                            <span className="italic">{log.notes || 'কোনো নোট নেই'}</span>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-5 w-5 opacity-0 group-hover/note:opacity-100" 
+                                                                onClick={() => { setEditingNoteId(log.id); setTempNote(log.notes || ''); }}
+                                                            >
+                                                                <FileText className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 <div className="flex justify-between text-[10px] font-semibold text-muted-foreground pt-2 border-t border-dashed">
-                                                    <span>{log.type === 'call' ? 'কল সম্পন্ন' : `প্রাপক: ${log.recipientsCount.toLocaleString('bn-BD')} জন`}</span>
+                                                    <span>{log.type === 'call' ? 'কল রেকর্ড' : `প্রাপক: ${log.recipientsCount.toLocaleString('bn-BD')} জন`}</span>
                                                     <span>প্রেরক: {log.senderName}</span>
                                                 </div>
                                             </div>

@@ -43,6 +43,7 @@
         "type": { "type": "string", "enum": ["all", "class", "individual", "absent", "call"] },
         "className": { "type": "string" },
         "content": { "type": "string" },
+        "notes": { "type": "string", "description": "Additional notes, e.g., call duration or outcome." },
         "sentAt": { "type": "string", "format": "date-time" },
         "senderUid": { "type": "string" },
         "senderName": { "type": "string" }
