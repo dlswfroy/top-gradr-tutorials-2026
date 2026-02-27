@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, Upload, Circle, Info, Database, Cloud, ShieldCheck } from 'lucide-react';
+import { Trash2, Upload, Circle, Info, Database, Cloud, ShieldCheck, Calculator } from 'lucide-react';
 import { format } from "date-fns";
 import { bn } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast";
@@ -49,36 +49,36 @@ function SystemUsageInfo() {
                 <CardContent className="space-y-2 text-sm text-blue-900">
                     <p>• <strong>রিড (Read):</strong> প্রতিদিন ৫০,০০০ বার</p>
                     <p>• <strong>রাইট (Write):</strong> প্রতিদিন ২০,০০০ বার</p>
-                    <p>• <strong>ডিলিট (Delete):</strong> প্রতিদিন ২০,০০০ বার</p>
-                    <p>• <strong>স্টোরেজ:</strong> ১ জিবি ডাটা</p>
+                    <p>• <strong>স্টোরেজ:</strong> ১ জিবি ডাটা (টেক্সট)</p>
+                    <p>• <strong>মেয়াদ:</strong> আজীবন ফ্রি (Spark Plan)</p>
                 </CardContent>
             </Card>
 
             <Card className="border-emerald-200 bg-emerald-50">
                 <CardHeader>
                     <div className="flex items-center gap-2 text-emerald-700">
-                        <Cloud className="h-5 w-5" />
-                        <CardTitle className="text-lg">হোস্টিং ও ছবি</CardTitle>
+                        <Calculator className="h-5 w-5" />
+                        <CardTitle className="text-lg">১০০০ শিক্ষার্থীর হিসেবে স্থায়িত্ব</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-emerald-900">
-                    <p>• <strong>ফাইল স্টোরেজ:</strong> ৫ জিবি থেকে ১০ জিবি</p>
-                    <p>• <strong>ব্যান্ডউইথ:</strong> প্রতিদিন ৩৬০ এমবি</p>
-                    <p>• <strong>আপলোড:</strong> মাসিক ৫ জিবি</p>
+                    <p>• <strong>বছরে ডাটা খরচ:</strong> প্রায় ৫০-১০০ মেগাবাইট</p>
+                    <p>• <strong>ব্যবহারযোগ্য সময়:</strong> প্রায় ১০-১৫ বছর (ফ্রি)</p>
+                    <p>• <strong>ডেইলি এক্টিভিটি:</strong> প্রতিদিন ১০০০ জনের হাজিরা ও কাজ অনায়াসেই ফ্রি লিমিটের মধ্যে থাকবে।</p>
                 </CardContent>
             </Card>
 
             <Card className="border-amber-200 bg-amber-50">
                 <CardHeader>
                     <div className="flex items-center gap-2 text-amber-700">
-                        <ShieldCheck className="h-5 w-5" />
-                        <CardTitle className="text-lg">নিরাপত্তা ও মেয়াদ</CardTitle>
+                        <Cloud className="h-5 w-5" />
+                        <CardTitle className="text-lg">হোস্টিং ও ছবি</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-amber-900">
-                    <p>• <strong>মেয়াদ:</strong> আজীবন ফ্রি (Spark Plan)</p>
-                    <p>• <strong>অ্যাক্সেস:</strong> রিয়েল-টাইম ডাটা সিঙ্ক</p>
-                    <p>• <strong>ব্যাকআপ:</strong> ফায়ারবেস ক্লাউড স্টোরেজ</p>
+                    <p>• <strong>ফাইল স্টোরেজ:</strong> ৫-১০ জিবি (ছবির জন্য)</p>
+                    <p>• <strong>ব্যান্ডউইথ:</strong> প্রতিদিন ৩৬০ এমবি</p>
+                    <p>• <strong>আপলোড:</strong> মাসিক ৫ জিবি পর্যন্ত</p>
                 </CardContent>
             </Card>
 
@@ -90,9 +90,9 @@ function SystemUsageInfo() {
                     </div>
                 </CardHeader>
                 <CardContent className="text-sm space-y-2">
-                    <p>১. আপনার বিদ্যালয়ের ছাত্র সংখ্যা ১০০০-এর নিচে হলে আপনি কখনই এই লিমিট অতিক্রম করবেন না।</p>
-                    <p>২. যদি কোনো দিন ব্যবহারের সীমা শেষ হয়ে যায়, তবে সফটওয়্যারটি সাময়িকভাবে বন্ধ হতে পারে এবং পরের দিন আবার চালু হবে।</p>
-                    <p>৩. বড় সাইজের ছবি আপলোড করা থেকে বিরত থাকুন (সিস্টেম অটোমেটিক ছবি ছোট করে নেয়, তাই চিন্তা নেই)।</p>
+                    <p>১. আপনার বিদ্যালয়ের ছাত্র সংখ্যা ১০০০ হলেও আপনি এই ফ্রি লিমিট অতিক্রম করবেন না, যদি না প্রতিদিন অস্বাভাবিক বেশি রিড/রাইট করা হয়।</p>
+                    <p>২. ১০ বছর পর যদি ডাটাবেস পূর্ণ হয়ে যায়, তবে পুরনো বছরের ডাটা ডিলিট করে জায়গা খালি করা যাবে অথবা সামান্য খরচে প্ল্যান আপগ্রেড করা যাবে।</p>
+                    <p>৩. বড় সাইজের ছবি আপলোড থেকে বিরত থাকলে স্টোরেজ আরও অনেক বেশি বছর স্থায়ী হবে।</p>
                 </CardContent>
             </Card>
         </div>
