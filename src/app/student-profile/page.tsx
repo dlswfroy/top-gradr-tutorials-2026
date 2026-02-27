@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSchoolInfo } from '@/context/SchoolInfoContext';
 
 const BENGALI_MONTHS = [
     'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
@@ -32,11 +33,18 @@ const classNamesMap: { [key: string]: string } = {
     '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম',
 };
 
+const toBengaliNumber = (str: string | number) => {
+    if (!str && str !== 0) return '';
+    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return String(str).replace(/[0-9]/g, (w) => bengaliDigits[parseInt(w, 10)]);
+};
+
 export default function StudentProfileSearchPage() {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
     const { user, loading: authLoading } = useAuth();
+    const { schoolInfo } = useSchoolInfo();
     const router = useRouter();
 
     const [isMounted, setIsMounted] = useState(false);
@@ -186,69 +194,131 @@ export default function StudentProfileSearchPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-indigo-50">
-            <Header />
-            <main className="flex flex-1 flex-col items-center justify-center p-4">
-                <Card className="w-full max-w-lg shadow-xl">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl text-primary font-bold">শিক্ষার্থী প্রোফাইল অনুসন্ধান</CardTitle>
-                        <CardDescription>রোল এবং শ্রেণি দিয়ে শিক্ষার্থীর বিস্তারিত তথ্য দেখুন</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSearch} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="roll">রোল নম্বর</Label>
-                                    <Input id="roll" type="number" value={roll} onChange={e => setRoll(e.target.value)} required />
+            <div className="no-print w-full flex flex-col">
+                <Header />
+                <main className="flex flex-1 flex-col items-center justify-center p-4 min-h-[calc(100vh-64px)]">
+                    <Card className="w-full max-w-lg shadow-xl">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl text-primary font-bold">শিক্ষার্থী প্রোফাইল অনুসন্ধান</CardTitle>
+                            <CardDescription>রোল এবং শ্রেণি দিয়ে শিক্ষার্থীর বিস্তারিত তথ্য দেখুন</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSearch} className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="roll">রোল নম্বর</Label>
+                                        <Input id="roll" type="number" value={roll} onChange={e => setRoll(e.target.value)} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="class">শ্রেণি</Label>
+                                        <Select value={className} onValueChange={setClassName} required>
+                                            <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="6">৬ষ্ঠ</SelectItem>
+                                                <SelectItem value="7">৭ম</SelectItem>
+                                                <SelectItem value="8">৮ম</SelectItem>
+                                                <SelectItem value="9">৯ম</SelectItem>
+                                                <SelectItem value="10">১০ম</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="class">শ্রেণি</Label>
-                                    <Select value={className} onValueChange={setClassName} required>
-                                        <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="6">৬ষ্ঠ</SelectItem>
-                                            <SelectItem value="7">৭ম</SelectItem>
-                                            <SelectItem value="8">৮ম</SelectItem>
-                                            <SelectItem value="9">৯ম</SelectItem>
-                                            <SelectItem value="10">১০ম</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="start-month">শুরুর মাস</Label>
-                                    <Select value={startMonth} onValueChange={setStartMonth}>
-                                        <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="start-month">শুরুর মাস</Label>
+                                        <Select value={startMonth} onValueChange={setStartMonth}>
+                                            <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="end-month">শেষের মাস</Label>
+                                        <Select value={endMonth} onValueChange={setEndMonth}>
+                                            <SelectTrigger id="end-month"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="end-month">শেষের মাস</Label>
-                                    <Select value={endMonth} onValueChange={setEndMonth}>
-                                        <SelectTrigger id="end-month"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
 
-                            <Button type="submit" className="w-full h-12 text-lg shadow-md" disabled={isLoading}>
-                                {isLoading ? 'অনুসন্ধান করা হচ্ছে...' : <><Search className="mr-2 h-5 w-5" /> তথ্য দেখুন</>}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-            </main>
+                                <Button type="submit" className="w-full h-12 text-lg shadow-md" disabled={isLoading}>
+                                    {isLoading ? 'অনুসন্ধান করা হচ্ছে...' : <><Search className="mr-2 h-5 w-5" /> তথ্য দেখুন</>}
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+
+            {/* Hidden Printable Area */}
+            {studentData && (
+                <div className="printable-area p-8 text-black bg-white">
+                    <header className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                        <div className="w-20 h-20 relative">
+                            {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="Logo" width={80} height={80} />}
+                        </div>
+                        <div className="text-center flex-1">
+                            <h1 className="text-2xl font-bold">{schoolInfo.name}</h1>
+                            <p className="text-sm">{schoolInfo.address}</p>
+                            <h2 className="text-xl font-bold mt-2 underline">শিক্ষার্থী প্রোফাইল রিপোর্ট</h2>
+                        </div>
+                        <div className="w-20"></div>
+                    </header>
+
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div className="space-y-2">
+                            <p><strong>নাম:</strong> {studentData.studentNameBn}</p>
+                            <p><strong>রোল:</strong> {toBengaliNumber(studentData.roll)}</p>
+                            <p><strong>শ্রেণি:</strong> {classNamesMap[studentData.className]} শ্রেণি</p>
+                            <p><strong>শিক্ষাবর্ষ:</strong> {toBengaliNumber(studentData.academicYear)}</p>
+                        </div>
+                        <div className="flex justify-end">
+                            <div className="w-32 h-32 border-2 border-black relative overflow-hidden">
+                                {studentData.photoUrl && <Image src={studentData.photoUrl} alt="Student" fill className="object-cover" />}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        <section>
+                            <h3 className="text-lg font-bold border-b mb-4 pb-1">হাজিরা পরিসংখ্যান ({startMonth} - {endMonth})</h3>
+                            <div className="grid grid-cols-3 border border-black text-center">
+                                <div className="p-2 border-r border-black"><p>মোট কার্যদিবস</p><p className="text-xl font-bold">{toBengaliNumber(attendanceStats.total)}</p></div>
+                                <div className="p-2 border-r border-black"><p>উপস্থিতি</p><p className="text-xl font-bold text-green-700">{toBengaliNumber(attendanceStats.present)}</p></div>
+                                <div className="p-2"><p>অনুপস্থিতি</p><p className="text-xl font-bold text-red-700">{toBengaliNumber(attendanceStats.absent)}</p></div>
+                            </div>
+                            <p className="mt-2 font-bold">উপস্থিতির হার: {toBengaliNumber(attendancePercentage.toFixed(2))}%</p>
+                        </section>
+
+                        <section>
+                            <h3 className="text-lg font-bold border-b mb-4 pb-1">বেতন পরিশোধের অবস্থা</h3>
+                            <div className="grid grid-cols-4 gap-2">
+                                {BENGALI_MONTHS.map(month => (
+                                    <div key={month} className="p-2 border border-black text-xs">
+                                        <p className="font-bold">{month}</p>
+                                        <p>{paidMonths.includes(month) ? 'পরিশোধিত' : 'বাকি'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </div>
+
+                    <footer className="mt-20 flex justify-between">
+                        <div className="text-center w-40 border-t border-black pt-1">শ্রেণি শিক্ষকের স্বাক্ষর</div>
+                        <div className="text-center w-40 border-t border-black pt-1">প্রধান শিক্ষকের স্বাক্ষর</div>
+                    </footer>
+                </div>
+            )}
 
             <Dialog open={showProfile} onOpenChange={setShowProfile}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto no-print">
                     {studentData && (
                         <>
-                            <DialogHeader className="no-print">
+                            <DialogHeader>
                                 <div className="flex flex-col md:flex-row items-center gap-6 pb-4 border-b">
                                     <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border-4 border-primary/20 shadow-lg">
                                         {studentData.photoUrl ? (
@@ -262,10 +332,10 @@ export default function StudentProfileSearchPage() {
                                     <div className="text-center md:text-left space-y-1">
                                         <DialogTitle className="text-3xl font-bold text-primary">{studentData.studentNameBn}</DialogTitle>
                                         <p className="text-lg font-medium text-muted-foreground">
-                                            রোল: {studentData.roll.toLocaleString('bn-BD')} | {classNamesMap[studentData.className] || studentData.className} শ্রেণি
+                                            রোল: {toBengaliNumber(studentData.roll)} | {classNamesMap[studentData.className]} শ্রেণি
                                         </p>
                                         <DialogDescription className="text-md">
-                                            শিক্ষাবর্ষ: {studentData.academicYear.toLocaleString('bn-BD')}
+                                            শিক্ষাবর্ষ: {toBengaliNumber(studentData.academicYear)}
                                         </DialogDescription>
                                     </div>
                                 </div>
@@ -279,22 +349,22 @@ export default function StudentProfileSearchPage() {
                                     <div className="grid grid-cols-3 gap-4 text-center">
                                         <div className="p-3 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                                             <p className="text-sm text-green-600 font-medium">উপস্থিত</p>
-                                            <p className="text-2xl font-bold">{attendanceStats.present.toLocaleString('bn-BD')} দিন</p>
+                                            <p className="text-2xl font-bold">{toBengaliNumber(attendanceStats.present)} দিন</p>
                                         </div>
                                         <div className="p-3 bg-red-50 rounded-lg border border-red-100 shadow-sm">
                                             <p className="text-sm text-red-600 font-medium">অনুপস্থিত</p>
-                                            <p className="text-2xl font-bold">{attendanceStats.absent.toLocaleString('bn-BD')} দিন</p>
+                                            <p className="text-2xl font-bold">{toBengaliNumber(attendanceStats.absent)} দিন</p>
                                         </div>
                                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
                                             <p className="text-sm text-blue-600 font-medium">মোট দিন</p>
-                                            <p className="text-2xl font-bold">{attendanceStats.total.toLocaleString('bn-BD')} দিন</p>
+                                            <p className="text-2xl font-bold">{toBengaliNumber(attendanceStats.total)} দিন</p>
                                         </div>
                                     </div>
                                     <div className="space-y-2 pt-2">
                                         <div className="flex justify-between text-sm font-medium">
                                             <span>উপস্থিতির হার</span>
                                             <span className={cn("font-bold", attendancePercentage < 75 ? "text-red-600" : "text-green-600")}>
-                                                {attendancePercentage.toFixed(2).toLocaleString('bn-BD')}%
+                                                {toBengaliNumber(attendancePercentage.toFixed(2))}%
                                             </span>
                                         </div>
                                         <Progress value={attendancePercentage} className="h-3" />
@@ -330,9 +400,9 @@ export default function StudentProfileSearchPage() {
                                     </div>
                                 </section>
                                 
-                                <div className="flex justify-end pt-4 no-print border-t">
+                                <div className="flex justify-end pt-4 border-t">
                                     <Button variant="outline" onClick={() => window.print()} className="gap-2">
-                                        <Printer className="h-4 w-4" /> প্রিন্ট করুন
+                                        <Printer className="h-4 w-4" /> রিপোর্ট প্রিন্ট করুন
                                     </Button>
                                 </div>
                             </div>
