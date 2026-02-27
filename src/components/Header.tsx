@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -69,6 +68,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [lastFetchedYear, setLastFetchedYear] = useState('');
 
   useEffect(() => {
     setIsClient(true);
@@ -84,7 +84,7 @@ export function Header() {
     let unsubscribe: (() => void) | undefined;
     
     if (user.role === 'teacher' && user.email) {
-      const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email), limit(1));
+      const staffQuery = query(collection(db, 'staff'), where('email', '==', user.email.toLowerCase()), limit(1));
       unsubscribe = onSnapshot(staffQuery, (snapshot) => {
         if (!snapshot.empty) {
           const staffData = snapshot.docs[0].data();
@@ -115,24 +115,39 @@ export function Header() {
   // Search Logic
   const handleSearchOpen = async (open: boolean) => {
     setSearchOpen(open);
-    if (open && allStudents.length === 0 && db) {
+    // Fetch if opening search AND (students not loaded OR year has changed)
+    if (open && db && (allStudents.length === 0 || lastFetchedYear !== selectedYear)) {
         setIsSearching(true);
-        const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
-        const snap = await getDocs(q);
-        setAllStudents(snap.docs.map(studentFromDoc));
+        try {
+            const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
+            const snap = await getDocs(q);
+            setAllStudents(snap.docs.map(studentFromDoc));
+            setLastFetchedYear(selectedYear);
+        } catch (e) {
+            console.error("Search fetch error:", e);
+        }
         setIsSearching(false);
     }
   };
 
   const filteredResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
+    
+    const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
     const q = searchQuery.toLowerCase();
-    return allStudents.filter(s => 
-        s.studentNameBn?.toLowerCase().includes(q) || 
-        s.studentNameEn?.toLowerCase().includes(q) || 
-        s.roll?.toString() === q ||
-        s.generatedId?.toLowerCase().includes(q)
-    ).slice(0, 5);
+    const qEn = bnToEn(q);
+
+    return allStudents.filter(s => {
+        const nameBn = (s.studentNameBn || '').toLowerCase();
+        const nameEn = (s.studentNameEn || '').toLowerCase();
+        const rollStr = (s.roll || '').toString();
+        const idStr = (s.generatedId || '').toLowerCase();
+        
+        return nameBn.includes(q) || 
+               nameEn.includes(q) || 
+               rollStr.includes(qEn) || 
+               idStr.includes(qEn);
+    }).slice(0, 10);
   }, [searchQuery, allStudents]);
 
   return (
@@ -343,29 +358,31 @@ export function Header() {
                             {isSearching ? (
                                 <p className="text-center text-sm text-muted-foreground py-4">ডাটা লোড হচ্ছে...</p>
                             ) : filteredResults.length > 0 ? (
-                                filteredResults.map(s => (
-                                    <div 
-                                        key={s.id} 
-                                        className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer transition-colors"
-                                        onClick={() => {
-                                            setSearchOpen(false);
-                                            setSearchQuery('');
-                                            router.push(`/student-list`); // Since we don't have a direct detail page, we go to list
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={s.photoUrl} />
-                                                <AvatarFallback>{s.studentNameBn?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-bold">{s.studentNameBn}</p>
-                                                <p className="text-[10px] text-muted-foreground">রোল: {s.roll.toLocaleString('bn-BD')} | শ্রেণি: {s.className}</p>
+                                <div className="max-h-[300px] overflow-y-auto pr-2">
+                                    {filteredResults.map(s => (
+                                        <div 
+                                            key={s.id} 
+                                            className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer transition-colors mb-2 last:mb-0"
+                                            onClick={() => {
+                                                setSearchOpen(false);
+                                                setSearchQuery('');
+                                                router.push(`/student-list`); 
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={s.photoUrl} />
+                                                    <AvatarFallback>{s.studentNameBn?.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm font-bold">{s.studentNameBn}</p>
+                                                    <p className="text-[10px] text-muted-foreground">রোল: {s.roll.toLocaleString('bn-BD')} | শ্রেণি: {s.className}</p>
+                                                </div>
                                             </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4 rotate-180" /></Button>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4 rotate-180" /></Button>
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             ) : searchQuery.trim() ? (
                                 <p className="text-center text-sm text-muted-foreground py-4">কোনো তথ্য পাওয়া যায়নি।</p>
                             ) : null}

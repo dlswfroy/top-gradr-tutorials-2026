@@ -78,11 +78,21 @@ export default function StudentProfileSearchPage() {
 
         setIsLoading(true);
         try {
+            // Convert Bengali digits to English for Firestore query
+            const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
+            const rollEn = parseInt(bnToEn(roll), 10);
+
+            if (isNaN(rollEn)) {
+                toast({ variant: 'destructive', title: 'ভুল রোল নম্বর', description: 'অনুগ্রহ করে সঠিক সংখ্যা ব্যবহার করুন।' });
+                setIsLoading(false);
+                return;
+            }
+
             const studentQuery = query(
                 collection(db, 'students'),
                 where('academicYear', '==', selectedYear),
                 where('className', '==', className),
-                where('roll', '==', parseInt(roll, 10))
+                where('roll', '==', rollEn)
             );
             const studentSnap = await getDocs(studentQuery);
 
@@ -207,7 +217,7 @@ export default function StudentProfileSearchPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="roll">রোল নম্বর</Label>
-                                        <Input id="roll" type="number" value={roll} onChange={e => setRoll(e.target.value)} required placeholder="" />
+                                        <Input id="roll" type="text" value={roll} onChange={e => setRoll(e.target.value)} required placeholder="উদা: ১ বা 1" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="class">শ্রেণি</Label>
