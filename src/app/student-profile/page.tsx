@@ -254,23 +254,23 @@ export default function StudentProfileSearchPage() {
                 </main>
             </div>
 
-            {/* Hidden Printable Area */}
+            {/* Hidden Printable Area - Optimized for one page */}
             {studentData && (
                 <div className="printable-area p-10 text-black bg-white min-h-screen">
-                    <header className="flex items-center justify-between border-b-4 border-black pb-4 mb-8">
-                        <div className="w-24 h-24 relative flex items-center justify-center">
-                            {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="Logo" width={90} height={90} className="object-contain" />}
+                    <header className="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
+                        <div className="w-20 h-20 relative flex items-center justify-center">
+                            {schoolInfo.logoUrl && <Image src={schoolInfo.logoUrl} alt="Logo" width={80} height={80} className="object-contain" />}
                         </div>
                         <div className="text-center flex-1">
-                            <h1 className="text-3xl font-extrabold">{schoolInfo.name}</h1>
-                            <p className="text-md font-medium">{schoolInfo.address}</p>
-                            <h2 className="text-2xl font-bold mt-4 underline decoration-2 underline-offset-4 uppercase tracking-wider">শিক্ষার্থী প্রোফাইল রিপোর্ট</h2>
+                            <h1 className="text-2xl font-extrabold">{schoolInfo.name}</h1>
+                            <p className="text-sm font-medium">{schoolInfo.address}</p>
+                            <h2 className="text-xl font-bold mt-2 underline decoration-2 underline-offset-4 uppercase tracking-wider">শিক্ষার্থী প্রোফাইল রিপোর্ট</h2>
                         </div>
-                        <div className="w-24"></div>
+                        <div className="w-20"></div>
                     </header>
 
-                    <div className="flex justify-between items-start gap-10 mb-10 p-6 border-2 border-black rounded-lg">
-                        <div className="space-y-3 text-lg flex-1">
+                    <div className="flex justify-between items-start gap-8 mb-8 p-4 border-2 border-black rounded-lg">
+                        <div className="space-y-2 text-md flex-1">
                             <p><strong>শিক্ষার্থীর নাম:</strong> {studentData.studentNameBn}</p>
                             <p><strong>রোল নম্বর:</strong> {toBengaliNumber(studentData.roll)}</p>
                             <p><strong>শ্রেণি:</strong> {classNamesMap[studentData.className]} শ্রেণি</p>
@@ -279,7 +279,7 @@ export default function StudentProfileSearchPage() {
                             <p><strong>মোবাইল:</strong> {studentData.guardianMobile || '-'}</p>
                         </div>
                         <div className="shrink-0">
-                            <div className="w-40 h-40 border-4 border-black relative overflow-hidden rounded-md shadow-sm">
+                            <div className="w-32 h-32 border-2 border-black relative overflow-hidden rounded-md shadow-sm">
                                 {studentData.photoUrl ? (
                                     <Image src={studentData.photoUrl} alt="Student" fill className="object-cover" />
                                 ) : (
@@ -289,29 +289,29 @@ export default function StudentProfileSearchPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-10">
+                    <div className="space-y-8">
                         <section>
-                            <h3 className="text-xl font-bold border-b-2 border-black mb-6 pb-2 inline-block">হাজিরা পরিসংখ্যান ({startMonth} - {endMonth})</h3>
+                            <h3 className="text-lg font-bold border-b-2 border-black mb-4 pb-1 inline-block">হাজিরা পরিসংখ্যান ({startMonth} - {endMonth})</h3>
                             <div className="grid grid-cols-3 border-2 border-black text-center rounded-lg overflow-hidden">
-                                <div className="p-4 border-r-2 border-black bg-gray-50"><p className="font-bold">মোট কার্যদিবস</p><p className="text-2xl font-black">{toBengaliNumber(attendanceStats.total)}</p></div>
-                                <div className="p-4 border-r-2 border-black bg-gray-50 text-green-800"><p className="font-bold">উপস্থিতি</p><p className="text-2xl font-black">{toBengaliNumber(attendanceStats.present)}</p></div>
-                                <div className="p-4 bg-gray-50 text-red-800"><p className="font-bold">অনুপস্থিতি</p><p className="text-2xl font-black">{toBengaliNumber(attendanceStats.absent)}</p></div>
+                                <div className="p-3 border-r-2 border-black bg-gray-50"><p className="font-bold text-sm">মোট কার্যদিবস</p><p className="text-xl font-black">{toBengaliNumber(attendanceStats.total)}</p></div>
+                                <div className="p-3 border-r-2 border-black bg-gray-50 text-green-800"><p className="font-bold text-sm">উপস্থিতি</p><p className="text-xl font-black">{toBengaliNumber(attendanceStats.present)}</p></div>
+                                <div className="p-3 bg-gray-50 text-red-800"><p className="font-bold text-sm">অনুপস্থিতি</p><p className="text-xl font-black">{toBengaliNumber(attendanceStats.absent)}</p></div>
                             </div>
-                            <div className="mt-4 flex justify-between items-center bg-gray-100 p-3 rounded border border-black">
-                                <span className="text-lg font-bold">উপস্থিতির হার:</span>
-                                <span className="text-2xl font-black">{toBengaliNumber(attendancePercentage.toFixed(2))}%</span>
+                            <div className="mt-3 flex justify-between items-center bg-gray-100 p-2 rounded border border-black">
+                                <span className="text-md font-bold">উপস্থিতির হার:</span>
+                                <span className="text-xl font-black">{toBengaliNumber(attendancePercentage.toFixed(2))}%</span>
                             </div>
                         </section>
 
                         <section>
-                            <h3 className="text-xl font-bold border-b-2 border-black mb-6 pb-2 inline-block">বেতন পরিশোধের অবস্থা (শিক্ষাবর্ষ {toBengaliNumber(selectedYear)})</h3>
-                            <div className="grid grid-cols-4 gap-3">
+                            <h3 className="text-lg font-bold border-b-2 border-black mb-4 pb-1 inline-block">বেতন পরিশোধের অবস্থা (শিক্ষাবর্ষ {toBengaliNumber(selectedYear)})</h3>
+                            <div className="grid grid-cols-4 gap-2">
                                 {BENGALI_MONTHS.map(month => {
                                     const isPaid = paidMonths.includes(month);
                                     return (
-                                        <div key={month} className={cn("p-3 border-2 text-center rounded-md", isPaid ? "border-green-600 bg-green-50" : "border-red-300 bg-red-50")}>
-                                            <p className="font-black text-sm">{month}</p>
-                                            <p className={cn("text-xs font-bold mt-1 uppercase", isPaid ? "text-green-700" : "text-red-600")}>{isPaid ? 'পরিশোধিত' : 'বাকি'}</p>
+                                        <div key={month} className={cn("p-2 border-2 text-center rounded-md", isPaid ? "border-green-600 bg-green-50" : "border-red-300 bg-red-50")}>
+                                            <p className="font-black text-xs">{month}</p>
+                                            <p className={cn("text-[10px] font-bold mt-1 uppercase", isPaid ? "text-green-700" : "text-red-600")}>{isPaid ? 'পরিশোধিত' : 'বাকি'}</p>
                                         </div>
                                     );
                                 })}
@@ -319,9 +319,9 @@ export default function StudentProfileSearchPage() {
                         </section>
                     </div>
 
-                    <footer className="mt-32 flex justify-between px-4">
-                        <div className="text-center w-56 border-t-2 border-black pt-2 font-bold">শ্রেণি শিক্ষকের স্বাক্ষর</div>
-                        <div className="text-center w-56 border-t-2 border-black pt-2 font-bold">প্রধান শিক্ষকের স্বাক্ষর</div>
+                    <footer className="mt-20 flex justify-between px-4">
+                        <div className="text-center w-48 border-t-2 border-black pt-1 font-bold text-sm">শ্রেণি শিক্ষকের স্বাক্ষর</div>
+                        <div className="text-center w-48 border-t-2 border-black pt-1 font-bold text-sm">প্রধান শিক্ষকের স্বাক্ষর</div>
                     </footer>
                 </div>
             )}

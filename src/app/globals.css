@@ -76,7 +76,8 @@
     .no-print *,
     [role="dialog"],
     [data-radix-portal],
-    .fixed.inset-0 {
+    .fixed.inset-0,
+    .bg-black\/80 {
       display: none !important;
       visibility: hidden !important;
     }
@@ -86,17 +87,28 @@
         visibility: visible !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 5mm !important;
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
         z-index: 9999 !important;
         background: white !important;
+        color: black !important;
+        box-sizing: border-box !important;
     }
 
     .printable-area * {
         color: black !important;
-        border-color: #333 !important;
+        border-color: #000 !important;
+        background-color: transparent !important;
+    }
+
+    .printable-area .bg-gray-50, 
+    .printable-area .bg-gray-100, 
+    .printable-area .bg-green-50, 
+    .printable-area .bg-red-50 {
+        background-color: #f9fafb !important;
+        -webkit-print-color-adjust: exact !important;
     }
 
     .admit-card-grid {
