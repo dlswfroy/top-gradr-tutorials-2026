@@ -16,7 +16,7 @@ import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Send, Users, Smartphone, History, Clock, Trash2, Phone, FileText, Check } from 'lucide-react';
+import { MessageSquare, Send, Users, Smartphone, History, Clock, Trash2, Phone, FileText, Check, UserCheck, UserMinus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { logMessage, getMessageLogs, MessageLog, deleteMessageLog, updateMessageNote } from '@/lib/messaging-data';
 import { format } from 'date-fns';
@@ -237,15 +237,16 @@ export default function MessagingPage() {
         }
     };
 
-    const handleSaveNote = async (id: string) => {
+    const handleSaveNote = async (id: string, customNote?: string) => {
         if (!db) return;
+        const noteToSave = customNote !== undefined ? customNote : tempNote;
         try {
-            await updateMessageNote(db, id, tempNote);
-            toast({ title: 'নোট আপডেট হয়েছে' });
+            await updateMessageNote(db, id, noteToSave);
+            toast({ title: 'তথ্য সংরক্ষিত হয়েছে' });
             setEditingNoteId(null);
             fetchLogs();
         } catch (e) {
-            toast({ variant: 'destructive', title: 'নোট সেভ করা যায়নি' });
+            toast({ variant: 'destructive', title: 'তথ্য সেভ করা যায়নি' });
         }
     };
 
@@ -572,19 +573,39 @@ export default function MessagingPage() {
                                                 {/* Display and Edit Notes (For Manual Duration/Outcome) */}
                                                 <div className="bg-muted/50 rounded-md p-2 mb-2 text-[11px] border border-dashed">
                                                     {editingNoteId === log.id ? (
-                                                        <div className="flex gap-1">
-                                                            <Input 
-                                                                value={tempNote} 
-                                                                onChange={e => setTempNote(e.target.value)} 
-                                                                className="h-7 text-[11px] py-0"
-                                                                placeholder="কথোপকথনের তথ্য (উদা: ২ মিনিট)"
-                                                                autoFocus
-                                                            />
-                                                            <Button size="icon" className="h-7 w-7" onClick={() => handleSaveNote(log.id)}><Check className="h-3 w-3" /></Button>
+                                                        <div className="space-y-2">
+                                                            <div className="flex gap-1">
+                                                                <Input 
+                                                                    value={tempNote} 
+                                                                    onChange={e => setTempNote(e.target.value)} 
+                                                                    className="h-7 text-[11px] py-0"
+                                                                    placeholder="কথোপকথনের তথ্য (উদা: ২ মিনিট)"
+                                                                    autoFocus
+                                                                />
+                                                                <Button size="icon" className="h-7 w-7" onClick={() => handleSaveNote(log.id)}><Check className="h-3 w-3" /></Button>
+                                                            </div>
+                                                            {log.type === 'call' && (
+                                                                <div className="flex gap-2">
+                                                                    <Button variant="outline" size="sm" className="h-6 text-[10px] flex-1 bg-green-50 hover:bg-green-100 border-green-200" onClick={() => handleSaveNote(log.id, 'কথা হয়েছে')}>
+                                                                        <UserCheck className="h-3 w-3 mr-1 text-green-600" /> কথা হয়েছে
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm" className="h-6 text-[10px] flex-1 bg-red-50 hover:bg-red-100 border-red-200" onClick={() => handleSaveNote(log.id, 'কথা হয় নাই')}>
+                                                                        <UserMinus className="h-3 w-3 mr-1 text-red-600" /> কথা হয় নাই
+                                                                    </Button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <div className="flex justify-between items-center group/note">
-                                                            <span className="italic">{log.notes || 'কোনো নোট নেই'}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                {log.notes === 'কথা হয়েছে' ? (
+                                                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 py-0 h-5 text-[10px]"><UserCheck className="h-2.5 w-2.5 mr-1" /> কথা হয়েছে</Badge>
+                                                                ) : log.notes === 'কথা হয় নাই' ? (
+                                                                    <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 py-0 h-5 text-[10px]"><UserMinus className="h-2.5 w-2.5 mr-1" /> কথা হয় নাই</Badge>
+                                                                ) : (
+                                                                    <span className="italic">{log.notes || 'কোনো নোট নেই'}</span>
+                                                                )}
+                                                            </div>
                                                             <Button 
                                                                 variant="ghost" 
                                                                 size="icon" 
