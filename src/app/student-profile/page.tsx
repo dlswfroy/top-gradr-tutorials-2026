@@ -309,9 +309,9 @@ export default function StudentProfileSearchPage() {
                                 {BENGALI_MONTHS.map(month => {
                                     const isPaid = paidMonths.includes(month);
                                     return (
-                                        <div key={month} className={cn("p-2 border-2 text-center rounded-md", isPaid ? "border-green-600 bg-green-50" : "border-red-300 bg-red-50")}>
+                                        <div key={month} className={cn("p-2 border-2 text-center rounded-md", isPaid ? "border-green-600 bg-green-50" : "border-red-600 bg-red-50")}>
                                             <p className="font-black text-xs">{month}</p>
-                                            <p className={cn("text-[10px] font-bold mt-1 uppercase", isPaid ? "text-green-700" : "text-red-600")}>{isPaid ? 'পরিশোধিত' : 'বাকি'}</p>
+                                            <p className={cn("text-[10px] font-bold mt-1 uppercase", isPaid ? "text-green-700" : "text-red-700")}>{isPaid ? 'পরিশোধিত' : 'বকেয়া'}</p>
                                         </div>
                                     );
                                 })}
@@ -400,12 +400,12 @@ export default function StudentProfileSearchPage() {
                                                     key={month}
                                                     className={cn(
                                                         "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all",
-                                                        isPaid ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" : "bg-gray-50 border-gray-200 text-gray-400 opacity-60"
+                                                        isPaid ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" : "bg-red-50 border-red-200 text-red-600"
                                                     )}
                                                 >
                                                     {isPaid ? <CheckCircle2 className="h-4 w-4 mb-1" /> : <XCircle className="h-4 w-4 mb-1" />}
                                                     <span className="text-xs font-bold">{month}</span>
-                                                    <span className="text-[10px]">{isPaid ? 'পরিশোধিত' : 'বাকি'}</span>
+                                                    <span className="text-[10px]">{isPaid ? 'পরিশোধিত' : 'বকেয়া'}</span>
                                                 </div>
                                             );
                                         })}
