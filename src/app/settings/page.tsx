@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, Upload, Circle } from 'lucide-react';
+import { Trash2, Upload, Circle, Info, Database, Cloud, ShieldCheck } from 'lucide-react';
 import { format } from "date-fns";
 import { bn } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,68 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Staff, staffFromDoc } from '@/lib/staff-data';
 import { cn } from '@/lib/utils';
 
+function SystemUsageInfo() {
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="border-blue-200 bg-blue-50">
+                <CardHeader>
+                    <div className="flex items-center gap-2 text-blue-700">
+                        <Database className="h-5 w-5" />
+                        <CardTitle className="text-lg">ডাটাবেস লিমিট (ফ্রি)</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-blue-900">
+                    <p>• <strong>রিড (Read):</strong> প্রতিদিন ৫০,০০০ বার</p>
+                    <p>• <strong>রাইট (Write):</strong> প্রতিদিন ২০,০০০ বার</p>
+                    <p>• <strong>ডিলিট (Delete):</strong> প্রতিদিন ২০,০০০ বার</p>
+                    <p>• <strong>স্টোরেজ:</strong> ১ জিবি ডাটা</p>
+                </CardContent>
+            </Card>
+
+            <Card className="border-emerald-200 bg-emerald-50">
+                <CardHeader>
+                    <div className="flex items-center gap-2 text-emerald-700">
+                        <Cloud className="h-5 w-5" />
+                        <CardTitle className="text-lg">হোস্টিং ও ছবি</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-emerald-900">
+                    <p>• <strong>ফাইল স্টোরেজ:</strong> ৫ জিবি থেকে ১০ জিবি</p>
+                    <p>• <strong>ব্যান্ডউইথ:</strong> প্রতিদিন ৩৬০ এমবি</p>
+                    <p>• <strong>আপলোড:</strong> মাসিক ৫ জিবি</p>
+                </CardContent>
+            </Card>
+
+            <Card className="border-amber-200 bg-amber-50">
+                <CardHeader>
+                    <div className="flex items-center gap-2 text-amber-700">
+                        <ShieldCheck className="h-5 w-5" />
+                        <CardTitle className="text-lg">নিরাপত্তা ও মেয়াদ</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-amber-900">
+                    <p>• <strong>মেয়াদ:</strong> আজীবন ফ্রি (Spark Plan)</p>
+                    <p>• <strong>অ্যাক্সেস:</strong> রিয়েল-টাইম ডাটা সিঙ্ক</p>
+                    <p>• <strong>ব্যাকআপ:</strong> ফায়ারবেস ক্লাউড স্টোরেজ</p>
+                </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2 lg:col-span-3">
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Info className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-lg">সতর্কতা ও পরামর্শ</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                    <p>১. আপনার বিদ্যালয়ের ছাত্র সংখ্যা ১০০০-এর নিচে হলে আপনি কখনই এই লিমিট অতিক্রম করবেন না।</p>
+                    <p>২. যদি কোনো দিন ব্যবহারের সীমা শেষ হয়ে যায়, তবে সফটওয়্যারটি সাময়িকভাবে বন্ধ হতে পারে এবং পরের দিন আবার চালু হবে।</p>
+                    <p>৩. বড় সাইজের ছবি আপলোড করা থেকে বিরত থাকুন (সিস্টেম অটোমেটিক ছবি ছোট করে নেয়, তাই চিন্তা নেই)।</p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
 
 function SchoolInfoSettings() {
     const { schoolInfo, updateSchoolInfo, isLoading } = useSchoolInfo();
@@ -893,6 +955,7 @@ export default function SettingsPage() {
                                     {isAdmin && <TabsTrigger value="school-info">প্রতিষ্ঠানের তথ্য</TabsTrigger>}
                                     {isAdmin && <TabsTrigger value="holidays">অতিরিক্ত ছুটি</TabsTrigger>}
                                     {isAdmin && <TabsTrigger value="user-management">ব্যবহারকারী</TabsTrigger>}
+                                    <TabsTrigger value="system-info">সিস্টেম তথ্য</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="profile" className="pt-4">
                                     <ProfileSettings />
@@ -910,6 +973,9 @@ export default function SettingsPage() {
                                         </TabsContent>
                                     </>
                                 )}
+                                <TabsContent value="system-info" className="pt-4">
+                                    <SystemUsageInfo />
+                                </TabsContent>
                             </Tabs>
                         ) : (
                             <div className="space-y-4">
