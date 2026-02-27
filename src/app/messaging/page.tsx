@@ -225,7 +225,7 @@ export default function MessagingPage() {
                                         >
                                             <Send className="mr-2 h-5 w-5" /> রেকর্ড করুন ও পাঠান (Simulation)
                                         </Button>
-                                        <p className="text-[10px] text-muted-foreground text-center italic">বাল্ক মেসেজ পাঠানোর জন্য গেটওয়ে প্রয়োজন। বর্তমানে এটি শুধুমাত্র সিস্টেমে রেকর্ড রাখবে।</p>
+                                        <p className="text-[10px] text-muted-foreground text-center italic">বাল্ক মেসেজ পাঠানোর জন্য গেটওয়ে প্রয়োজন। বর্তমানে এটি শুধুমাত্র সিস্টেমে রেকর্ড রাখবে।</p>
                                     </TabsContent>
 
                                     <TabsContent value="class" className="space-y-4">
@@ -372,14 +372,14 @@ export default function MessagingPage() {
                                                             <TableRow key={s.id}>
                                                                 <TableCell>{s.roll.toLocaleString('bn-BD')}</TableCell>
                                                                 <TableCell>{s.studentNameBn}</TableCell>
-                                                                <TableCell className="text-xs">{s.guardianMobile}</TableCell>
+                                                                <TableCell className="text-xs">{s.guardianMobile || '-'}</TableCell>
                                                                 <TableCell className="text-right">
                                                                     <Button 
                                                                         variant="outline" 
                                                                         size="sm" 
                                                                         className="h-7 px-2 text-[10px]"
                                                                         onClick={() => handleSendDirectSMS(s.guardianMobile || s.studentMobile || '', messageContent)}
-                                                                        disabled={!messageContent.trim()}
+                                                                        disabled={!messageContent.trim() || (!s.guardianMobile && !s.studentMobile)}
                                                                     >
                                                                         <Smartphone className="h-3 w-3 mr-1" /> সিম থেকে পাঠান
                                                                     </Button>
