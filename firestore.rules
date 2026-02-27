@@ -12,15 +12,21 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthed() && getUserData().role == 'admin';
+      return isAuthed() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserData().role == 'admin';
     }
     
     function isTeacher() {
-      return isAuthed() && getUserData().role == 'teacher';
+      return isAuthed() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserData().role == 'teacher';
     }
 
     function hasPermission(permission) {
-      return isAuthed() && (isAdmin() || getUserData().permissions.hasAny([permission]));
+      return isAuthed() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             (isAdmin() || getUserData().permissions.hasAny([permission]));
     }
 
     match /{document=**} {
@@ -52,7 +58,7 @@ service cloud.firestore {
     
     match /school/info {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAuthed();
     }
 
     match /students/{id} {
