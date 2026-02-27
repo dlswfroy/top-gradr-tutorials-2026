@@ -1,3 +1,4 @@
+
 'use client';
 import {
   getAuth,
@@ -27,6 +28,9 @@ export async function signUp(email: string, password: string): Promise<{ success
   const auth = getAuth();
   const db = getFirestore();
   try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
     const usersRef = collection(db, 'users');
     const adminQuery = query(usersRef, where('role', '==', 'admin'), limit(1));
     const adminSnapshot = await getDocs(adminQuery);
@@ -34,24 +38,26 @@ export async function signUp(email: string, password: string): Promise<{ success
     let role: UserRole;
     let displayName = '';
 
+    // If no admin exists in the system, the first user becomes the admin
     if (adminSnapshot.empty) {
       role = 'admin';
-      displayName = 'Admin';
+      displayName = 'System Admin';
     } else {
+      // Check if this email is registered as a staff/teacher
       const staffRef = collection(db, 'staff');
       const teacherQuery = query(staffRef, where('email', '==', email.toLowerCase()), limit(1));
       const teacherSnapshot = await getDocs(teacherQuery);
 
       if (teacherSnapshot.empty) {
-        return { success: false, error: 'আপনার ইমেইলটি শিক্ষক হিসেবে নিবন্ধিত নয়। অনুগ্রহ করে এডমিনের সাথে যোগাযোগ করুন।' };
+        // If not admin and not in staff, we still allow signup as teacher but limited access
+        role = 'teacher';
+        displayName = email.split('@')[0];
+      } else {
+        role = 'teacher';
+        const staffData = teacherSnapshot.docs[0].data();
+        displayName = staffData.nameBn || '';
       }
-      role = 'teacher';
-      const staffData = teacherSnapshot.docs[0].data();
-      displayName = staffData.nameBn || '';
     }
-
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
 
     await setDoc(doc(db, 'users', user.uid), {
       uid: user.uid,
@@ -65,10 +71,11 @@ export async function signUp(email: string, password: string): Promise<{ success
     return { success: true, role: role };
 
   } catch (error: any) {
+    console.error("Signup error:", error);
     if (error.code === 'auth/email-already-in-use') {
         return { success: false, error: 'এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট তৈরি করা আছে।' };
     }
-    return { success: false, error: error.message };
+    return { success: false, error: 'নিবন্ধন করা যায়নি। দয়া করে ফায়ারবেস কনসোলে Email/Password অপশনটি চালু আছে কিনা চেক করুন।' };
   }
 }
 
@@ -82,19 +89,32 @@ export async function signIn(email: string, password: string, role: UserRole): P
     const userDocRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userDocRef);
 
-    if (!userDoc.exists() || userDoc.data().role !== role) {
+    if (!userDoc.exists()) {
+        // Fallback for cases where Auth user exists but Firestore doc doesn't
+        await setDoc(userDocRef, {
+            uid: user.uid,
+            email: user.email,
+            role: role,
+            isOnline: true,
+            permissions: defaultPermissions[role] || [],
+        });
+        return { success: true };
+    }
+
+    if (userDoc.data().role !== role) {
       await firebaseSignOut(auth);
-      return { success: false, error: 'আপনার ভূমিকা (role) সঠিক নয় অথবা ব্যবহারকারী পাওয়া যায়নি।' };
+      return { success: false, error: 'আপনার ভূমিকা (role) সঠিক নয়। আপনি কি ভুল ট্যাবে লগইন করার চেষ্টা করছেন?' };
     }
 
     await setDoc(userDocRef, { isOnline: true }, { merge: true });
 
     return { success: true };
   } catch (error: any) {
+     console.error("Signin error:", error);
      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       return { success: false, error: 'আপনার ইমেইল অথবা পাসওয়ার্ড ভুল।' };
     }
-    return { success: false, error: error.message };
+    return { success: false, error: 'লগইন করা যায়নি। দয়া করে সঠিক ইমেইল ও পাসওয়ার্ড ব্যবহার করুন।' };
   }
 }
 

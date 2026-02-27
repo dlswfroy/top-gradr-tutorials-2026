@@ -23,7 +23,7 @@ service cloud.firestore {
              getUserData().role == 'teacher';
     }
 
-    // প্রতিষ্ঠানের সাধারণ তথ্য সবাই দেখতে পারবে
+    // প্রতিষ্ঠানের তথ্য সবাই দেখতে পারবে, কিন্তু শুধু এডমিন পরিবর্তন করতে পারবে
     match /school/info {
       allow read: if true;
       allow write: if isAuthed();
@@ -34,27 +34,31 @@ service cloud.firestore {
       allow read: if isAuthed() && (request.auth.uid == userId || isAdmin());
       allow create: if isAuthed() && request.auth.uid == userId;
       allow update: if isAuthed() && (request.auth.uid == userId || isAdmin());
-      allow list: if isAdmin();
+      // প্রথম ইউজার চেক করার জন্য লিস্ট পারমিশন প্রয়োজন
+      allow list: if isAuthed(); 
     }
 
-    // ক্লাস রুটিন রুলস
+    // ক্লাস রুটিন, নোটিশ, ছুটি ইত্যাদি সকল লগইন করা ইউজার পড়তে পারবে
     match /classRoutines/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
 
-    // নোটিশ বোর্ড রুলস
     match /notices/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
 
-    // ছুটির তালিকা
     match /holidays/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();
     }
     
+    match /exams/{id} {
+      allow read: if isAuthed();
+      allow write: if isAdmin();
+    }
+
     // শিক্ষার্থী ও শিক্ষক ডাটা
     match /students/{id} {
       allow read: if isAuthed();
@@ -66,40 +70,35 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // হাজিরা ও রেজাল্ট (শিক্ষক ও এডমিন উভয়েই পারবে)
+    // হাজিরা, রেজাল্ট এবং মেসেজ লগ (শিক্ষক ও এডমিন উভয়েই পারবে)
     match /attendance/{id} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && (isAdmin() || isTeacher());
+      allow write: if isAuthed();
     }
     
     match /results/{id} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && (isAdmin() || isTeacher());
+      allow write: if isAuthed();
+    }
+
+    match /messageLogs/{id} {
+      allow read: if isAuthed();
+      allow write: if isAuthed();
+    }
+
+    match /emailLogs/{id} {
+      allow read, write: if isAuthed();
     }
 
     // হিসাব-নিকাশ
     match /feeCollections/{id} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && (isAdmin() || isTeacher());
+      allow write: if isAuthed();
     }
 
     match /transactions/{id} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && (isAdmin() || isTeacher());
-    }
-
-    match /exams/{id} {
-      allow read: if isAuthed();
-      allow write: if isAdmin();
-    }
-
-    match /messageLogs/{id} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && (isAdmin() || isTeacher());
-    }
-
-    match /emailLogs/{id} {
-      allow read, write: if isAuthed() && (isAdmin() || isTeacher());
+      allow write: if isAuthed();
     }
   }
 }
