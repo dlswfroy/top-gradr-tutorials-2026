@@ -470,7 +470,7 @@ export default function MessagingPage() {
                                                             <Clock className="h-3 w-3 mr-1" />
                                                             {format(log.sentAt, 'PPp', { locale: bn })}
                                                         </span>
-                                                        {hasPermission('manage:messaging') && (
+                                                        {user?.role === 'admin' && (
                                                             <AlertDialog>
                                                                 <AlertDialogTrigger asChild>
                                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
