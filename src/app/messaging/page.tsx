@@ -93,8 +93,22 @@ export default function MessagingPage() {
             toast({ variant: 'destructive', title: 'মেসেজ লিখুন' });
             return;
         }
+
+        // Sanitize number: keep only digits and +
+        const cleanMobile = mobile.replace(/[^\d+]/g, '');
         const encodedContent = encodeURIComponent(content);
-        window.location.href = `sms:${mobile}?body=${encodedContent}`;
+
+        // Cross-platform SMS URI detection
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const separator = isIOS ? '&' : '?';
+        const smsUrl = `sms:${cleanMobile}${separator}body=${encodedContent}`;
+
+        // Attempt to open the SMS app
+        try {
+            window.location.href = smsUrl;
+        } catch (e) {
+            window.open(smsUrl, '_blank');
+        }
     };
 
     const handleLogAndSimulateMessage = async (type: 'all' | 'class' | 'individual' | 'absent', recipientsCount: number) => {
@@ -115,7 +129,7 @@ export default function MessagingPage() {
                 senderName: user.displayName || user.email || 'Admin'
             });
 
-            toast({ title: 'মেসেজ রেকর্ড করা হয়েছে', description: `মোট ${recipientsCount.toLocaleString('bn-BD')} জনের জন্য মেসেজ লগ তৈরি করা হয়েছে।` });
+            toast({ title: 'মেসেজ রেকর্ড করা হয়েছে', description: `মোট ${recipientsCount.toLocaleString('bn-BD')} জন শিক্ষার্থীর জন্য লগ তৈরি করা হয়েছে।` });
             
             // For individual, if only one selected, offer direct send
             if (type === 'individual' && selectedStudentIds.size === 1) {
