@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /messageLogs/{id} {
       allow read: if isAuthed() && (isAdmin() || isTeacher());
-      allow create: if isAuthed() && hasPermission('manage:messaging');
+      allow create, delete: if isAuthed() && hasPermission('manage:messaging');
     }
 
     match /staff/{id} {

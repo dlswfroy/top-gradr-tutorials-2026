@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   setDoc,
+  deleteDoc,
   getDocs,
   query,
   orderBy,
@@ -30,7 +31,6 @@ export type NewMessageLog = Omit<MessageLog, 'id' | 'sentAt'>;
 const MESSAGES_COLLECTION = 'messageLogs';
 
 export const logMessage = async (db: Firestore, logData: NewMessageLog) => {
-  // Generate a fresh document reference with a unique ID to avoid "already exists" errors
   const docRef = doc(collection(db, MESSAGES_COLLECTION));
   const dataToSave = {
     ...logData,
@@ -41,7 +41,6 @@ export const logMessage = async (db: Firestore, logData: NewMessageLog) => {
     return await setDoc(docRef, dataToSave);
   } catch (serverError: any) {
     console.error("Error logging message:", serverError);
-    // Only treat as permission error if the code indicates so
     if (serverError.code === 'permission-denied') {
         const permissionError = new FirestorePermissionError({
             path: MESSAGES_COLLECTION,
@@ -70,5 +69,23 @@ export const getMessageLogs = async (db: Firestore): Promise<MessageLog[]> => {
   } catch (e) {
     console.error("Error getting message logs:", e);
     return [];
+  }
+};
+
+export const deleteMessageLog = async (db: Firestore, id: string) => {
+  const docRef = doc(db, MESSAGES_COLLECTION, id);
+  try {
+    await deleteDoc(docRef);
+  } catch (serverError: any) {
+    console.error("Error deleting message log:", serverError);
+    if (serverError.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw permissionError;
+    }
+    throw serverError;
   }
 };

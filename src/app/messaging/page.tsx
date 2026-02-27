@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/Header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -13,22 +13,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Send, Users, User, Clock, History, Smartphone } from 'lucide-react';
+import { MessageSquare, Send, Users, Smartphone, History, Clock, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { logMessage, getMessageLogs, MessageLog } from '@/lib/messaging-data';
+import { logMessage, getMessageLogs, MessageLog, deleteMessageLog } from '@/lib/messaging-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function MessagingPage() {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     
     const [isClient, setIsClient] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -99,17 +100,14 @@ export default function MessagingPage() {
             return;
         }
 
-        // Cross-platform SMS URI detection
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const separator = isIOS ? '&' : '?';
-        // iOS usually expects comma, Android usually expects semicolon for multiple recipients
         const recipientSeparator = isIOS ? ',' : ';';
         
         const recipients = cleanNumbers.join(recipientSeparator);
         const encodedContent = encodeURIComponent(content);
         const smsUrl = `sms:${recipients}${separator}body=${encodedContent}`;
 
-        // Attempt to open the SMS app
         try {
             window.location.href = smsUrl;
         } catch (e) {
@@ -137,7 +135,6 @@ export default function MessagingPage() {
 
             toast({ title: 'মেসেজ রেকর্ড করা হয়েছে', description: `মোট ${recipientsCount.toLocaleString('bn-BD')} জন শিক্ষার্থীর জন্য লগ তৈরি করা হয়েছে।` });
             
-            // For individual and absent, support bulk sending via SIM if students are selected
             if ((type === 'individual' || type === 'absent') && selectedStudentIds.size > 0) {
                 const mobiles = Array.from(selectedStudentIds).map(id => {
                     const student = allStudents.find(s => s.id === id);
@@ -190,13 +187,20 @@ export default function MessagingPage() {
                 toast({ title: `${absentIds.length.toLocaleString('bn-BD')} জন অনুপস্থিত পাওয়া গেছে।` });
             }
         } catch (e: any) {
-            if (e.message?.includes('index')) {
-                toast({ variant: 'destructive', title: 'ইনডেক্স তৈরি করা হয়নি', description: 'দয়া করে অনুপস্থিত শিক্ষার্থী খোঁজার জন্য ইনডেক্স তৈরি করুন।' });
-            } else {
-                toast({ variant: 'destructive', title: 'তথ্য আনা সম্ভব হয়নি' });
-            }
+            toast({ variant: 'destructive', title: 'তথ্য আনা সম্ভব হয়নি' });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDeleteLog = async (id: string) => {
+        if (!db) return;
+        try {
+            await deleteMessageLog(db, id);
+            toast({ title: 'লগ মুছে ফেলা হয়েছে' });
+            fetchLogs();
+        } catch (e) {
+            // Error handled by FirebaseErrorListener
         }
     };
 
@@ -248,7 +252,6 @@ export default function MessagingPage() {
                                         >
                                             <Send className="mr-2 h-5 w-5" /> রেকর্ড করুন ও পাঠান (Simulation)
                                         </Button>
-                                        <p className="text-[10px] text-muted-foreground text-center italic">বাল্ক মেসেজ পাঠানোর জন্য গেটওয়ে প্রয়োজন। বর্তমানে এটি শুধুমাত্র সিস্টেমে রেকর্ড রাখবে।</p>
                                     </TabsContent>
 
                                     <TabsContent value="class" className="space-y-4">
@@ -263,12 +266,6 @@ export default function MessagingPage() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        {selectedClass && (
-                                            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                                                <p className="font-bold text-blue-900">{classNamesMap[selectedClass]} শ্রেণি</p>
-                                                <p className="text-sm text-blue-700">মোট {studentsInClass.length.toLocaleString('bn-BD')} জন শিক্ষার্থী।</p>
-                                            </div>
-                                        )}
                                         <div className="space-y-2">
                                             <Label>বার্তার বিষয়বস্তু</Label>
                                             <Textarea 
@@ -332,7 +329,6 @@ export default function MessagingPage() {
                                                                     <Button 
                                                                         variant="ghost" 
                                                                         size="icon" 
-                                                                        title="নিজের সিম থেকে পাঠান"
                                                                         onClick={() => handleSendDirectSMS(s.guardianMobile || s.studentMobile || '', messageContent)}
                                                                         disabled={!messageContent.trim() || (!s.guardianMobile && !s.studentMobile)}
                                                                     >
@@ -454,15 +450,38 @@ export default function MessagingPage() {
                                 ) : (
                                     <div className="divide-y">
                                         {messageLogs.map(log => (
-                                            <div key={log.id} className="p-4 hover:bg-primary/5 transition-colors">
+                                            <div key={log.id} className="p-4 hover:bg-primary/5 transition-colors relative group">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <Badge variant="secondary" className="text-[10px] py-0 px-2 h-5">
                                                         {log.type === 'all' ? 'সকল' : log.type === 'class' ? 'শ্রেণি' : log.type === 'individual' ? 'একক' : 'অনুপস্থিত'}
                                                     </Badge>
-                                                    <span className="text-[10px] text-muted-foreground flex items-center bg-muted px-1.5 py-0.5 rounded">
-                                                        <Clock className="h-3 w-3 mr-1" />
-                                                        {format(log.sentAt, 'PPp', { locale: bn })}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-muted-foreground flex items-center bg-muted px-1.5 py-0.5 rounded">
+                                                            <Clock className="h-3 w-3 mr-1" />
+                                                            {format(log.sentAt, 'PPp', { locale: bn })}
+                                                        </span>
+                                                        {hasPermission('manage:messaging') && (
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            এই মেসেজ রেকর্ডটি স্থায়ীভাবে মুছে ফেলা হবে।
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleDeleteLog(log.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">মুছে ফেলুন</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <p className="text-sm font-medium line-clamp-3 mb-2 text-foreground">{log.content}</p>
                                                 <div className="flex justify-between text-[10px] font-semibold text-muted-foreground pt-2 border-t border-dashed">
