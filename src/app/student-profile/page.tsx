@@ -41,7 +41,7 @@ export default function StudentProfileSearchPage() {
     const [roll, setRoll] = useState<string>('');
     const [className, setClassName] = useState<string>('');
     const [startMonth, setStartMonth] = useState<string>(BENGALI_MONTHS[0]);
-    const [endMonth, setEndMonth] = useState<string>(BENGALI_MONTHS[0]);
+    const [endMonth, setEndMonth] = useState<string>(BENGALI_MONTHS[new Date().getMonth()]);
     
     const [isLoading, setIsLoading] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
@@ -51,8 +51,6 @@ export default function StudentProfileSearchPage() {
 
     useEffect(() => {
         setIsMounted(true);
-        const currentMonthIdx = new Date().getMonth();
-        setEndMonth(BENGALI_MONTHS[currentMonthIdx]);
     }, []);
 
     useEffect(() => {
@@ -103,26 +101,29 @@ export default function StudentProfileSearchPage() {
                 where('date', '<=', endDate)
             );
             
-            const attSnap = await getDocs(attQuery).catch(err => {
-                if (err.code === 'failed-precondition') {
+            let attRecords: DailyAttendance[] = [];
+            try {
+                const attSnap = await getDocs(attQuery);
+                attRecords = attSnap.docs.map(doc => doc.data() as DailyAttendance);
+            } catch (err: any) {
+                if (err.code === 'failed-precondition' || err.message?.includes('index')) {
                     toast({
                         variant: 'destructive',
                         title: 'ইন্ডেক্স তৈরি করা নেই',
-                        description: 'এই অনুসন্ধানের জন্য ফায়ারবেসে একটি ইন্ডেক্স প্রয়োজন। অনুগ্রহ করে আপনার কনসোল লগ চেক করুন এবং ইন্ডেক্স লিঙ্কে ক্লিক করুন।',
+                        description: 'এই ফিচারের জন্য ফায়ারবেসে একটি ইনডেক্স প্রয়োজন। অনুগ্রহ করে আপনার চ্যাট হিস্টোরিতে দেওয়া লিঙ্কে ক্লিক করে ইনডেক্সটি তৈরি করুন।',
+                        duration: 10000,
                     });
-                } else if (err.code === 'permission-denied') {
+                } else {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'attendance', operation: 'list' }));
                 }
                 throw err;
-            });
-            
-            const attRecords = attSnap.docs.map(doc => doc.data() as DailyAttendance);
+            }
 
             let presentCount = 0;
             let totalCount = 0;
 
             attRecords.forEach(record => {
-                const studentAtt = record.attendance.find(a => a.studentId === foundStudent.id);
+                const studentAtt = record.attendance?.find(a => a.studentId === foundStudent.id);
                 if (studentAtt) {
                     totalCount++;
                     if (studentAtt.status === 'present') presentCount++;
@@ -147,7 +148,7 @@ export default function StudentProfileSearchPage() {
             const monthsPaid = new Set<string>();
             feeRecords.forEach(record => {
                 BENGALI_MONTHS.forEach(m => {
-                    if (record.description.includes(m)) {
+                    if (record.description && record.description.includes(m)) {
                         monthsPaid.add(m);
                     }
                 });
