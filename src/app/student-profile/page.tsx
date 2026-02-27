@@ -16,9 +16,11 @@ import { DailyAttendance } from '@/lib/attendance-data';
 import { FeeCollection, feeCollectionFromDoc } from '@/lib/fees-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle2, XCircle, User } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, User, Banknote, CalendarCheck } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const BENGALI_MONTHS = [
     'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
@@ -57,7 +59,10 @@ export default function StudentProfileSearchPage() {
                 where('className', '==', className),
                 where('roll', '==', parseInt(roll, 10))
             );
-            const studentSnap = await getDocs(studentQuery);
+            const studentSnap = await getDocs(studentQuery).catch(err => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'students', operation: 'list' }));
+                throw err;
+            });
 
             if (studentSnap.empty) {
                 toast({ variant: 'destructive', title: 'শিক্ষার্থী পাওয়া যায়নি।', description: 'অনুগ্রহ করে রোল ও শ্রেণি পরীক্ষা করুন।' });
@@ -72,7 +77,6 @@ export default function StudentProfileSearchPage() {
             const startIdx = BENGALI_MONTHS.indexOf(startMonth);
             const endIdx = BENGALI_MONTHS.indexOf(endMonth);
             
-            // Generate date strings for the range
             const startDate = `${selectedYear}-${String(startIdx + 1).padStart(2, '0')}-01`;
             const endDate = `${selectedYear}-${String(endIdx + 1).padStart(2, '0')}-31`;
 
@@ -83,7 +87,10 @@ export default function StudentProfileSearchPage() {
                 where('date', '>=', startDate),
                 where('date', '<=', endDate)
             );
-            const attSnap = await getDocs(attQuery);
+            const attSnap = await getDocs(attQuery).catch(err => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'attendance', operation: 'list' }));
+                throw err;
+            });
             const attRecords = attSnap.docs.map(doc => doc.data() as DailyAttendance);
 
             let presentCount = 0;
@@ -109,7 +116,10 @@ export default function StudentProfileSearchPage() {
                 where('studentId', '==', foundStudent.id),
                 where('academicYear', '==', selectedYear)
             );
-            const feeSnap = await getDocs(feeQuery);
+            const feeSnap = await getDocs(feeQuery).catch(err => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'feeCollections', operation: 'list' }));
+                throw err;
+            });
             const feeRecords = feeSnap.docs.map(feeCollectionFromDoc).filter((f): f is FeeCollection => f !== null);
             
             const monthsPaid = new Set<string>();
@@ -125,7 +135,7 @@ export default function StudentProfileSearchPage() {
             setShowProfile(true);
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'তথ্য খুঁজতে সমস্যা হয়েছে।' });
+            // Error is already emitted or handled
         } finally {
             setIsLoading(false);
         }
@@ -242,7 +252,6 @@ export default function StudentProfileSearchPage() {
                             </DialogHeader>
 
                             <div className="space-y-8 pt-4">
-                                {/* Attendance Section */}
                                 <section className="space-y-4">
                                     <h3 className="text-lg font-semibold border-b pb-2 flex items-center gap-2 text-primary">
                                         <CalendarCheck className="h-5 w-5" /> হাজিরা রিপোর্ট ({startMonth} - {endMonth})
@@ -270,7 +279,6 @@ export default function StudentProfileSearchPage() {
                                     </div>
                                 </section>
 
-                                {/* Fees Section */}
                                 <section className="space-y-4">
                                     <h3 className="text-lg font-semibold border-b pb-2 flex items-center gap-2 text-primary">
                                         <Banknote className="h-5 w-5" /> বেতন পরিশোধের অবস্থা
@@ -301,9 +309,4 @@ export default function StudentProfileSearchPage() {
             </Dialog>
         </div>
     );
-}
-
-// Reuse some icons needed but not in the original import
-function CalendarCheck({ className }: { className?: string }) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
 }

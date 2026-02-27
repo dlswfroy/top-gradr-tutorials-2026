@@ -6,6 +6,7 @@ import { useFirestore } from '@/firebase';
 import { doc, onSnapshot, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useAuth } from '@/hooks/useAuth';
 
 type SchoolInfoContextType = {
   schoolInfo: SchoolInfo;
@@ -17,6 +18,7 @@ const SchoolInfoContext = createContext<SchoolInfoContextType | undefined>(undef
 
 export function SchoolInfoProvider({ children }: { children: ReactNode }) {
   const db = useFirestore();
+  const { user } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>(defaultSchoolInfo);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,8 +33,10 @@ export function SchoolInfoProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
             setSchoolInfo({ ...defaultSchoolInfo, ...docSnap.data() } as SchoolInfo);
         } else {
-            // If the document doesn't exist, we can create it with default values
-            saveSchoolInfo(db, defaultSchoolInfo).catch(console.error);
+            // Only admins should attempt to create the missing document to avoid permission errors
+            if (user?.role === 'admin') {
+                saveSchoolInfo(db, defaultSchoolInfo).catch(console.error);
+            }
             setSchoolInfo(defaultSchoolInfo);
         }
         setIsLoading(false);
@@ -46,13 +50,12 @@ export function SchoolInfoProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [db]);
+  }, [db, user]);
 
   const updateSchoolInfo = useCallback(async (newInfo: Partial<SchoolInfo>) => {
     if (!db) return Promise.reject("Firestore not initialized");
     const updatedInfo = { ...schoolInfo, ...newInfo };
     return saveSchoolInfo(db, updatedInfo);
-    // The onSnapshot listener will update the state automatically
   }, [db, schoolInfo]);
 
   const value = useMemo(() => ({
