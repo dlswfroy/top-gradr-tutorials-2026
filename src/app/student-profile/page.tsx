@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,6 +22,9 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const BENGALI_MONTHS = [
     'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
@@ -31,11 +35,14 @@ export default function StudentProfileSearchPage() {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
 
+    const [isMounted, setIsMounted] = useState(false);
     const [roll, setRoll] = useState<string>('');
     const [className, setClassName] = useState<string>('');
     const [startMonth, setStartMonth] = useState<string>(BENGALI_MONTHS[0]);
-    const [endMonth, setEndMonth] = useState<string>(BENGALI_MONTHS[new Date().getMonth()]);
+    const [endMonth, setEndMonth] = useState<string>(BENGALI_MONTHS[0]);
     
     const [isLoading, setIsLoading] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
@@ -43,9 +50,22 @@ export default function StudentProfileSearchPage() {
     const [attendanceStats, setAttendanceStats] = useState({ present: 0, absent: 0, total: 0 });
     const [paidMonths, setPaidMonths] = useState<string[]>([]);
 
+    useEffect(() => {
+        setIsMounted(true);
+        // Set end month to current month on client side only to avoid hydration mismatch
+        const currentMonthIdx = new Date().getMonth();
+        setEndMonth(BENGALI_MONTHS[currentMonthIdx]);
+    }, []);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!db || !roll || !className) {
+        if (!db || !roll || !className || !user) {
             toast({ variant: 'destructive', title: 'অনুগ্রহ করে রোল এবং শ্রেণি পূরণ করুন।' });
             return;
         }
@@ -135,7 +155,6 @@ export default function StudentProfileSearchPage() {
             setShowProfile(true);
         } catch (error) {
             console.error(error);
-            // Error is already emitted or handled
         } finally {
             setIsLoading(false);
         }
@@ -145,6 +164,33 @@ export default function StudentProfileSearchPage() {
         if (attendanceStats.total === 0) return 0;
         return (attendanceStats.present / attendanceStats.total) * 100;
     }, [attendanceStats]);
+
+    if (!isMounted || authLoading) {
+        return (
+            <div className="flex min-h-screen w-full flex-col bg-indigo-50">
+                <Header />
+                <main className="flex flex-1 flex-col items-center justify-center p-4">
+                    <Card className="w-full max-w-lg shadow-xl">
+                        <CardHeader>
+                            <Skeleton className="h-8 w-3/4 mx-auto mb-2" />
+                            <Skeleton className="h-4 w-1/2 mx-auto" />
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-indigo-50">
