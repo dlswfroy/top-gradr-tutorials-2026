@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -262,6 +261,10 @@ export function Header() {
                     )}
                   </div>
                 </nav>
+                <div className="p-4 border-t bg-muted/20 text-center text-[10px] text-muted-foreground">
+                  <p>© ২০২৬ {schoolInfo.name}।</p>
+                  <p>সর্বস্বত্ব সংরক্ষিত।</p>
+                </div>
               </SheetContent>
             </Sheet>
             ) : (
