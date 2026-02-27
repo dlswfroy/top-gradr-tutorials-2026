@@ -38,20 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (fbUser) {
         const userDocRef = doc(db, 'users', fbUser.uid);
         
-        // Ensure user document exists or mark online
-        try {
-            const userSnap = await getDoc(userDocRef);
-            if (!userSnap.exists()) {
-                // If doc doesn't exist (should happen during signup, but as backup)
-                // we don't set here to avoid role/permission conflicts, 
-                // the login/signup logic handles creation.
-            } else {
-                await setDoc(userDocRef, { isOnline: true }, { merge: true });
-            }
-        } catch (e) {
-            console.error("Error updating user status:", e);
-        }
-
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = userFromDoc(docSnap);
@@ -59,12 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               userData.permissions = defaultPermissions[userData.role] || [];
             }
             setUser(userData);
+            setLoading(false);
           } else {
+            // Document doesn't exist yet (signup in progress)
+            // We wait for it to be created by the signUp function
             setUser(null);
+            // Don't set loading to false yet if we just authenticated but document isn't there
           }
-          setLoading(false);
         }, (error) => {
-            console.error("Error fetching user document snapshot:", error);
+            console.error("Auth snapshot error:", error);
             setLoading(false);
         });
 
@@ -82,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading || !user) {
       return false;
     }
-    // Admins always have permission
     if (user.role === 'admin') return true;
     return user.permissions?.includes(permissionId) ?? false;
   }, [user, loading]);

@@ -7,23 +7,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
     function isAdmin() {
       return isAuthed() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             getUserData().role == 'admin';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     function isTeacher() {
       return isAuthed() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             getUserData().role == 'teacher';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // প্রতিষ্ঠানের তথ্য সবাই দেখতে পারবে, কিন্তু শুধু এডমিন পরিবর্তন করতে পারবে
+    // প্রতিষ্ঠানের তথ্য সবাই দেখতে পারবে
     match /school/info {
       allow read: if true;
       allow write: if isAuthed();
@@ -31,14 +27,13 @@ service cloud.firestore {
 
     // ইউজার প্রোফাইল রুলস
     match /users/{userId} {
-      allow read: if isAuthed() && (request.auth.uid == userId || isAdmin());
+      allow get: if isAuthed() && (request.auth.uid == userId || isAdmin());
       allow create: if isAuthed() && request.auth.uid == userId;
       allow update: if isAuthed() && (request.auth.uid == userId || isAdmin());
-      // প্রথম ইউজার চেক করার জন্য লিস্ট পারমিশন প্রয়োজন
       allow list: if isAuthed(); 
     }
 
-    // ক্লাস রুটিন, নোটিশ, ছুটি ইত্যাদি সকল লগইন করা ইউজার পড়তে পারবে
+    // সাধারণ রিসোর্স যা সকল লগইন করা ইউজার পড়তে পারবে
     match /classRoutines/{id} {
       allow read: if isAuthed();
       allow write: if isAdmin();

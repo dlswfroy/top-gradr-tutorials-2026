@@ -31,32 +31,34 @@ export async function signUp(email: string, password: string): Promise<{ success
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    const usersRef = collection(db, 'users');
-    const adminQuery = query(usersRef, where('role', '==', 'admin'), limit(1));
-    const adminSnapshot = await getDocs(adminQuery);
-    
-    let role: UserRole;
-    let displayName = '';
+    // Check if any admin exists in the system
+    let role: UserRole = 'teacher';
+    let displayName = email.split('@')[0];
 
-    // If no admin exists in the system, the first user becomes the admin
-    if (adminSnapshot.empty) {
-      role = 'admin';
-      displayName = 'System Admin';
-    } else {
-      // Check if this email is registered as a staff/teacher
-      const staffRef = collection(db, 'staff');
-      const teacherQuery = query(staffRef, where('email', '==', email.toLowerCase()), limit(1));
-      const teacherSnapshot = await getDocs(teacherQuery);
+    try {
+        const usersRef = collection(db, 'users');
+        const adminQuery = query(usersRef, where('role', '==', 'admin'), limit(1));
+        const adminSnapshot = await getDocs(adminQuery);
+        
+        // If no admin exists, first user is admin
+        if (adminSnapshot.empty) {
+            role = 'admin';
+            displayName = 'System Admin';
+        } else {
+            // Check if user is in staff/teacher list
+            const staffRef = collection(db, 'staff');
+            const teacherQuery = query(staffRef, where('email', '==', email.toLowerCase()), limit(1));
+            const teacherSnapshot = await getDocs(teacherQuery);
 
-      if (teacherSnapshot.empty) {
-        // If not admin and not in staff, we still allow signup as teacher but limited access
-        role = 'teacher';
-        displayName = email.split('@')[0];
-      } else {
-        role = 'teacher';
-        const staffData = teacherSnapshot.docs[0].data();
-        displayName = staffData.nameBn || '';
-      }
+            if (!teacherSnapshot.empty) {
+                const staffData = teacherSnapshot.docs[0].data();
+                displayName = staffData.nameBn || displayName;
+            }
+        }
+    } catch (e) {
+        // If collection doesn't exist yet or query fails, assume this is the first user
+        role = 'admin';
+        displayName = 'System Admin';
     }
 
     await setDoc(doc(db, 'users', user.uid), {
@@ -75,7 +77,7 @@ export async function signUp(email: string, password: string): Promise<{ success
     if (error.code === 'auth/email-already-in-use') {
         return { success: false, error: 'এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট তৈরি করা আছে।' };
     }
-    return { success: false, error: 'নিবন্ধন করা যায়নি। দয়া করে ফায়ারবেস কনসোলে Email/Password অপশনটি চালু আছে কিনা চেক করুন।' };
+    return { success: false, error: 'নিবন্ধন করা যায়নি। ' + (error.message || '') };
   }
 }
 
@@ -90,7 +92,6 @@ export async function signIn(email: string, password: string, role: UserRole): P
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
-        // Fallback for cases where Auth user exists but Firestore doc doesn't
         await setDoc(userDocRef, {
             uid: user.uid,
             email: user.email,
@@ -103,7 +104,7 @@ export async function signIn(email: string, password: string, role: UserRole): P
 
     if (userDoc.data().role !== role) {
       await firebaseSignOut(auth);
-      return { success: false, error: 'আপনার ভূমিকা (role) সঠিক নয়। আপনি কি ভুল ট্যাবে লগইন করার চেষ্টা করছেন?' };
+      return { success: false, error: 'আপনার ভূমিকা (role) সঠিক নয়।' };
     }
 
     await setDoc(userDocRef, { isOnline: true }, { merge: true });
@@ -114,7 +115,7 @@ export async function signIn(email: string, password: string, role: UserRole): P
      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       return { success: false, error: 'আপনার ইমেইল অথবা পাসওয়ার্ড ভুল।' };
     }
-    return { success: false, error: 'লগইন করা যায়নি। দয়া করে সঠিক ইমেইল ও পাসওয়ার্ড ব্যবহার করুন।' };
+    return { success: false, error: 'লগইন করা যায়নি।' };
   }
 }
 
@@ -127,9 +128,7 @@ export async function signOut() {
     const userDocRef = doc(db, 'users', user.uid);
     try {
       await setDoc(userDocRef, { isOnline: false }, { merge: true });
-    } catch (e) {
-      console.error("Error setting offline status on logout:", e);
-    }
+    } catch (e) {}
   }
   
   return firebaseSignOut(auth);
@@ -152,10 +151,6 @@ export async function changePassword(currentPassword: string, newPassword: strin
     if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       return { success: false, error: 'আপনার বর্তমান পাসওয়ার্ডটি ভুল।' };
     }
-    if (error.code === 'auth/weak-password') {
-        return { success: false, error: 'নতুন পাসওয়ার্ডটি খুবই দুর্বল।' };
-    }
-    console.error("Password change error:", error);
-    return { success: false, error: 'পাসওয়ার্ড পরিবর্তন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।' };
+    return { success: false, error: 'পাসওয়ার্ড পরিবর্তন করা যায়নি।' };
   }
 }
