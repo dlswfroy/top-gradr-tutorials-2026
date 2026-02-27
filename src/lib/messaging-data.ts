@@ -3,7 +3,7 @@
 import {
   collection,
   doc,
-  addDoc,
+  setDoc,
   getDocs,
   query,
   orderBy,
@@ -30,22 +30,29 @@ export type NewMessageLog = Omit<MessageLog, 'id' | 'sentAt'>;
 const MESSAGES_COLLECTION = 'messageLogs';
 
 export const logMessage = async (db: Firestore, logData: NewMessageLog) => {
-  const collectionRef = collection(db, MESSAGES_COLLECTION);
+  // Generate a fresh document reference with a unique ID to avoid "already exists" errors
+  const docRef = doc(collection(db, MESSAGES_COLLECTION));
   const dataToSave = {
     ...logData,
     sentAt: serverTimestamp(),
   };
 
-  return addDoc(collectionRef, dataToSave).catch(async (serverError) => {
+  try {
+    return await setDoc(docRef, dataToSave);
+  } catch (serverError: any) {
     console.error("Error logging message:", serverError);
-    const permissionError = new FirestorePermissionError({
-      path: MESSAGES_COLLECTION,
-      operation: 'create',
-      requestResourceData: dataToSave,
-    });
-    errorEmitter.emit('permission-error', permissionError);
-    throw permissionError;
-  });
+    // Only treat as permission error if the code indicates so
+    if (serverError.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+            path: MESSAGES_COLLECTION,
+            operation: 'create',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw permissionError;
+    }
+    throw serverError;
+  }
 };
 
 export const getMessageLogs = async (db: Firestore): Promise<MessageLog[]> => {

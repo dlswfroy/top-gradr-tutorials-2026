@@ -42,28 +42,28 @@ export default function MessagingPage() {
 
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
+    const fetchLogs = useCallback(async () => {
+        if (!db) return;
+        setIsLoadingLogs(true);
+        const logs = await getMessageLogs(db);
+        setMessageLogs(logs);
+        setIsLoadingLogs(false);
+    }, [db]);
+
+    const fetchStudents = useCallback(async () => {
+        if (!db) return;
+        const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
+        const snap = await getDocs(q);
+        setAllStudents(snap.docs.map(studentFromDoc));
+    }, [db, selectedYear]);
+
     useEffect(() => {
         setIsClient(true);
         if (db) {
             fetchLogs();
             fetchStudents();
         }
-    }, [db, selectedYear]);
-
-    const fetchLogs = async () => {
-        if (!db) return;
-        setIsLoadingLogs(true);
-        const logs = await getMessageLogs(db);
-        setMessageLogs(logs);
-        setIsLoadingLogs(false);
-    };
-
-    const fetchStudents = async () => {
-        if (!db) return;
-        const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
-        const snap = await getDocs(q);
-        setAllStudents(snap.docs.map(studentFromDoc));
-    };
+    }, [db, fetchLogs, fetchStudents]);
 
     const studentsInClass = useMemo(() => {
         return allStudents.filter(s => s.className === selectedClass).sort((a,b) => a.roll - b.roll);
@@ -129,8 +129,9 @@ export default function MessagingPage() {
             setMessageContent('');
             setSelectedStudentIds(new Set());
             fetchLogs();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
+            toast({ variant: 'destructive', title: 'মেসেজ সেভ করা যায়নি', description: e.message });
         } finally {
             setIsLoading(false);
         }
@@ -191,7 +192,7 @@ export default function MessagingPage() {
                             <CardDescription>শিক্ষার্থী ও অভিভাবকদের কাছে সরাসরি মেসেজ পাঠান</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Tabs defaultValue="bulk" onValueChange={() => { setSelectedStudentIds(new Set()); setMessageContent(''); }}>
+                            <Tabs defaultValue="bulk" onValueChange={() => { setSelectedStudentIds(new Set()); setMessageContent(''); setSelectedClass(''); }}>
                                 <TabsList className="grid w-full grid-cols-4">
                                     <TabsTrigger value="bulk">সকলকে</TabsTrigger>
                                     <TabsTrigger value="class">শ্রেণিভিত্তিক</TabsTrigger>
