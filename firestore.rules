@@ -6,12 +6,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isAdmin() {
-      return isAuthed() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthed() && getUserData().role == 'admin';
     }
     
     function isTeacher() {
-      return isAuthed() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+      return isAuthed() && getUserData().role == 'teacher';
     }
 
     match /{document=**} {

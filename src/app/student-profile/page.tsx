@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,13 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
 import { DailyAttendance } from '@/lib/attendance-data';
 import { FeeCollection, feeCollectionFromDoc } from '@/lib/fees-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle2, XCircle, User, Banknote, CalendarCheck } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, User, Banknote, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -52,16 +51,15 @@ export default function StudentProfileSearchPage() {
 
     useEffect(() => {
         setIsMounted(true);
-        // Set end month to current month on client side only to avoid hydration mismatch
         const currentMonthIdx = new Date().getMonth();
         setEndMonth(BENGALI_MONTHS[currentMonthIdx]);
     }, []);
 
     useEffect(() => {
-        if (!authLoading && !user) {
+        if (isMounted && !authLoading && !user) {
             router.push('/login');
         }
-    }, [user, authLoading, router]);
+    }, [user, authLoading, router, isMounted]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -80,7 +78,9 @@ export default function StudentProfileSearchPage() {
                 where('roll', '==', parseInt(roll, 10))
             );
             const studentSnap = await getDocs(studentQuery).catch(err => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'students', operation: 'list' }));
+                if (err.code === 'permission-denied') {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'students', operation: 'list' }));
+                }
                 throw err;
             });
 
@@ -107,10 +107,20 @@ export default function StudentProfileSearchPage() {
                 where('date', '>=', startDate),
                 where('date', '<=', endDate)
             );
+            
             const attSnap = await getDocs(attQuery).catch(err => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'attendance', operation: 'list' }));
+                if (err.code === 'failed-precondition') {
+                    toast({
+                        variant: 'destructive',
+                        title: 'ইন্ডেক্স তৈরি করা নেই',
+                        description: 'এই অনুসন্ধানের জন্য ফায়ারবেসে একটি ইন্ডেক্স প্রয়োজন। অনুগ্রহ করে আপনার কনসোল লগ চেক করুন এবং ইন্ডেক্স লিঙ্কে ক্লিক করুন।',
+                    });
+                } else if (err.code === 'permission-denied') {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'attendance', operation: 'list' }));
+                }
                 throw err;
             });
+            
             const attRecords = attSnap.docs.map(doc => doc.data() as DailyAttendance);
 
             let presentCount = 0;
@@ -136,10 +146,7 @@ export default function StudentProfileSearchPage() {
                 where('studentId', '==', foundStudent.id),
                 where('academicYear', '==', selectedYear)
             );
-            const feeSnap = await getDocs(feeQuery).catch(err => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'feeCollections', operation: 'list' }));
-                throw err;
-            });
+            const feeSnap = await getDocs(feeQuery);
             const feeRecords = feeSnap.docs.map(feeCollectionFromDoc).filter((f): f is FeeCollection => f !== null);
             
             const monthsPaid = new Set<string>();
@@ -153,8 +160,8 @@ export default function StudentProfileSearchPage() {
             setPaidMonths(Array.from(monthsPaid));
 
             setShowProfile(true);
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Search Error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -171,19 +178,10 @@ export default function StudentProfileSearchPage() {
                 <Header />
                 <main className="flex flex-1 flex-col items-center justify-center p-4">
                     <Card className="w-full max-w-lg shadow-xl">
-                        <CardHeader>
-                            <Skeleton className="h-8 w-3/4 mx-auto mb-2" />
-                            <Skeleton className="h-4 w-1/2 mx-auto" />
-                        </CardHeader>
+                        <CardHeader><Skeleton className="h-8 w-3/4 mx-auto mb-2" /><Skeleton className="h-4 w-1/2 mx-auto" /></CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </div>
+                            <div className="grid grid-cols-2 gap-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
+                            <div className="grid grid-cols-2 gap-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
                             <Skeleton className="h-10 w-full" />
                         </CardContent>
                     </Card>
@@ -198,7 +196,7 @@ export default function StudentProfileSearchPage() {
             <main className="flex flex-1 flex-col items-center justify-center p-4">
                 <Card className="w-full max-w-lg shadow-xl">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">শিক্ষার্থী প্রোফাইল অনুসন্ধান</CardTitle>
+                        <CardTitle className="text-2xl text-primary font-bold">শিক্ষার্থী প্রোফাইল অনুসন্ধান</CardTitle>
                         <CardDescription>রোল এবং শ্রেণি দিয়ে শিক্ষার্থীর বিস্তারিত তথ্য দেখুন</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -206,21 +204,12 @@ export default function StudentProfileSearchPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="roll">রোল নম্বর</Label>
-                                    <Input 
-                                        id="roll" 
-                                        placeholder="উদা: ১" 
-                                        type="number" 
-                                        value={roll} 
-                                        onChange={e => setRoll(e.target.value)} 
-                                        required 
-                                    />
+                                    <Input id="roll" placeholder="উদা: ১" type="number" value={roll} onChange={e => setRoll(e.target.value)} required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="class">শ্রেণি</Label>
                                     <Select value={className} onValueChange={setClassName} required>
-                                        <SelectTrigger id="class">
-                                            <SelectValue placeholder="শ্রেণি নির্বাচন" />
-                                        </SelectTrigger>
+                                        <SelectTrigger id="class"><SelectValue placeholder="শ্রেণি নির্বাচন" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="6">৬ষ্ঠ</SelectItem>
                                             <SelectItem value="7">৭ম</SelectItem>
@@ -236,9 +225,7 @@ export default function StudentProfileSearchPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="start-month">শুরুর মাস</Label>
                                     <Select value={startMonth} onValueChange={setStartMonth}>
-                                        <SelectTrigger id="start-month">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                         </SelectContent>
@@ -247,9 +234,7 @@ export default function StudentProfileSearchPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="end-month">শেষের মাস</Label>
                                     <Select value={endMonth} onValueChange={setEndMonth}>
-                                        <SelectTrigger id="end-month">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger id="end-month"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {BENGALI_MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                         </SelectContent>
@@ -257,8 +242,8 @@ export default function StudentProfileSearchPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'অনুসন্ধান করা হচ্ছে...' : <><Search className="mr-2 h-4 w-4" /> তথ্য দেখুন</>}
+                            <Button type="submit" className="w-full h-12 text-lg shadow-md" disabled={isLoading}>
+                                {isLoading ? 'অনুসন্ধান করা হচ্ছে...' : <><Search className="mr-2 h-5 w-5" /> তথ্য দেখুন</>}
                             </Button>
                         </form>
                     </CardContent>
@@ -271,14 +256,9 @@ export default function StudentProfileSearchPage() {
                         <>
                             <DialogHeader>
                                 <div className="flex flex-col md:flex-row items-center gap-6 pb-4">
-                                    <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border-4 border-primary/20 shadow-md">
+                                    <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border-4 border-primary/20 shadow-lg">
                                         {studentData.photoUrl ? (
-                                            <Image 
-                                                src={studentData.photoUrl} 
-                                                alt={studentData.studentNameBn} 
-                                                fill 
-                                                className="object-cover"
-                                            />
+                                            <Image src={studentData.photoUrl} alt={studentData.studentNameBn} fill className="object-cover" />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center bg-muted">
                                                 <User className="h-16 w-16 text-muted-foreground" />
@@ -303,15 +283,15 @@ export default function StudentProfileSearchPage() {
                                         <CalendarCheck className="h-5 w-5" /> হাজিরা রিপোর্ট ({startMonth} - {endMonth})
                                     </h3>
                                     <div className="grid grid-cols-3 gap-4 text-center">
-                                        <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+                                        <div className="p-3 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                                             <p className="text-sm text-green-600 font-medium">উপস্থিত</p>
                                             <p className="text-2xl font-bold">{attendanceStats.present.toLocaleString('bn-BD')} দিন</p>
                                         </div>
-                                        <div className="p-3 bg-red-50 rounded-lg border border-red-100">
+                                        <div className="p-3 bg-red-50 rounded-lg border border-red-100 shadow-sm">
                                             <p className="text-sm text-red-600 font-medium">অনুপস্থিত</p>
                                             <p className="text-2xl font-bold">{attendanceStats.absent.toLocaleString('bn-BD')} দিন</p>
                                         </div>
-                                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
                                             <p className="text-sm text-blue-600 font-medium">মোট দিন</p>
                                             <p className="text-2xl font-bold">{attendanceStats.total.toLocaleString('bn-BD')} দিন</p>
                                         </div>
@@ -319,9 +299,16 @@ export default function StudentProfileSearchPage() {
                                     <div className="space-y-2 pt-2">
                                         <div className="flex justify-between text-sm font-medium">
                                             <span>উপস্থিতির হার</span>
-                                            <span>{attendancePercentage.toFixed(2).toLocaleString('bn-BD')}%</span>
+                                            <span className={cn("font-bold", attendancePercentage < 75 ? "text-red-600" : "text-green-600")}>
+                                                {attendancePercentage.toFixed(2).toLocaleString('bn-BD')}%
+                                            </span>
                                         </div>
                                         <Progress value={attendancePercentage} className="h-3" />
+                                        {attendancePercentage < 75 && (
+                                            <p className="text-[10px] text-red-500 flex items-center gap-1">
+                                                <AlertTriangle className="h-3 w-3" /> উপস্থিতির হার ৭৫% এর নিচে।
+                                            </p>
+                                        )}
                                     </div>
                                 </section>
 

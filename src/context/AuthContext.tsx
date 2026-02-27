@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (fbUser) {
         const userDocRef = doc(db, 'users', fbUser.uid);
         
-        // Mark user as online when they connect
+        // Mark user as online immediately
         setDoc(userDocRef, { isOnline: true }, { merge: true }).catch(() => {});
 
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
@@ -48,12 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             setUser(userData);
           } else {
+            // Document doesn't exist yet, signup logic will create it
             setUser(null);
           }
           setLoading(false);
         }, (error) => {
             console.error("Error fetching user document:", error);
-            setUser(null);
             setLoading(false);
         });
 
