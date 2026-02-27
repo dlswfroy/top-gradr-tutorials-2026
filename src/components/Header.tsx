@@ -115,7 +115,6 @@ export function Header() {
   // Search Logic
   const handleSearchOpen = async (open: boolean) => {
     setSearchOpen(open);
-    // Fetch if opening search AND (students not loaded OR year has changed)
     if (open && db && (allStudents.length === 0 || lastFetchedYear !== selectedYear)) {
         setIsSearching(true);
         try {
@@ -143,10 +142,13 @@ export function Header() {
         const rollStr = (s.roll || '').toString();
         const idStr = (s.generatedId || '').toLowerCase();
         
-        return nameBn.includes(q) || 
-               nameEn.includes(q) || 
-               rollStr.includes(qEn) || 
-               idStr.includes(qEn);
+        // Logic: Exact match for roll and ID to avoid showing roll 10 when searching for 1.
+        // Names still use partial matching (includes).
+        const matchesName = nameBn.includes(q) || nameEn.includes(q);
+        const matchesRoll = rollStr === qEn;
+        const matchesId = idStr === qEn;
+        
+        return matchesName || matchesRoll || matchesId;
     }).slice(0, 10);
   }, [searchQuery, allStudents]);
 
