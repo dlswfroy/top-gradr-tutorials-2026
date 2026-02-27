@@ -19,8 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, CheckCircle2, XCircle, User, Banknote, CalendarCheck, AlertTriangle, Printer } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -143,7 +141,15 @@ export default function StudentProfileSearchPage() {
             setShowProfile(true);
         } catch (error: any) {
             console.error("Search Error:", error);
-            if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+            if (error.message?.includes('building')) {
+                toast({
+                    variant: 'default',
+                    className: 'bg-amber-50 border-amber-200 text-amber-900',
+                    title: 'ইন্ডেক্স তৈরি হচ্ছে',
+                    description: 'প্রয়োজনীয় ইনডেক্সটি বর্তমানে ফায়ারবেসে তৈরি হচ্ছে। এটি সক্রিয় হতে সাধারণত ৩-৫ মিনিট সময় লাগে। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+                    duration: 8000,
+                });
+            } else if (error.code === 'failed-precondition' || error.message?.includes('index')) {
                 toast({
                     variant: 'destructive',
                     title: 'ইন্ডেক্স তৈরি করা প্রয়োজন',
@@ -151,7 +157,7 @@ export default function StudentProfileSearchPage() {
                     duration: 10000,
                 });
             } else {
-                toast({ variant: 'destructive', title: 'অনুসন্ধান ব্যর্থ হয়েছে', description: 'আবার চেষ্টা করুন।' });
+                toast({ variant: 'destructive', title: 'অনুসন্ধান ব্যর্থ হয়েছে', description: 'সার্ভারে সংযোগ করতে সমস্যা হচ্ছে, আবার চেষ্টা করুন।' });
             }
         } finally {
             setIsLoading(false);
