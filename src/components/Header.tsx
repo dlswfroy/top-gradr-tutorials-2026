@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -18,6 +19,7 @@ import {
   LogOut,
   UserSearch,
   MessageSquare,
+  Search,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -30,7 +32,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
@@ -39,7 +41,7 @@ import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot, getDocs } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +50,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Student, studentFromDoc } from '@/lib/student-data';
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
@@ -58,6 +63,12 @@ export function Header() {
   const db = useFirestore();
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+
+  // Global Search State
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -100,6 +111,29 @@ export function Header() {
     await signOut();
     router.push('/login');
   };
+
+  // Search Logic
+  const handleSearchOpen = async (open: boolean) => {
+    setSearchOpen(open);
+    if (open && allStudents.length === 0 && db) {
+        setIsSearching(true);
+        const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
+        const snap = await getDocs(q);
+        setAllStudents(snap.docs.map(studentFromDoc));
+        setIsSearching(false);
+    }
+  };
+
+  const filteredResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return allStudents.filter(s => 
+        s.studentNameBn?.toLowerCase().includes(q) || 
+        s.studentNameEn?.toLowerCase().includes(q) || 
+        s.roll?.toString() === q ||
+        s.generatedId?.toLowerCase().includes(q)
+    ).slice(0, 5);
+  }, [searchQuery, allStudents]);
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-primary px-4 text-primary-foreground shadow-sm sm:px-6 md:px-8">
@@ -286,7 +320,61 @@ export function Header() {
           </h1>
       </Link>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {user && (
+            <Dialog open={searchOpen} onOpenChange={handleSearchOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full bg-white/10 hover:bg-white/20 text-white">
+                        <Search className="h-5 w-5" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>শিক্ষার্থী খুঁজুন</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input 
+                            placeholder="নাম বা রোল লিখে খুঁজুন..." 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="space-y-2">
+                            {isSearching ? (
+                                <p className="text-center text-sm text-muted-foreground py-4">ডাটা লোড হচ্ছে...</p>
+                            ) : filteredResults.length > 0 ? (
+                                filteredResults.map(s => (
+                                    <div 
+                                        key={s.id} 
+                                        className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer transition-colors"
+                                        onClick={() => {
+                                            setSearchOpen(false);
+                                            setSearchQuery('');
+                                            router.push(`/student-list`); // Since we don't have a direct detail page, we go to list
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={s.photoUrl} />
+                                                <AvatarFallback>{s.studentNameBn?.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="text-sm font-bold">{s.studentNameBn}</p>
+                                                <p className="text-[10px] text-muted-foreground">রোল: {s.roll.toLocaleString('bn-BD')} | শ্রেণি: {s.className}</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4 rotate-180" /></Button>
+                                    </div>
+                                ))
+                            ) : searchQuery.trim() ? (
+                                <p className="text-center text-sm text-muted-foreground py-4">কোনো তথ্য পাওয়া যায়নি।</p>
+                            ) : null}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        )}
+
         {authLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

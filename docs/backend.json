@@ -325,6 +325,19 @@
         }
       },
       "required": ["name", "academicYear"]
+    },
+    "notice": {
+      "title": "Notice",
+      "description": "A general school notice or announcement.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "priority": { "type": "string", "enum": ["normal", "important", "urgent"] },
+        "senderName": { "type": "string" }
+      },
+      "required": ["title", "content", "date", "senderName"]
     }
   },
   "auth": {
@@ -388,6 +401,10 @@
     "/exams/{examId}": {
       "schema": { "$ref": "#/entities/exam" },
       "description": "Stores examination events."
+    },
+    "/notices/{noticeId}": {
+      "schema": { "$ref": "#/entities/notice" },
+      "description": "Stores school notices and announcements."
     }
   }
 }
