@@ -97,3 +97,4 @@ service cloud.firestore {
     }
   }
 }
+// Triggering redeployment of security rules for the new project.
