@@ -133,20 +133,26 @@ export function Header() {
     if (!searchQuery.trim()) return [];
     
     const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     const qEn = bnToEn(q);
+
+    const isNumericQuery = /^\d+$/.test(qEn);
 
     return allStudents.filter(s => {
         const nameBn = (s.studentNameBn || '').toLowerCase();
         const nameEn = (s.studentNameEn || '').toLowerCase();
-        const rollStr = (s.roll || '').toString();
-        const idStr = (s.generatedId || '').toLowerCase();
         
-        // Logic: Exact match for roll and ID to avoid showing roll 10 when searching for 1.
-        // Names still use partial matching (includes).
         const matchesName = nameBn.includes(q) || nameEn.includes(q);
-        const matchesRoll = rollStr === qEn;
-        const matchesId = idStr === qEn;
+
+        let matchesRoll = false;
+        if (isNumericQuery) {
+            // Exact match for roll to avoid "1" matching "10"
+            matchesRoll = s.roll === parseInt(qEn, 10);
+        }
+
+        const idStr = (s.generatedId || '').toLowerCase();
+        // `includes` is good for ID as it can be a partial search
+        const matchesId = idStr.includes(qEn);
         
         return matchesName || matchesRoll || matchesId;
     }).slice(0, 10);

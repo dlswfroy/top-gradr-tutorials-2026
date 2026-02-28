@@ -847,17 +847,55 @@ function ProfileSettings() {
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit before compression
                 toast({
                     variant: "destructive",
                     title: "ফাইল ತುಂಬಾ বড়",
-                    description: "অনুগ্রহ করে ২ মেগাবাইটের কম আকারের ছবি আপলোড করুন।",
+                    description: "অনুগ্রহ করে ৫ মেগাবাইটের কম আকারের ছবি আপলোড করুন।",
                 });
                 return;
             }
+            
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setPhotoPreview(reader.result as string);
+            reader.onload = (e) => {
+                const img = new window.Image();
+                img.src = e.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 256;
+                    const MAX_HEIGHT = 256;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height = Math.round(height * (MAX_WIDTH / width));
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width = Math.round(width * (MAX_HEIGHT / height));
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        setPhotoPreview(dataUrl);
+                    } else {
+                        setPhotoPreview(e.target?.result as string);
+                    }
+                };
+                img.onerror = () => {
+                    toast({
+                        variant: "destructive",
+                        title: "ছবিটি লোড করা যায়নি",
+                    });
+                }
             };
             reader.readAsDataURL(file);
         }
