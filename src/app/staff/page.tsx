@@ -82,7 +82,7 @@ export default function StaffListPage() {
             title: "রেকর্ড ডিলিট হয়েছে",
         });
     }).catch(() => {
-        // The error is handled by the global error handler
+        // Error handled by global handler
     });
   };
 
@@ -140,7 +140,7 @@ export default function StaffListPage() {
                                 <TableCell>{(index + 1).toLocaleString('bn-BD')}</TableCell>
                                 <TableCell>
                                 <Image
-                                    src={staff.photoUrl}
+                                    src={staff.photoUrl || 'https://picsum.photos/seed/staff/96/96'}
                                     alt={staff.nameBn}
                                     width={40}
                                     height={40}
@@ -165,31 +165,30 @@ export default function StaffListPage() {
                                     {canManageStaff && (
                                         <>
                                             <Link href={`/edit-staff/${staff.id}`}>
-                                            <Button variant="outline" size="icon" asChild>
-                                                <span className="cursor-pointer">
-                                                <FilePen className="h-4 w-4" />
-                                                </span>
-                                            </Button>
+                                                <Button variant="outline" size="icon">
+                                                    <FilePen className="h-4 w-4" />
+                                                </Button>
                                             </Link>
                                             <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="icon">
-                                                <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    এই কাজটি ফিরিয়ে আনা যাবে না। এটি তালিকা থেকে স্থায়ীভাবে এই রেকর্ডটি মুছে ফেলবে।
-                                                </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteStaff(staff.id)}>
-                                                    ডিলিট করুন
-                                                </AlertDialogAction>
-                                                </AlertDialogFooter>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            এই কাজটি ফিরিয়ে আনা যাবে না। এটি তালিকা থেকে স্থায়ীভাবে এই রেকর্ডটি মুছে ফেলবে।
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteStaff(staff.id)}>
+                                                            মুছে ফেলুন
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
                                             </AlertDialog>
                                         </>
                                     )}
@@ -252,7 +251,7 @@ export default function StaffListPage() {
              {staffToView && (
                 <>
                     <DialogHeader className="flex-row items-center gap-4">
-                        <Image src={staffToView.photoUrl} alt={staffToView.nameBn} width={80} height={80} className="rounded-lg object-cover" />
+                        <Image src={staffToView.photoUrl || 'https://picsum.photos/seed/staff/96/96'} alt={staffToView.nameBn} width={80} height={80} className="rounded-lg object-cover" />
                         <div>
                             <DialogTitle className="text-2xl mb-1">{staffToView.nameBn}</DialogTitle>
                             <DialogDescription>
