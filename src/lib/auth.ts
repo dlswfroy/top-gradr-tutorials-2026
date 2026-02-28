@@ -40,12 +40,10 @@ export async function signUp(email: string, password: string): Promise<{ success
         const adminQuery = query(usersRef, where('role', '==', 'admin'), limit(1));
         const adminSnapshot = await getDocs(adminQuery);
         
-        // If no admin exists, first user is admin
         if (adminSnapshot.empty) {
             role = 'admin';
             displayName = 'System Admin';
         } else {
-            // Check if user is in staff/teacher list
             const staffRef = collection(db, 'staff');
             const teacherQuery = query(staffRef, where('email', '==', email.toLowerCase()), limit(1));
             const teacherSnapshot = await getDocs(teacherQuery);
@@ -55,10 +53,9 @@ export async function signUp(email: string, password: string): Promise<{ success
                 displayName = staffData.nameBn || displayName;
             }
         }
-    } catch (e) {
-        // If collection doesn't exist yet or query fails, assume this is the first user
-        role = 'admin';
-        displayName = 'System Admin';
+    } catch (e: any) {
+        console.error("Error determining user role during signup:", e);
+        return { success: false, error: 'আপনার ভূমিকা নির্ধারণ করার সময় একটি সমস্যা হয়েছে। অনুগ্রহ করে প্রশাসকের সাথে যোগাযোগ করুন।' };
     }
 
     await setDoc(doc(db, 'users', user.uid), {
@@ -89,7 +86,16 @@ export async function signIn(email: string, password: string, role: UserRole): P
     const user = userCredential.user;
 
     const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    let userDoc;
+
+    try {
+        userDoc = await getDoc(userDocRef);
+    } catch(e: any) {
+        console.error("Error fetching user document during sign-in:", e);
+        await firebaseSignOut(auth);
+        return { success: false, error: 'ব্যবহারকারীর ভূমিকা যাচাই করা যায়নি।' };
+    }
+
 
     if (!userDoc.exists()) {
         await setDoc(userDocRef, {

@@ -98,3 +98,4 @@ service cloud.firestore {
   }
 }
 // Triggering redeployment of security rules for the new project.
+// Re-deploying rules to fix permission issues after project change.
