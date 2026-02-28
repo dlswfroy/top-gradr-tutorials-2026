@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -154,18 +153,18 @@ export function Header() {
   }, [searchQuery, allStudents]);
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-primary px-4 text-primary-foreground shadow-sm sm:px-6 md:px-8">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8">
       <div className="flex items-center gap-2">
         {user && (
           <>
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0 rounded-lg bg-white text-primary hover:bg-gray-100">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0 rounded-lg text-white hover:bg-white/20">
               <ArrowLeft className="h-6 w-6" />
               <span className="sr-only">Go back</span>
             </Button>
             {isClient ? (
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="shrink-0 rounded-lg bg-white text-primary hover:bg-gray-100">
+                <Button variant="ghost" size="icon" className="shrink-0 rounded-lg text-white hover:bg-white/20">
                   <Menu className="h-6 w-6" />
                   <span className="sr-only">Toggle navigation menu</span>
                 </Button>
