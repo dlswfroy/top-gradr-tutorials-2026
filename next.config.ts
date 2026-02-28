@@ -57,12 +57,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // This path covers the manifest and all common icon formats.
+        // This path covers the manifest and all common icon formats to prevent caching issues.
         source: '/:path*(webmanifest|ico|png|svg|xml|json)',
         headers: [
           {
             key: 'Cache-Control',
-            // This is the most aggressive cache-busting strategy.
             value: 'no-cache, no-store, must-revalidate',
           },
         ],

@@ -10,16 +10,19 @@ import { cn } from '@/lib/utils';
 import { APP_ICON_URL, defaultSchoolInfo } from '@/lib/school-info';
 
 export const metadata: Metadata = {
-  title: defaultSchoolInfo.name,
-  description: 'A central hub for school management.',
-  manifest: `/manifest.webmanifest?v=21`,
+  title: `${defaultSchoolInfo.name} - ম্যানেজমেন্ট সিস্টেম`,
+  description: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়ের একটি কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
+  manifest: `/manifest.webmanifest?v=22`,
   icons: {
     icon: [
-      { url: APP_ICON_URL, sizes: 'any' },
-      { url: APP_ICON_URL, type: 'image/png', sizes: '32x32' }
+      { url: `${APP_ICON_URL}?v=22`, sizes: 'any' },
+      { url: `${APP_ICON_URL}?v=22`, type: 'image/png', sizes: '32x32' },
+      { url: `${APP_ICON_URL}?v=22`, type: 'image/png', sizes: '192x192' }
     ],
-    shortcut: APP_ICON_URL,
-    apple: APP_ICON_URL,
+    shortcut: [`${APP_ICON_URL}?v=22`],
+    apple: [
+      { url: `${APP_ICON_URL}?v=22`, sizes: '180x180', type: 'image/png' },
+    ],
   }
 };
 
