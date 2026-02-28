@@ -14,6 +14,7 @@ export interface SchoolInfo {
   logoUrl: string;
 }
 
+// Rebranded from Birganj Pouro High School to Top Grade Tutorials
 // আপনার অ্যাপের আইকন। এটি সরাসরি ছবির লিংক হতে হবে।
 export const APP_ICON_URL = 'https://i.postimg.cc/9Q6mY71p/logo.png';
 
