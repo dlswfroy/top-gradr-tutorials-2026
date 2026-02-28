@@ -14,8 +14,7 @@ export interface SchoolInfo {
   logoUrl: string;
 }
 
-// আপনার অ্যাপের আইকন পরিবর্তন করতে নিচের লিঙ্কটি পরিবর্তন করুন। 
-// অবশ্যই সরাসরি ছবির লিঙ্ক (Direct Image Link) ব্যবহার করুন।
+// আপনার অ্যাপের আইকন। এটি সরাসরি ছবির লিংক হতে হবে।
 export const APP_ICON_URL = 'https://i.postimg.cc/zvsNP6qY/IMG-20260218-WA0002.jpg';
 
 export const defaultSchoolInfo: SchoolInfo = {

@@ -1,3 +1,4 @@
+
 import { MetadataRoute } from 'next'
 import { defaultSchoolInfo, APP_ICON_URL } from '@/lib/school-info'
  
@@ -12,15 +13,21 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#2f2a8a',
     icons: [
       {
-        src: `${APP_ICON_URL}?v=22`,
-        sizes: '192x192',
-        type: 'image/png',
+        src: APP_ICON_URL,
+        sizes: 'any',
+        type: 'image/jpeg',
         purpose: 'any',
       },
       {
-        src: `${APP_ICON_URL}?v=22`,
+        src: APP_ICON_URL,
+        sizes: '192x192',
+        type: 'image/jpeg',
+        purpose: 'maskable',
+      },
+      {
+        src: APP_ICON_URL,
         sizes: '512x512',
-        type: 'image/png',
+        type: 'image/jpeg',
         purpose: 'maskable',
       },
     ],

@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -57,12 +58,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // This path covers the manifest and all common icon formats to prevent caching issues.
-        source: '/:path*(webmanifest|ico|png|svg|xml|json)',
+        source: '/:path*(webmanifest|json|ico|png|jpg|jpeg|svg)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
