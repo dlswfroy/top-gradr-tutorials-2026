@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -69,7 +68,7 @@ const NoticeBoard = () => {
         if (!db || !user) return;
         setIsLoading(true);
         try {
-            const data = await getNotices(db, 10); // Increased limit to 10
+            const data = await getNotices(db, 10);
             setNotices(data);
         } catch (e) {
             console.error(e);
@@ -218,7 +217,7 @@ const NoticeBoard = () => {
                                         </Button>
                                     )}
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed">{notice.content}</p>
+                                <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed text-justify">{notice.content}</p>
                                 <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2">
                                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(notice.date, 'dd MMM p', { locale: bn })}</span>
                                     <span>{notice.senderName}</span>
@@ -310,7 +309,7 @@ const LiveRoutineCard = () => {
                     const adjustedPeriodIndex = periodIndex + (periodIndex >= 3 ? 1 : 0);
                     const periodInfo = periodTimes[adjustedPeriodIndex];
                     return {
-                        className: r.className, // Keep raw class name for sorting
+                        className: r.className,
                         displayClassName: classNamesMap[r.className] || r.className,
                         teacher: parseTeacherName(periodContent),
                         period: periodInfo.name,
