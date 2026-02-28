@@ -332,7 +332,7 @@ export function Header() {
           {isSchoolInfoLoading ? <Skeleton className="h-10 w-10 rounded-full hidden sm:block" /> : (schoolInfo.logoUrl && (
             <Image src={schoolInfo.logoUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" />
           ))}
-          <h1 className="text-xl font-bold whitespace-nowrap drop-shadow-md">
+          <h1 className="text-xl md:text-2xl font-bold whitespace-nowrap drop-shadow-md">
             {isSchoolInfoLoading ? <Skeleton className="h-7 w-48" /> : schoolInfo.name}
           </h1>
       </Link>
