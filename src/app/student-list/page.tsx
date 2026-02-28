@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { deleteStudent, Student, studentFromDoc } from '@/lib/student-data';
 import { Eye, FilePen, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertDialog,
@@ -42,7 +41,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
-export default function StudentListPage() {
+function StudentListPageContent() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -412,4 +411,12 @@ export default function StudentListPage() {
     </Dialog>
     </>
   );
+}
+
+export default function StudentListPage() {
+  return (
+    <Suspense>
+      <StudentListPageContent />
+    </Suspense>
+  )
 }
