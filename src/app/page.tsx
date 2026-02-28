@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users, GraduationCap, Clock, Bell, Info, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { Student } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
@@ -11,7 +11,7 @@ import { getAttendanceForDate } from '@/lib/attendance-data';
 import { getFullRoutine, ClassRoutine } from '@/lib/routine-data';
 import { getNotices, addNotice, deleteNotice, Notice } from '@/lib/notice-data';
 import { format } from 'date-fns';
-import { bn } from 'date-fns/locale/bn';
+import { bn } from 'date-fns/locale';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -24,6 +24,17 @@ import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -212,10 +223,23 @@ const NoticeBoard = () => {
                                 <div className="flex justify-between items-start mb-1">
                                     <h4 className="font-bold text-sm leading-tight pr-6">{notice.title}</h4>
                                     {isAdmin && (
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive" onClick={() => handleDelete(notice.id)}>
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    )}
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                                                    <AlertDialogDescription>এই নোটিশটি স্থায়ীভাবে মুছে ফেলা হবে।</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(notice.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">মুছে ফেলুন</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialog>
+                                        )}
                                 </div>
                                 <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed text-justify">{notice.content}</p>
                                 <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2">
