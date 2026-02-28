@@ -59,7 +59,7 @@
   }
 
   .printable-area {
-    display: none;
+    /* This class is now visible by default for previews */
   }
 
   @media print {
