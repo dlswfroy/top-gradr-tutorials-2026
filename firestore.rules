@@ -22,7 +22,7 @@ service cloud.firestore {
     // প্রতিষ্ঠানের তথ্য যে কেউ পড়তে পারবে।
     // This rule allows public read access to the school information document.
     match /school/info {
-      allow get: if true;
+      allow read: if true;
       allow write: if isAuthed();
     }
 
