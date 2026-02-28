@@ -125,10 +125,10 @@ export default function MarksheetPage() {
     
     const renderMeritPosition = (position?: number) => {
         if (!position) return '-';
-        if (position % 10 === 1 && position % 100 !== 11) return `${''position}st`;
-        if (position % 10 === 2 && position % 100 !== 12) return `${''position}nd`;
-        if (position % 10 === 3 && position % 100 !== 13) return `${''position}rd`;
-        return `${''position}th`;
+        if (position % 10 === 1 && position % 100 !== 11) return `${position}st`;
+        if (position % 10 === 2 && position % 100 !== 12) return `${position}nd`;
+        if (position % 10 === 3 && position % 100 !== 13) return `${position}rd`;
+        return `${position}th`;
     }
 
     const gradingScale = [
@@ -154,8 +154,8 @@ export default function MarksheetPage() {
     const studentOptionalSubject = student.optionalSubject;
 
     return (
-        <div className="bg-slate-100 p-4 font-sans">
-            <div className="w-[210mm] h-[297mm] bg-white mx-auto p-6 shadow-lg printable-area relative">
+        <div className="bg-slate-100 p-4 font-sans printable-area">
+            <div className="w-[210mm] h-[297mm] bg-white mx-auto p-6 shadow-lg relative">
                 {schoolInfo.logoUrl && (
                     <div className="absolute inset-0 flex items-center justify-center z-0">
                         <Image src={schoolInfo.logoUrl} alt="School Logo Watermark" width={400} height={400} className="opacity-10" />
@@ -283,12 +283,12 @@ export default function MarksheetPage() {
                         </div>
                     </footer>
                 </div>
-            </div>
-            <div className="flex justify-center mt-4 no-print">
-                <Button onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    মার্কশিট প্রিন্ট করুন
-                </Button>
+                <div className="flex justify-center mt-4 no-print">
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        মার্কশিট প্রিন্ট করুন
+                    </Button>
+                </div>
             </div>
         </div>
     );
