@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -42,7 +40,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canManageResults = hasPermission('manage:results');
     
     const [className, setClassName] = useState('');
@@ -64,10 +62,10 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     const groupMap: { [key: string]: string } = { 'science': 'বিজ্ঞান', 'arts': 'মানবিক', 'commerce': 'ব্যবসায় শিক্ষা', 'সাধারণ': 'সাধারণ' };
 
     const updateSavedResults = useCallback(async () => {
-        if (!db) return;
+        if (!db || !user) return;
         const allResults = await getAllResults(db, selectedYear);
         setSavedResults(allResults);
-    }, [db, selectedYear]);
+    }, [db, selectedYear, user]);
     
     useEffect(() => {
         updateSavedResults();
@@ -143,8 +141,8 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     }, [subject, availableSubjects, studentsForClass.length]);
     
     const handleLoadStudents = async () => {
-        if (!className || !subject || !db) {
-            toast({ variant: 'destructive', title: 'শ্রেণি এবং বিষয় নির্বাচন করুন' });
+        if (!className || !subject || !db || !user) {
+            toast({ variant: 'destructive', title: 'তথ্য অসম্পূর্ণ' });
             return;
         }
 
@@ -193,7 +191,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     const handleSaveResults = () => {
-        if (!db) return;
+        if (!db || !user) return;
         if (studentsForClass.length === 0) {
             toast({ variant: 'destructive', title: 'কোনো শিক্ষার্থী নেই' });
             return;
@@ -220,7 +218,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     const handleDeleteResult = (result: ClassResult) => {
-        if (!db || !result.id) return;
+        if (!db || !result.id || !user) return;
         deleteClassResult(db, result.id).then(() => {
             updateSavedResults();
             toast({ title: 'ফলাফল মোছা হয়েছে' });
@@ -252,7 +250,7 @@ const MarkManagementTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!db || !className || !subject) {
+        if (!db || !user || !className || !subject) {
             toast({
                 variant: "destructive",
                 title: "প্রথমে শ্রেণি ও বিষয় নির্বাচন করুন",
@@ -585,7 +583,7 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canPromote = hasPermission('promote:students');
     
     const [className, setClassName] = useState('');
@@ -596,7 +594,7 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleViewResults = async () => {
-        if (!className || !db) {
+        if (!className || !db || !user) {
             toast({
                 variant: 'destructive',
                 title: 'শ্রেণি নির্বাচন করুন',
@@ -636,7 +634,7 @@ const ResultSheetTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     const handlePromoteStudents = async () => {
-        if (!db) return;
+        if (!db || !user) return;
         if (processedResults.length === 0) {
             toast({
                 variant: 'destructive',
@@ -893,7 +891,7 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canPromote = hasPermission('promote:students');
 
     const [className, setClassName] = useState('');
@@ -905,7 +903,7 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
     const showGroupSelector = className === '9' || className === '10';
 
     const handleViewFailedStudents = useCallback(async () => {
-        if (!className || !db) {
+        if (!className || !db || !user) {
             toast({ variant: 'destructive', title: 'শ্রেণি নির্বাচন করুন' });
             return;
         }
@@ -940,7 +938,7 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
         setFailedStudents(failed);
         setSelectedStudentIds(new Set());
         setIsLoading(false);
-    }, [className, group, db, allStudents, selectedYear, toast, showGroupSelector]);
+    }, [className, group, db, user, allStudents, selectedYear, toast, showGroupSelector]);
 
     const handleToggleStudent = (studentId: string) => {
         const newSelection = new Set(selectedStudentIds);
@@ -962,7 +960,7 @@ const SpecialPromotionTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
     
     const handlePromoteSelected = async () => {
-        if (!db) return;
+        if (!db || !user) return;
         if (selectedStudentIds.size === 0) {
             toast({ variant: 'destructive', title: 'কোনো শিক্ষার্থী নির্বাচন করা হয়নি' });
             return;
@@ -1159,6 +1157,7 @@ const BulkUploadTab = ({ allStudents }: { allStudents: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { user } = useAuth();
     
     const [className, setClassName] = useState('');
     const [group, setGroup] = useState('');
@@ -1214,7 +1213,7 @@ const BulkUploadTab = ({ allStudents }: { allStudents: Student[] }) => {
     };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!db || !className) {
+        if (!db || !user || !className) {
             toast({
                 variant: "destructive",
                 title: "প্রথমে শ্রেণি নির্বাচন করুন",
@@ -1425,11 +1424,11 @@ export default function ResultsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canPromote = hasPermission('promote:students');
 
     const fetchAllStudents = useCallback(() => {
-        if (!db) return;
+        if (!db || !user) return;
         
         const studentsQuery = query(collection(db, "students"));
         const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
@@ -1447,7 +1446,7 @@ export default function ResultsPage() {
         });
 
         return unsubscribe;
-    }, [db]);
+    }, [db, user]);
 
 
     useEffect(() => {

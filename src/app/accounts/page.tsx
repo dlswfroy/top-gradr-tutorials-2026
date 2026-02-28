@@ -111,6 +111,7 @@ const FeeCollectionTab = ({ studentsForYear, isLoading, onFeeCollected }: { stud
 // Collection Report Tab Component
 const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     const db = useFirestore();
+    const { user } = useAuth();
     const { selectedYear } = useAcademicYear();
     const [collections, setCollections] = useState<FeeCollection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -118,7 +119,7 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
     const [collectorFilter, setCollectorFilter] = useState<string>('all');
 
     useEffect(() => {
-        if (!db) return;
+        if (!db || !user) return;
         setIsLoading(true);
         const q = query(
             collection(db, 'feeCollections'),
@@ -139,7 +140,7 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
         });
 
         return () => unsubscribe();
-    }, [db, selectedYear]);
+    }, [db, user, selectedYear]);
 
     const studentMap = useMemo(() => {
         const map = new Map<string, Student>();
@@ -231,6 +232,7 @@ const CollectionReportTab = ({ allStudents }: { allStudents: Student[] }) => {
 const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => void }) => {
     const { toast } = useToast();
     const db = useFirestore();
+    const { user } = useAuth();
     const { selectedYear } = useAcademicYear();
 
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -244,7 +246,7 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!db || !date || !type || !accountHead || !amount || amount <= 0) {
+        if (!db || !user || !date || !type || !accountHead || !amount || amount <= 0) {
             toast({ variant: 'destructive', title: 'অনুগ্রহ করে সকল তথ্য পূরণ করুন এবং টাকার পরিমাণ শূন্যের বেশি রাখুন।' });
             return;
         }
@@ -330,7 +332,7 @@ const NewTransactionTab = ({ onTransactionAdded }: { onTransactionAdded: () => v
 const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Transaction[], isLoading: boolean, refetch: () => void }) => {
     const db = useFirestore();
     const { toast } = useToast();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canManageTransactions = hasPermission('manage:transactions');
 
     const sortedTransactions = useMemo(() => {
@@ -350,7 +352,7 @@ const CashbookTab = ({ transactions, isLoading, refetch }: { transactions: Trans
     }, [sortedTransactions]);
 
     const handleDelete = async (id: string) => {
-        if(!db) return;
+        if(!db || !user) return;
         try {
             await deleteTransaction(db, id);
             toast({ title: 'লেনদেন মুছে ফেলা হয়েছে।'});
@@ -501,27 +503,26 @@ const LedgerTab = ({ transactions, isLoading }: { transactions: Transaction[], i
 export default function AccountsPage() {
   const [isClient, setIsClient] = useState(false);
   const db = useFirestore();
+  const { user, hasPermission } = useAuth();
   const { selectedYear } = useAcademicYear();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
-  const { hasPermission } = useAuth();
   const canCollectFees = hasPermission('collect:fees');
   const canManageTransactions = hasPermission('manage:transactions');
 
   const fetchTransactions = useCallback(async () => {
-    if (!db) return;
+    if (!db || !user) return;
     setIsLoading(true);
     const fetchedTransactions = await getTransactions(db, selectedYear);
     setTransactions(fetchedTransactions);
     setIsLoading(false);
-  }, [db, selectedYear]);
+  }, [db, user, selectedYear]);
 
   const fetchStudents = useCallback(() => {
-    if (!db) return;
+    if (!db || !user) return;
     setIsLoadingStudents(true);
-    // Added orderBy("roll") to ensure students are sorted serially
     const studentsQuery = query(collection(db, "students"), orderBy("roll"));
     const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -536,7 +537,7 @@ export default function AccountsPage() {
         setIsLoadingStudents(false);
     });
     return unsubscribe;
-  }, [db]);
+  }, [db, user]);
 
   useEffect(() => {
     setIsClient(true);

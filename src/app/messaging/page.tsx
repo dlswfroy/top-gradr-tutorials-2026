@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -49,27 +48,27 @@ export default function MessagingPage() {
     const classNamesMap: { [key: string]: string } = { '6': '৬ষ্ঠ', '7': '৭ম', '8': '৮ম', '9': '৯ম', '10': '১০ম' };
 
     const fetchLogs = useCallback(async () => {
-        if (!db) return;
+        if (!db || !user) return;
         setIsLoadingLogs(true);
         const logs = await getMessageLogs(db);
         setMessageLogs(logs);
         setIsLoadingLogs(false);
-    }, [db]);
+    }, [db, user]);
 
     const fetchStudents = useCallback(async () => {
-        if (!db) return;
+        if (!db || !user) return;
         const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
         const snap = await getDocs(q);
         setAllStudents(snap.docs.map(studentFromDoc));
-    }, [db, selectedYear]);
+    }, [db, user, selectedYear]);
 
     useEffect(() => {
         setIsClient(true);
-        if (db) {
+        if (db && user) {
             fetchLogs();
             fetchStudents();
         }
-    }, [db, fetchLogs, fetchStudents]);
+    }, [db, user, fetchLogs, fetchStudents]);
 
     const studentsInClass = useMemo(() => {
         return allStudents.filter(s => s.className === selectedClass).sort((a,b) => a.roll - b.roll);
@@ -191,7 +190,7 @@ export default function MessagingPage() {
     };
 
     const fetchAbsentStudents = async () => {
-        if (!db || !selectedClass) {
+        if (!db || !user || !selectedClass) {
             toast({ variant: 'destructive', title: 'শ্রেণি নির্বাচন করুন' });
             return;
         }
@@ -227,7 +226,7 @@ export default function MessagingPage() {
     };
 
     const handleDeleteLog = async (id: string) => {
-        if (!db) return;
+        if (!db || !user) return;
         try {
             await deleteMessageLog(db, id);
             toast({ title: 'লগ মুছে ফেলা হয়েছে' });
@@ -238,7 +237,7 @@ export default function MessagingPage() {
     };
 
     const handleSaveNote = async (id: string, customNote?: string) => {
-        if (!db) return;
+        if (!db || !user) return;
         const noteToSave = customNote !== undefined ? customNote : tempNote;
         try {
             await updateMessageNote(db, id, noteToSave);

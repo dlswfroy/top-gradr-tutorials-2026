@@ -14,6 +14,7 @@ import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useAuth } from '@/hooks/useAuth';
 
 const classMap: { [key: string]: string } = { '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten' };
 const groupMap: { [key: string]: string } = { 'science': 'Science', 'arts': 'Arts', 'commerce': 'Commerce' };
@@ -24,6 +25,7 @@ export default function MarksheetPage() {
     const searchParams = useSearchParams();
     const studentId = params.id as string;
     const db = useFirestore();
+    const { user } = useAuth();
     const { schoolInfo } = useSchoolInfo();
 
     const [student, setStudent] = useState<Student | null>(null);
@@ -35,7 +37,7 @@ export default function MarksheetPage() {
     const academicYear = searchParams.get('academicYear');
 
     useEffect(() => {
-      if (!db) return;
+      if (!db || !user) return;
       const studentsQuery = query(collection(db, "students"));
       const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
         const studentsData = querySnapshot.docs.map(doc => ({
@@ -52,12 +54,12 @@ export default function MarksheetPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
-    }, [db]);
+    }, [db, user]);
 
 
     useEffect(() => {
         const processMarks = async () => {
-            if (!studentId || !academicYear || !db || allStudents.length === 0) {
+            if (!studentId || !academicYear || !db || !user || allStudents.length === 0) {
                 return;
             }
 
@@ -118,7 +120,7 @@ export default function MarksheetPage() {
         setIsLoading(true);
         processMarks();
 
-    }, [studentId, academicYear, db, allStudents]);
+    }, [studentId, academicYear, db, user, allStudents]);
 
     
     const renderMeritPosition = (position?: number) => {

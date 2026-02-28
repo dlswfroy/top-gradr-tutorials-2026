@@ -14,9 +14,13 @@ export function FirebaseErrorListener() {
         variant: 'destructive',
         title: 'Firestore Permission Error',
         description:
-          'You do not have permission to perform this action. Check the console for more details.',
+          'আপনার এই কাজটি করার অনুমতি নেই। বিস্তারিত জানতে কনসোল চেক করুন।',
         duration: 9000,
       });
+      // Throw the error to surface it to the Next.js development overlay
+      if (process.env.NODE_ENV === 'development') {
+        throw error;
+      }
     };
 
     errorEmitter.on('permission-error', handleError);

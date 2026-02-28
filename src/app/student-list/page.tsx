@@ -47,7 +47,7 @@ export default function StudentListPage() {
   const [studentToView, setStudentToView] = useState<Student | null>(null);
   const db = useFirestore();
   const [isClient, setIsClient] = useState(false);
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const canManageStudents = hasPermission('manage:students');
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function StudentListPage() {
   }, []);
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !user) return;
     setIsLoading(true);
 
     const studentsQuery = query(
@@ -77,7 +77,7 @@ export default function StudentListPage() {
     });
 
     return () => unsubscribe();
-  }, [db, toast]);
+  }, [db, user]);
 
   const studentsForYear = useMemo(() => {
     return allStudents.filter(student => student.academicYear === selectedYear);
@@ -387,7 +387,3 @@ export default function StudentListPage() {
     </>
   );
 }
-
-    
-
-    

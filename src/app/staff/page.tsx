@@ -45,7 +45,7 @@ export default function StaffListPage() {
   const [staffToView, setStaffToView] = useState<Staff | null>(null);
   const db = useFirestore();
   const [isClient, setIsClient] = useState(false);
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const canManageStaff = hasPermission('manage:staff');
 
 
@@ -54,7 +54,7 @@ export default function StaffListPage() {
   }, []);
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !user) return;
     setIsLoading(true);
 
     const staffQuery = query(collection(db, "staff"), orderBy("joinDate", "asc"));
@@ -73,7 +73,7 @@ export default function StaffListPage() {
     });
 
     return () => unsubscribe();
-  }, [db]);
+  }, [db, user]);
 
   const handleDeleteStaff = (staffId: string) => {
     if (!db) return;
@@ -190,7 +190,6 @@ export default function StaffListPage() {
                                                     ডিলিট করুন
                                                 </AlertDialogAction>
                                                 </AlertDialogFooter>
-                                            </AlertDialogContent>
                                             </AlertDialog>
                                         </>
                                     )}
@@ -284,7 +283,3 @@ export default function StaffListPage() {
     </>
   );
 }
-
-    
-
-    

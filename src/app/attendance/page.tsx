@@ -20,12 +20,14 @@ import { isHoliday, Holiday } from '@/lib/holiday-data';
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useAuth } from '@/hooks/useAuth';
 
 // Digital Attendance content (from digital-attendance/page.tsx)
 const AttendanceSheet = ({ classId, students }: { classId: string, students: Student[] }) => {
     const { toast } = useToast();
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { user } = useAuth();
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay(); // 0 for Sunday, 5 for Friday, 6 for Saturday
@@ -43,7 +45,7 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
     const isSchoolHours = now >= schoolStart && now <= schoolEnd;
 
     useEffect(() => {
-        if (!db) return;
+        if (!db || !user) return;
         
         const initialAttendance = new Map<string, AttendanceStatus>();
         students.forEach(student => {
@@ -63,14 +65,14 @@ const AttendanceSheet = ({ classId, students }: { classId: string, students: Stu
 
         checkExistingData();
 
-    }, [students, todayStr, classId, selectedYear, db]);
+    }, [students, todayStr, classId, selectedYear, db, user]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => new Map(prev).set(studentId, status));
     };
 
     const handleSaveAttendance = () => {
-        if (!db) return;
+        if (!db || !user) return;
         
         const rightNow = new Date();
         const schoolStartNow = new Date(rightNow.getFullYear(), rightNow.getMonth(), rightNow.getDate(), 10, 30, 0);
@@ -267,15 +269,17 @@ interface StudentReport {
 const ReportSheet = ({ classId, students, startDate, endDate }: { classId: string, students: Student[], startDate?: Date, endDate?: Date }) => {
     const { selectedYear } = useAcademicYear();
     const db = useFirestore();
+    const { user } = useAuth();
     const [reportData, setReportData] = useState<StudentReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!db) return;
+        if (!db || !user) return;
 
         const fetchAttendance = async () => {
             setIsLoading(true);
-            const allAttendanceForClass = (await getAttendanceFromStorage(db)).filter(
+            const allAttendanceFromDb = await getAttendanceFromStorage(db);
+            const allAttendanceForClass = allAttendanceFromDb.filter(
                 att => att.academicYear === selectedYear && att.className === classId
             );
 
@@ -326,7 +330,7 @@ const ReportSheet = ({ classId, students, startDate, endDate }: { classId: strin
 
         fetchAttendance();
 
-    }, [classId, students, selectedYear, db, startDate, endDate]);
+    }, [classId, students, selectedYear, db, user, startDate, endDate]);
 
      if (isLoading) {
         return <p className="text-center p-8">লোড হচ্ছে...</p>
@@ -432,6 +436,7 @@ export default function AttendancePage() {
     const [allStudents, setAllStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const db = useFirestore();
+    const { user } = useAuth();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
      const [isClient, setIsClient] = useState(false);
@@ -441,7 +446,7 @@ export default function AttendancePage() {
     }, []);
 
     useEffect(() => {
-        if (!db) return;
+        if (!db || !user) return;
         setIsLoading(true);
         const studentsQuery = query(collection(db, "students"), orderBy("roll"));
 
@@ -456,7 +461,7 @@ export default function AttendancePage() {
         });
 
         return () => unsubscribe();
-    }, [db, toast]);
+    }, [db, user]);
     
     return (
         <div className="flex min-h-screen w-full flex-col bg-amber-100">
