@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -368,7 +369,7 @@ export function Header() {
                                             onClick={() => {
                                                 setSearchOpen(false);
                                                 setSearchQuery('');
-                                                router.push(`/student-list`); 
+                                                router.push(`/student-list?class=${s.className}&highlight=${s.id}`); 
                                             }}
                                         >
                                             <div className="flex items-center gap-3">

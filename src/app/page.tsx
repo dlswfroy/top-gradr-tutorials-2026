@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, GraduationCap, Clock, Bell, Info, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { Users, GraduationCap, Clock, Bell, Info, Plus, Trash2, Sparkles, Loader2, FileText } from 'lucide-react';
 import { Student } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { getAttendanceForDate } from '@/lib/attendance-data';
@@ -73,7 +74,7 @@ const NoticeBoard = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const isAdmin = user?.role === 'admin';
 
-    const [newNotice, setNewNotice] = useState({ title: '', content: '', priority: 'normal' as Notice['priority'] });
+    const [newNotice, setNewNotice] = useState<{title: string, content: string, priority: Notice['priority'], pdfUrl: string | null}>({ title: '', content: '', priority: 'normal', pdfUrl: null });
 
     const fetchNotices = async () => {
         if (!db || !user) return;
@@ -93,6 +94,22 @@ const NoticeBoard = () => {
         }
     }, [db, user]);
 
+    const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            toast({ variant: 'destructive', title: 'ফাইল ತುಂಬಾ বড় (সর্বোচ্চ ২ মেগাবাইট)' });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setNewNotice(prev => ({ ...prev, pdfUrl: event.target?.result as string }));
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleAddNotice = async () => {
         if (!db || !user) return;
         if (!newNotice.title || !newNotice.content) {
@@ -105,11 +122,12 @@ const NoticeBoard = () => {
                 title: newNotice.title,
                 content: newNotice.content,
                 priority: newNotice.priority,
-                senderName: user.displayName || user.email || 'Admin'
+                senderName: user.displayName || user.email || 'Admin',
+                pdfUrl: newNotice.pdfUrl || undefined
             });
             toast({ title: 'নোটিশ প্রকাশিত হয়েছে' });
             setIsAddOpen(false);
-            setNewNotice({ title: '', content: '', priority: 'normal' });
+            setNewNotice({ title: '', content: '', priority: 'normal', pdfUrl: null });
             fetchNotices();
         } catch (e) {}
     };
@@ -199,6 +217,10 @@ const NoticeBoard = () => {
                                         className="min-h-[150px]" 
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="pdf-upload">পিডিএফ সংযুক্তি (ঐচ্ছিক, সর্বোচ্চ ২ মেগাবাইট)</Label>
+                                    <Input id="pdf-upload" type="file" accept="application/pdf" onChange={handlePdfUpload} />
+                                </div>
                             </div>
                             <DialogFooter>
                                 <DialogClose asChild><Button variant="ghost">বাতিল</Button></DialogClose>
@@ -243,7 +265,15 @@ const NoticeBoard = () => {
                                     )}
                                 </div>
                                 <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed text-justify">{notice.content}</p>
-                                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2">
+                                {notice.pdfUrl && (
+                                    <a href={notice.pdfUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+                                        <Button variant="outline" size="sm" className="h-7">
+                                            <FileText className="mr-2 h-3 w-3" />
+                                            সংযুক্ত পিডিএফ দেখুন
+                                        </Button>
+                                    </a>
+                                )}
+                                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2 mt-2">
                                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(notice.date, 'dd MMM p', { locale: bn })}</span>
                                     <span>{notice.senderName}</span>
                                 </div>

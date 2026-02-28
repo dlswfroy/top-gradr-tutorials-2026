@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -9,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { deleteStudent, Student, studentFromDoc } from '@/lib/student-data';
 import { Eye, FilePen, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 export default function StudentListPage() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
@@ -50,9 +53,30 @@ export default function StudentListPage() {
   const { user, hasPermission } = useAuth();
   const canManageStudents = hasPermission('manage:students');
 
+  const searchParams = useSearchParams();
+  const highlightedStudentId = searchParams.get('highlight');
+  const classFromQuery = searchParams.get('class');
+
+  const [activeTab, setActiveTab] = useState(classFromQuery || '6');
+  const highlightRef = useRef<HTMLTableRowElement | null>(null);
+  
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    if (classFromQuery) {
+        setActiveTab(classFromQuery);
+    }
+  }, [classFromQuery]);
+
+  useEffect(() => {
+    if (highlightRef.current) {
+        setTimeout(() => {
+            highlightRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
+        }, 100);
+    }
+  }, [highlightedStudentId, activeTab]);
 
   useEffect(() => {
     if (!db || !user) return;
@@ -132,7 +156,7 @@ export default function StudentListPage() {
           </CardHeader>
           <CardContent>
              {isClient ? (
-                <Tabs defaultValue="6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-5">
                     {classes.map((className) => (
                       <TabsTrigger key={className} value={className}>
@@ -172,8 +196,10 @@ export default function StudentListPage() {
                                       </TableCell>
                                    </TableRow>
                                 ) : (
-                                  getStudentsByClass(className).map((student, index) => (
-                                  <TableRow key={student.id}>
+                                  getStudentsByClass(className).map((student, index) => {
+                                    const isHighlighted = student.id === highlightedStudentId;
+                                    return (
+                                  <TableRow key={student.id} ref={isHighlighted ? highlightRef : null} className={cn(isHighlighted && "bg-primary/10")}>
                                     <TableCell>{(index + 1).toLocaleString('bn-BD')}</TableCell>
                                     <TableCell>
                                       <Image
@@ -234,7 +260,7 @@ export default function StudentListPage() {
                                       </div>
                                     </TableCell>
                                   </TableRow>
-                                 ))
+                                 )})
                                 )}
                               </TableBody>
                             </Table>

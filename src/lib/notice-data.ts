@@ -23,6 +23,7 @@ export interface Notice {
   date: Date;
   priority: 'normal' | 'important' | 'urgent';
   senderName: string;
+  pdfUrl?: string;
 }
 
 export type NewNoticeData = Omit<Notice, 'id' | 'date'>;
@@ -49,10 +50,16 @@ export const getNotices = async (db: Firestore, maxCount = 5): Promise<Notice[]>
 
 export const addNotice = async (db: Firestore, noticeData: NewNoticeData) => {
   const collectionRef = collection(db, NOTICES_COLLECTION);
-  const dataToSave = {
+  const dataToSave: { [key: string]: any } = {
     ...noticeData,
     date: serverTimestamp(),
   };
+
+  Object.keys(dataToSave).forEach(key => {
+    if (dataToSave[key] === undefined) {
+      delete dataToSave[key];
+    }
+  });
 
   try {
     return await addDoc(collectionRef, dataToSave);
