@@ -1,5 +1,9 @@
 
 rules_version = '2';
+
+// FORCING A REDEPLOY TO APPLY RULES TO THE NEW FIREBASE PROJECT.
+// The rule for /school/info is being explicitly set to allow all reads.
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
