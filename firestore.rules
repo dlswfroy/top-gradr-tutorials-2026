@@ -3,8 +3,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // =================================
+    //  Helper Functions
+    // =================================
     function isAuthed() {
       return request.auth != null;
+    }
+
+    function isTeacher() {
+      return isAuthed() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
     function isAdmin() {
@@ -13,18 +22,22 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
-    function isTeacher() {
-      return isAuthed() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
-    }
+    // =================================
+    //  Public-Facing Rules
+    // =================================
 
-    // প্রতিষ্ঠানের তথ্য যে কেউ পড়তে পারবে।
-    // This rule allows public read access to the school information document.
+    // Rule: school/info
+    // Allows any user (authenticated or not) to read school information.
+    // This is necessary for the login page and public-facing elements.
+    // Only authenticated admins can write to it.
     match /school/info {
       allow read: if true;
-      allow write: if isAuthed();
+      allow write: if isAdmin();
     }
+
+    // =================================
+    //  User-Specific Rules
+    // =================================
 
     // ইউজার প্রোফাইল রুলস
     match /users/{userId} {
@@ -33,6 +46,10 @@ service cloud.firestore {
       allow update: if isAuthed() && (request.auth.uid == userId || isAdmin());
       allow list: if isAuthed(); 
     }
+
+    // =================================
+    //  Authenticated-User Rules
+    // =================================
 
     // সাধারণ রিসোর্স যা সকল লগইন করা ইউজার পড়তে পারবে
     match /classRoutines/{id} {
@@ -66,6 +83,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // =================================
+    //  Teacher & Admin Rules
+    // =================================
+
     // হাজিরা, রেজাল্ট এবং মেসেজ লগ (শিক্ষক ও এডমিন উভয়েই পারবে)
     match /attendance/{id} {
       allow read: if isAuthed();
@@ -85,6 +106,10 @@ service cloud.firestore {
     match /emailLogs/{id} {
       allow read, write: if isAuthed();
     }
+
+    // =================================
+    //  Accounting Rules
+    // =================================
 
     // হিসাব-নিকাশ
     match /feeCollections/{id} {
