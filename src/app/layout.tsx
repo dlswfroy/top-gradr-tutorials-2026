@@ -12,7 +12,7 @@ import { APP_ICON_URL, defaultSchoolInfo } from '@/lib/school-info';
 
 export const metadata: Metadata = {
   title: `${defaultSchoolInfo.name} - ম্যানেজমেন্ট সিস্টেম`,
-  description: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়ের একটি কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
+  description: 'টপ গ্রেড টিউটোরিয়ালস এর একটি কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: APP_ICON_URL,

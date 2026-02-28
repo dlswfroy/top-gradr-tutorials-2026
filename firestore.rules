@@ -1,7 +1,7 @@
 
 rules_version = '2';
 
-// FORCING A REDEPLOY TO APPLY RULES TO THE NEW FIREBASE PROJECT.
+// Rebranding to Top Grade Tutorials.
 // The rule for /school/info is being explicitly set to allow all reads.
 // Simplifying the user get rule to resolve login issues.
 

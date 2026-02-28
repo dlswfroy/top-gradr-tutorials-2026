@@ -5,8 +5,8 @@ import { defaultSchoolInfo, APP_ICON_URL } from '@/lib/school-info'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: defaultSchoolInfo.name,
-    short_name: 'বিপৌউবি',
-    description: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়ের কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
+    short_name: 'টপ গ্রেড',
+    description: 'টপ গ্রেড টিউটোরিয়ালস এর কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
     start_url: '/',
     display: 'standalone',
     background_color: '#F0FAF9',
@@ -15,19 +15,19 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: APP_ICON_URL,
         sizes: 'any',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'any',
       },
       {
         src: APP_ICON_URL,
         sizes: '192x192',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'maskable',
       },
       {
         src: APP_ICON_URL,
         sizes: '512x512',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'maskable',
       },
     ],

@@ -15,14 +15,14 @@ export interface SchoolInfo {
 }
 
 // আপনার অ্যাপের আইকন। এটি সরাসরি ছবির লিংক হতে হবে।
-export const APP_ICON_URL = 'https://i.postimg.cc/zvsNP6qY/IMG-20260218-WA0002.jpg';
+export const APP_ICON_URL = 'https://i.postimg.cc/9Q6mY71p/logo.png';
 
 export const defaultSchoolInfo: SchoolInfo = {
-    name: 'বীরগঞ্জ পৌর উচ্চ বিদ্যালয়',
-    nameEn: 'Birganj Pouro High School',
-    eiin: '138244',
+    name: 'টপ গ্রেড টিউটোরিয়ালস',
+    nameEn: 'Top Grade Tutorials',
+    eiin: '000000',
     code: '0000',
-    address: 'বীরগঞ্জ, দিনাজপুর',
+    address: 'ঢাকা, বাংলাদেশ',
     logoUrl: APP_ICON_URL
 };
 

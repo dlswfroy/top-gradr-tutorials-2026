@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -178,7 +179,7 @@ export default function MessagingPage() {
                 }
             }
 
-            setMessageContent(type === 'absent' ? 'সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। বিপৌউবি' : '');
+            setMessageContent(type === 'absent' ? 'সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। - টপ গ্রেড টিউটোরিয়ালস' : '');
             setSelectedStudentIds(new Set());
             fetchLogs();
         } catch (e: any) {
@@ -253,7 +254,7 @@ export default function MessagingPage() {
         setSelectedStudentIds(new Set());
         setSelectedClass('');
         if (val === 'absent') {
-            setMessageContent('সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। বিপৌউবি');
+            setMessageContent('সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। - টপ গ্রেড টিউটোরিয়ালস');
         } else {
             setMessageContent('');
         }
@@ -490,7 +491,7 @@ export default function MessagingPage() {
                                         <div className="space-y-2">
                                             <Label>সতর্কবার্তা</Label>
                                             <Textarea 
-                                                placeholder="সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। বিপৌউবি" 
+                                                placeholder="সম্মানিত অভিভাবক, আপনার সন্তান আজ বিদ্যালয়ে অনুপস্থিত আছে। - টপ গ্রেড টিউটোরিয়ালস" 
                                                 value={messageContent}
                                                 onChange={e => setMessageContent(e.target.value)}
                                             />
