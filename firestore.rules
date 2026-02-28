@@ -3,6 +3,7 @@ rules_version = '2';
 
 // FORCING A REDEPLOY TO APPLY RULES TO THE NEW FIREBASE PROJECT.
 // The rule for /school/info is being explicitly set to allow all reads.
+// Simplifying the user get rule to resolve login issues.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -45,7 +46,7 @@ service cloud.firestore {
 
     // ইউজার প্রোফাইল রুলস
     match /users/{userId} {
-      allow get: if isAuthed() && (request.auth.uid == userId || isAdmin());
+      allow get: if isAuthed();
       allow create: if isAuthed() && request.auth.uid == userId;
       allow update: if isAuthed() && (request.auth.uid == userId || isAdmin());
       allow list: if isAuthed(); 
