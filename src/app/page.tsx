@@ -69,7 +69,7 @@ const NoticeBoard = () => {
         if (!db || !user) return;
         setIsLoading(true);
         try {
-            const data = await getNotices(db);
+            const data = await getNotices(db, 10); // Increased limit to 10
             setNotices(data);
         } catch (e) {
             console.error(e);
@@ -199,7 +199,7 @@ const NoticeBoard = () => {
                 )}
             </CardHeader>
             <CardContent className="p-4">
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin">
                     {isLoading ? (
                         [...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-md" />)
                     ) : notices.length === 0 ? (
@@ -218,8 +218,8 @@ const NoticeBoard = () => {
                                         </Button>
                                     )}
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2 line-clamp-3 whitespace-pre-wrap">{notice.content}</p>
-                                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold">
+                                <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed">{notice.content}</p>
+                                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2">
                                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(notice.date, 'dd MMM p', { locale: bn })}</span>
                                     <span>{notice.senderName}</span>
                                 </div>
