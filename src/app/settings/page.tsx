@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -116,15 +117,75 @@ function SchoolInfoSettings() {
 
     const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setLogoPreview(result);
-                handleInputChange('logoUrl', result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) {
+            return;
         }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit before compression
+            toast({
+                variant: "destructive",
+                title: "ফাইল ತುಂಬಾ বড়",
+                description: "অনুগ্রহ করে ৫ মেগাবাইটের কম আকারের ছবি আপলোড করুন।",
+            });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new window.Image();
+            img.src = e.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 512;
+                const MAX_HEIGHT = 512;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height = Math.round(height * (MAX_WIDTH / width));
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width = Math.round(width * (MAX_HEIGHT / height));
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    if (dataUrl.length > 1048487) {
+                        toast({
+                            variant: "destructive",
+                            title: "প্রসেস করার পরেও ফাইলটি বড়",
+                            description: "অনুগ্রহ করে আরও ছোট রেজোলিউশনের ছবি ব্যবহার করুন।",
+                        });
+                        return;
+                    }
+                    
+                    setLogoPreview(dataUrl);
+                    handleInputChange('logoUrl', dataUrl);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "ছবি প্রসেস করা যায়নি",
+                    });
+                }
+            };
+            img.onerror = () => {
+                toast({
+                    variant: "destructive",
+                    title: "ছবিটি লোড করা যায়নি",
+                });
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSaveChanges = () => {
@@ -846,7 +907,7 @@ function ProfileSettings() {
     }
     
     return (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:col-span-3">
              <Card>
                 <CardHeader>
                     <CardTitle>প্রোফাইল তথ্য</CardTitle>
