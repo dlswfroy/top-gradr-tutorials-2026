@@ -11,7 +11,7 @@ import { getAttendanceForDate } from '@/lib/attendance-data';
 import { getFullRoutine, ClassRoutine } from '@/lib/routine-data';
 import { getNotices, addNotice, deleteNotice, Notice } from '@/lib/notice-data';
 import { format } from 'date-fns';
-import { bn } from 'date-fns/locale';
+import { bn } from 'date-fns/locale/bn';
 import { useFirestore } from '@/firebase';
 import { collection, onSnapshot, query, where, FirestoreError } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -131,7 +131,7 @@ const NoticeBoard = () => {
             toast({ title: 'নোটিশ মুছে ফেলা হয়েছে' });
             fetchNotices();
         } catch (e) {}
-    }
+    };
 
     return (
         <Card className="lg:col-span-1 shadow-md border-primary/10">
@@ -229,7 +229,7 @@ const NoticeBoard = () => {
             </CardContent>
         </Card>
     );
-}
+};
 
 const LiveRoutineCard = () => {
     const db = useFirestore();
