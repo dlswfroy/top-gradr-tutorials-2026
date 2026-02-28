@@ -238,8 +238,9 @@ const NoticeBoard = () => {
                                                     <AlertDialogCancel>বাতিল</AlertDialogCancel>
                                                     <AlertDialogAction onClick={() => handleDelete(notice.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">মুছে ফেলুন</AlertDialogAction>
                                                 </AlertDialogFooter>
-                                            </AlertDialog>
-                                        )}
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    )}
                                 </div>
                                 <p className="text-xs text-muted-foreground mb-2 whitespace-pre-wrap leading-relaxed text-justify">{notice.content}</p>
                                 <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold border-t border-dashed pt-2">
