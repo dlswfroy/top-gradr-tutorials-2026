@@ -869,7 +869,7 @@ function ProfileSettings() {
         setIsPhotoSaving(true);
         try {
             const userRef = doc(db, 'users', user.uid);
-            await setDoc(userRef, { photoUrl: photoPreview }, { merge: true });
+            await updateDoc(userRef, { photoUrl: photoPreview });
             toast({ title: 'প্রোফাইল ছবি আপডেট হয়েছে' });
         } catch (e) {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
