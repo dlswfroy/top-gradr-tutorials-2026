@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Users, GraduationCap, Clock, Bell, Info, AlertCircle, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, GraduationCap, Clock, Bell, Info, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { Student } from '@/lib/student-data';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { getAttendanceForDate } from '@/lib/attendance-data';
