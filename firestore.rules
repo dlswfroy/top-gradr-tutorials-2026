@@ -19,9 +19,10 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // প্রতিষ্ঠানের তথ্য সবাই দেখতে পারবে
+    // প্রতিষ্ঠানের তথ্য যে কেউ পড়তে পারবে।
+    // This rule allows public read access to the school information document.
     match /school/info {
-      allow read: if true;
+      allow get: if true;
       allow write: if isAuthed();
     }
 
@@ -97,5 +98,3 @@ service cloud.firestore {
     }
   }
 }
-// Triggering redeployment of security rules for the new project.
-// Re-deploying rules to fix permission issues after project change.
