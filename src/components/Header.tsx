@@ -19,6 +19,7 @@ import {
   UserSearch,
   MessageSquare,
   Search,
+  User
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Student, studentFromDoc } from '@/lib/student-data';
 
@@ -69,6 +70,10 @@ export function Header() {
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [lastFetchedYear, setLastFetchedYear] = useState('');
+  
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -146,12 +151,10 @@ export function Header() {
 
         let matchesRoll = false;
         if (isNumericQuery) {
-            // Exact match for roll to avoid "1" matching "10"
             matchesRoll = s.roll === parseInt(qEn, 10);
         }
 
         const idStr = (s.generatedId || '').toLowerCase();
-        // `includes` is good for ID as it can be a partial search
         const matchesId = idStr.includes(qEn);
         
         return matchesName || matchesRoll || matchesId;
@@ -159,6 +162,7 @@ export function Header() {
   }, [searchQuery, allStudents]);
 
   return (
+    <>
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8">
       <div className="flex items-center gap-2">
         {user && (
@@ -372,9 +376,10 @@ export function Header() {
                                             key={s.id} 
                                             className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer transition-colors mb-2 last:mb-0"
                                             onClick={() => {
+                                                setSelectedStudent(s);
+                                                setIsProfileDialogOpen(true);
                                                 setSearchOpen(false);
                                                 setSearchQuery('');
-                                                router.push(`/student-list?class=${s.className}&highlight=${s.id}`); 
                                             }}
                                         >
                                             <div className="flex items-center gap-3">
@@ -434,5 +439,42 @@ export function Header() {
         )}
       </div>
     </header>
+    <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+        <DialogContent>
+            {selectedStudent && (
+                <>
+                    <DialogHeader>
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-20 w-20">
+                                <AvatarImage src={selectedStudent.photoUrl} />
+                                <AvatarFallback>{selectedStudent.studentNameBn?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <DialogTitle className="text-2xl">{selectedStudent.studentNameBn}</DialogTitle>
+                                <DialogDescription>
+                                    রোল: {selectedStudent.roll.toLocaleString('bn-BD')} | শ্রেণি: {selectedStudent.className}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                        <Button variant="outline" onClick={() => { router.push(`/student-list?class=${selectedStudent.className}&highlight=${selectedStudent.id}`); setIsProfileDialogOpen(false); }}>
+                            <User className="mr-2 h-4 w-4" /> প্রোফাইল দেখুন
+                        </Button>
+                        <Button variant="outline" onClick={() => { router.push(`/student-profile?roll=${selectedStudent.roll}&className=${selectedStudent.className}`); setIsProfileDialogOpen(false); }}>
+                            <Banknote className="mr-2 h-4 w-4" /> ফি ও হাজিরা
+                        </Button>
+                        <Button variant="outline" onClick={() => { router.push(`/marksheet/${selectedStudent.id}?academicYear=${selectedStudent.academicYear}`); setIsProfileDialogOpen(false); }}>
+                            <BookMarked className="mr-2 h-4 w-4" /> মার্কশিট
+                        </Button>
+                        <Button variant="outline" onClick={() => { router.push(`/documents/testimonial/${selectedStudent.id}`); setIsProfileDialogOpen(false); }}>
+                            <FileText className="mr-2 h-4 w-4" /> প্রত্যয়ন পত্র
+                        </Button>
+                    </div>
+                </>
+            )}
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

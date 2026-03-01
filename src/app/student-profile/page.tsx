@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,7 +20,7 @@ import { Search, CheckCircle2, XCircle, User, Banknote, CalendarCheck, AlertTria
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
 
@@ -39,13 +39,15 @@ const toBengaliNumber = (str: string | number) => {
     return String(str).replace(/[0-9]/g, (w) => bengaliDigits[parseInt(w, 10)]);
 };
 
-export default function StudentProfileSearchPage() {
+
+function StudentProfileSearchPage() {
     const db = useFirestore();
     const { selectedYear } = useAcademicYear();
     const { toast } = useToast();
     const { user, loading: authLoading } = useAuth();
     const { schoolInfo } = useSchoolInfo();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [isMounted, setIsMounted] = useState(false);
     const [roll, setRoll] = useState<string>('');
@@ -69,18 +71,16 @@ export default function StudentProfileSearchPage() {
         }
     }, [user, authLoading, router, isMounted]);
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!db || !roll || !className || !user) {
+    const performSearch = useCallback(async (rollToSearch: string, classToSearch: string) => {
+        if (!db || !rollToSearch || !classToSearch || !user) {
             toast({ variant: 'destructive', title: 'অনুগ্রহ করে রোল এবং শ্রেণি পূরণ করুন।' });
             return;
         }
 
         setIsLoading(true);
         try {
-            // Convert Bengali digits to English for Firestore query
             const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
-            const rollEn = parseInt(bnToEn(roll), 10);
+            const rollEn = parseInt(bnToEn(rollToSearch), 10);
 
             if (isNaN(rollEn)) {
                 toast({ variant: 'destructive', title: 'ভুল রোল নম্বর', description: 'অনুগ্রহ করে সঠিক সংখ্যা ব্যবহার করুন।' });
@@ -91,7 +91,7 @@ export default function StudentProfileSearchPage() {
             const studentQuery = query(
                 collection(db, 'students'),
                 where('academicYear', '==', selectedYear),
-                where('className', '==', className),
+                where('className', '==', classToSearch),
                 where('roll', '==', rollEn)
             );
             const studentSnap = await getDocs(studentQuery);
@@ -99,6 +99,7 @@ export default function StudentProfileSearchPage() {
             if (studentSnap.empty) {
                 toast({ variant: 'destructive', title: 'শিক্ষার্থী পাওয়া যায়নি।', description: 'অনুগ্রহ করে রোল ও শ্রেণি পরীক্ষা করুন।' });
                 setIsLoading(false);
+                setShowProfile(false);
                 return;
             }
 
@@ -114,7 +115,7 @@ export default function StudentProfileSearchPage() {
             const attQuery = query(
                 collection(db, 'attendance'),
                 where('academicYear', '==', selectedYear),
-                where('className', '==', className),
+                where('className', '==', classToSearch),
                 where('date', '>=', startDate),
                 where('date', '<=', endDate)
             );
@@ -136,11 +137,7 @@ export default function StudentProfileSearchPage() {
                 }
             });
 
-            setAttendanceStats({
-                present: presentCount,
-                absent: totalCount - presentCount,
-                total: totalCount
-            });
+            setAttendanceStats({ present: presentCount, absent: totalCount - presentCount, total: totalCount });
 
             const feeQuery = query(
                 collection(db, 'feeCollections'),
@@ -177,6 +174,22 @@ export default function StudentProfileSearchPage() {
         } finally {
             setIsLoading(false);
         }
+    }, [db, user, selectedYear, startMonth, endMonth, toast]);
+
+    const queryRoll = searchParams.get('roll');
+    const queryClassName = searchParams.get('className');
+
+    useEffect(() => {
+        if (isMounted && queryRoll && queryClassName) {
+            setRoll(queryRoll);
+            setClassName(queryClassName);
+            performSearch(queryRoll, queryClassName);
+        }
+    }, [isMounted, queryRoll, queryClassName, performSearch]);
+
+    const handleSearchFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        performSearch(roll, className);
     };
 
     const attendancePercentage = useMemo(() => {
@@ -213,7 +226,7 @@ export default function StudentProfileSearchPage() {
                             <CardDescription>রোল এবং শ্রেণি দিয়ে শিক্ষার্থীর বিস্তারিত তথ্য দেখুন</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleSearch} className="space-y-6">
+                            <form onSubmit={handleSearchFormSubmit} className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="roll">রোল নম্বর</Label>
@@ -264,7 +277,6 @@ export default function StudentProfileSearchPage() {
                 </main>
             </div>
 
-            {/* Hidden Printable Area - Optimized for one page */}
             {studentData && (
                 <div className="printable-area p-10 text-black bg-white min-h-screen">
                     <header className="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
@@ -434,4 +446,12 @@ export default function StudentProfileSearchPage() {
             </Dialog>
         </div>
     );
+}
+
+export default function StudentProfileSearchPageWrapper() {
+    return (
+        <Suspense>
+            <StudentProfileSearchPage />
+        </Suspense>
+    )
 }

@@ -23,6 +23,7 @@ import { Skeleton } from './ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DatePicker } from './ui/date-picker';
 import { useAuth } from '@/hooks/useAuth';
+import { ToastAction } from './ui/toast';
 
 const feeFields: { key: keyof FeeBreakdown; label: string }[] = [
     { key: 'tuitionCurrent', label: 'চলতি' },
@@ -197,7 +198,32 @@ function FeeCollectionForm({ student, onSave, existingCollection, open, onOpenCh
 
         try {
             await batch.commit();
-            toast({ title: "ফি আদায় সফল হয়েছে", description: `শিক্ষার্থীর ফি এবং ক্যাশবুক সফলভাবে আপডেট করা হয়েছে।` });
+            const feeMonths = description.replace('মাসের বেতন', '').trim() || 'মাসিক';
+            const smsMessage = `${student.studentNameBn} এর ${feeMonths} মাসের বেতন ${totalAmount.toLocaleString('bn-BD')} টাকা আদায় হয়েছে। ধন্যবাদ, টপ গ্রেড টিউটোরিয়ালস`;
+
+            toast({
+                title: "ফি আদায় সফল হয়েছে",
+                description: `শিক্ষার্থীর ফি এবং ক্যাশবুক সফলভাবে আপডেট করা হয়েছে।`,
+                action: (
+                    <ToastAction
+                        altText="Send SMS"
+                        onClick={() => {
+                            const mobile = student.guardianMobile || student.studentMobile;
+                            if (!mobile) {
+                                toast({ variant: 'destructive', title: 'মোবাইল নম্বর নেই' });
+                                return;
+                            }
+                            const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+                            const separator = isIOS ? '&' : '?';
+                            const encodedContent = encodeURIComponent(smsMessage);
+                            window.location.href = `sms:${mobile.replace(/[^\d+]/g, '')}${separator}body=${encodedContent}`;
+                        }}
+                    >
+                        মেসেজ পাঠান
+                    </ToastAction>
+                ),
+                duration: 10000,
+            });
             onSave();
             onOpenChange(false);
         } catch (error) {
