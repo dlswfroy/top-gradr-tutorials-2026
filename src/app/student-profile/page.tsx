@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -120,10 +121,7 @@ function StudentProfileSearchPage() {
                 where('date', '<=', endDate)
             );
             
-            const attSnap = await getDocs(attQuery).catch(error => {
-                if (error.message?.includes('index')) throw error;
-                return { docs: [] };
-            });
+            const attSnap = await getDocs(attQuery);
             const attRecords = attSnap.docs.map(doc => doc.data() as DailyAttendance);
 
             let presentCount = 0;
@@ -160,13 +158,13 @@ function StudentProfileSearchPage() {
             setShowProfile(true);
         } catch (error: any) {
             console.error("Search Error:", error);
-            if (error.message?.includes('building') || error.message?.includes('index')) {
+            if (error.message?.includes('index')) {
                 toast({
                     variant: 'default',
                     className: 'bg-amber-50 border-amber-200 text-amber-900',
-                    title: 'ইন্ডেক্স তৈরি হচ্ছে',
-                    description: 'প্রয়োজনীয় ইনডেক্সটি বর্তমানে ফায়ারবেসে তৈরি হচ্ছে। এটি সক্রিয় হতে সাধারণত ৩-৫ মিনিট সময় লাগে। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
-                    duration: 8000,
+                    title: 'ডেটাবেস ইনডেক্স প্রয়োজন',
+                    description: 'এই কাজটি সম্পন্ন করার জন্য একটি ডেটাবেস ইনডেক্স প্রয়োজন। ফায়ারবেস এটি তৈরি করতে কয়েক মিনিট সময় নিতে পারে। কিছুক্ষণ পর আবার চেষ্টা করুন।',
+                    duration: 10000,
                 });
             } else {
                 toast({ variant: 'destructive', title: 'অনুসন্ধান ব্যর্থ হয়েছে', description: 'সার্ভারে সংযোগ করতে সমস্যা হচ্ছে, আবার চেষ্টা করুন।' });
