@@ -102,8 +102,8 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
+      <div className="flex-shrink-0">
         {user && (
           <>
             {isClient ? (
@@ -271,17 +271,20 @@ export function Header() {
             )}
           </>
         )}
+      </div>
+
+      <div className="flex-1 min-w-0">
         <Link href="/" className="flex items-center gap-2">
-            {isSchoolInfoLoading ? <Skeleton className="h-[53px] w-[53px] rounded-full" /> : (schoolInfo.logoUrl && (
-              <Image src={schoolInfo.logoUrl} alt="School Logo" width={53} height={53} className="rounded-full" />
-            ))}
-            <h1 className="text-2xl md:text-3xl font-bold whitespace-nowrap drop-shadow-md">
-              {isSchoolInfoLoading ? <Skeleton className="h-8 w-56" /> : schoolInfo.name}
-            </h1>
+          {isSchoolInfoLoading ? <Skeleton className="h-[53px] w-[53px] rounded-full flex-shrink-0" /> : (schoolInfo.logoUrl && (
+            <Image src={schoolInfo.logoUrl} alt="School Logo" width={53} height={53} className="rounded-full flex-shrink-0" />
+          ))}
+          <h1 className="text-xl md:text-2xl font-bold whitespace-nowrap drop-shadow-md truncate">
+            {isSchoolInfoLoading ? <Skeleton className="h-8 w-56" /> : schoolInfo.name}
+          </h1>
         </Link>
       </div>
       
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex-shrink-0">
         {authLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
