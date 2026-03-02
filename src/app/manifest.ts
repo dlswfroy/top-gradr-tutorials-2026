@@ -1,10 +1,12 @@
 
 import { MetadataRoute } from 'next'
-import { defaultSchoolInfo, APP_ICON_URL } from '@/lib/school-info'
+
+const APP_NAME = 'টপ গ্রেড টিউটোরিয়ালস';
+const APP_ICON_URL = 'https://i.postimg.cc/9Q6mY71p/logo.png';
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: defaultSchoolInfo.name,
+    name: APP_NAME,
     short_name: 'টপ গ্রেড',
     description: 'টপ গ্রেড টিউটোরিয়ালস এর কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
     start_url: '/',

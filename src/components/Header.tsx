@@ -17,9 +17,7 @@ import {
   CalendarClock,
   LogOut,
   UserSearch,
-  MessageSquare,
-  Search,
-  User
+  MessageSquare
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -32,7 +30,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { useSchoolInfo } from '@/context/SchoolInfoContext';
@@ -41,7 +39,7 @@ import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, limit, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,9 +48,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Student, studentFromDoc } from '@/lib/student-data';
 
 export function Header() {
   const [isClient, setIsClient] = useState(false);
@@ -63,17 +58,6 @@ export function Header() {
   const db = useFirestore();
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
-
-  // Global Search State
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [allStudents, setAllStudents] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [lastFetchedYear, setLastFetchedYear] = useState('');
-  
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-
 
   useEffect(() => {
     setIsClient(true);
@@ -117,57 +101,12 @@ export function Header() {
     router.push('/login');
   };
 
-  // Search Logic
-  const handleSearchOpen = async (open: boolean) => {
-    setSearchOpen(open);
-    if (open && db && (allStudents.length === 0 || lastFetchedYear !== selectedYear)) {
-        setIsSearching(true);
-        try {
-            const q = query(collection(db, 'students'), where('academicYear', '==', selectedYear));
-            const snap = await getDocs(q);
-            setAllStudents(snap.docs.map(studentFromDoc));
-            setLastFetchedYear(selectedYear);
-        } catch (e) {
-            console.error("Search fetch error:", e);
-        }
-        setIsSearching(false);
-    }
-  };
-
-  const filteredResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    
-    const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
-    const q = searchQuery.trim().toLowerCase();
-    const qEn = bnToEn(q);
-
-    const isNumericQuery = /^\d+$/.test(qEn);
-
-    return allStudents.filter(s => {
-        const nameBn = (s.studentNameBn || '').toLowerCase();
-        const nameEn = (s.studentNameEn || '').toLowerCase();
-        
-        const matchesName = nameBn.includes(q) || nameEn.includes(q);
-
-        let matchesRoll = false;
-        if (isNumericQuery) {
-            matchesRoll = s.roll === parseInt(qEn, 10);
-        }
-
-        const idStr = (s.generatedId || '').toLowerCase();
-        const matchesId = idStr.includes(qEn);
-        
-        return matchesName || matchesRoll || matchesId;
-    }).slice(0, 10);
-  }, [searchQuery, allStudents]);
-
   return (
-    <>
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
       <div className="flex items-center gap-2">
         {user && (
           <>
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0 rounded-lg text-white hover:bg-white/20">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0 rounded-lg text-white hover:bg-white/20 md:hidden">
               <ArrowLeft className="h-6 w-6" />
               <span className="sr-only">Go back</span>
             </Button>
@@ -339,8 +278,8 @@ export function Header() {
       </div>
 
       <Link href="/" className="flex items-center gap-2">
-          {isSchoolInfoLoading ? <Skeleton className="h-10 w-10 rounded-full hidden sm:block" /> : (schoolInfo.logoUrl && (
-            <Image src={schoolInfo.logoUrl} alt="School Logo" width={40} height={40} className="rounded-full hidden sm:block" />
+          {isSchoolInfoLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : (schoolInfo.logoUrl && (
+            <Image src={schoolInfo.logoUrl} alt="School Logo" width={46} height={46} className="rounded-full" />
           ))}
           <h1 className="text-xl md:text-2xl font-bold whitespace-nowrap drop-shadow-md">
             {isSchoolInfoLoading ? <Skeleton className="h-7 w-48" /> : schoolInfo.name}
@@ -348,63 +287,6 @@ export function Header() {
       </Link>
       
       <div className="flex items-center gap-2 sm:gap-4">
-        {user && (
-            <Dialog open={searchOpen} onOpenChange={handleSearchOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full bg-white/10 hover:bg-white/20 text-white">
-                        <Search className="h-5 w-5" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>শিক্ষার্থী খুঁজুন</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <Input 
-                            placeholder="নাম বা রোল লিখে খুঁজুন..." 
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            autoFocus
-                        />
-                        <div className="space-y-2">
-                            {isSearching ? (
-                                <p className="text-center text-sm text-muted-foreground py-4">ডাটা লোড হচ্ছে...</p>
-                            ) : filteredResults.length > 0 ? (
-                                <div className="max-h-[300px] overflow-y-auto pr-2">
-                                    {filteredResults.map(s => (
-                                        <div 
-                                            key={s.id} 
-                                            className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer transition-colors mb-2 last:mb-0"
-                                            onClick={() => {
-                                                setSelectedStudent(s);
-                                                setIsProfileDialogOpen(true);
-                                                setSearchOpen(false);
-                                                setSearchQuery('');
-                                            }}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={s.photoUrl} />
-                                                    <AvatarFallback>{s.studentNameBn?.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="text-sm font-bold">{s.studentNameBn}</p>
-                                                    <p className="text-[10px] text-muted-foreground">রোল: {s.roll.toLocaleString('bn-BD')} | শ্রেণি: {s.className}</p>
-                                                </div>
-                                            </div>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4 rotate-180" /></Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : searchQuery.trim() ? (
-                                <p className="text-center text-sm text-muted-foreground py-4">কোনো তথ্য পাওয়া যায়নি।</p>
-                            ) : null}
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        )}
-
         {authLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -439,42 +321,5 @@ export function Header() {
         )}
       </div>
     </header>
-    <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent>
-            {selectedStudent && (
-                <>
-                    <DialogHeader>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-20 w-20">
-                                <AvatarImage src={selectedStudent.photoUrl} />
-                                <AvatarFallback>{selectedStudent.studentNameBn?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <DialogTitle className="text-2xl">{selectedStudent.studentNameBn}</DialogTitle>
-                                <DialogDescription>
-                                    রোল: {selectedStudent.roll.toLocaleString('bn-BD')} | শ্রেণি: {selectedStudent.className}
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
-                    <div className="grid grid-cols-2 gap-4 py-4">
-                        <Button variant="outline" onClick={() => { router.push(`/student-list?class=${selectedStudent.className}&highlight=${selectedStudent.id}`); setIsProfileDialogOpen(false); }}>
-                            <User className="mr-2 h-4 w-4" /> প্রোফাইল দেখুন
-                        </Button>
-                        <Button variant="outline" onClick={() => { router.push(`/student-profile?roll=${selectedStudent.roll}&className=${selectedStudent.className}`); setIsProfileDialogOpen(false); }}>
-                            <Banknote className="mr-2 h-4 w-4" /> ফি ও হাজিরা
-                        </Button>
-                        <Button variant="outline" onClick={() => { router.push(`/marksheet/${selectedStudent.id}?academicYear=${selectedStudent.academicYear}`); setIsProfileDialogOpen(false); }}>
-                            <BookMarked className="mr-2 h-4 w-4" /> মার্কশিট
-                        </Button>
-                        <Button variant="outline" onClick={() => { router.push(`/documents/testimonial/${selectedStudent.id}`); setIsProfileDialogOpen(false); }}>
-                            <FileText className="mr-2 h-4 w-4" /> প্রত্যয়ন পত্র
-                        </Button>
-                    </div>
-                </>
-            )}
-        </DialogContent>
-    </Dialog>
-    </>
   );
 }

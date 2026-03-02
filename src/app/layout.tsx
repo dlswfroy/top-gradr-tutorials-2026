@@ -8,10 +8,13 @@ import { SchoolInfoProvider } from '@/context/SchoolInfoContext';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthProvider } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-import { APP_ICON_URL, defaultSchoolInfo } from '@/lib/school-info';
+import { BottomNav } from '@/components/BottomNav';
+
+const APP_NAME = 'টপ গ্রেড টিউটোরিয়ালস';
+const APP_ICON_URL = 'https://i.postimg.cc/9Q6mY71p/logo.png';
 
 export const metadata: Metadata = {
-  title: `${defaultSchoolInfo.name} - ম্যানেজমেন্ট সিস্টেম`,
+  title: `${APP_NAME} - ম্যানেজমেন্ট সিস্টেম`,
   description: 'টপ গ্রেড টিউটোরিয়ালস এর একটি কেন্দ্রীয় শিক্ষা ব্যবস্থাপনা পোর্টাল।',
   manifest: '/manifest.webmanifest',
   icons: {
@@ -40,17 +43,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bn">
-      <body className={cn("font-body antialiased", noto_sans_bengali.variable, pt_sans.variable)}>
+      <body className={cn("font-body antialiased pb-16 md:pb-0", noto_sans_bengali.variable, pt_sans.variable)}>
         <FirebaseClientProvider>
           <AuthProvider>
             <SchoolInfoProvider>
               <AcademicYearProvider>
                 {children}
+                <Toaster />
+                <BottomNav />
               </AcademicYearProvider>
             </SchoolInfoProvider>
           </AuthProvider>
         </FirebaseClientProvider>
-        <Toaster />
       </body>
     </html>
   );
