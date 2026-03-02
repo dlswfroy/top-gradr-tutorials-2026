@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import {
-    LayoutDashboard,
+    ArrowLeft,
     Users,
     CalendarCheck,
     Search,
@@ -12,7 +13,7 @@ import {
     User,
     FileText
 } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,6 @@ import { useFirestore } from '@/firebase';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Student, studentFromDoc } from '@/lib/student-data';
-import { useRouter } from 'next/navigation';
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
     const pathname = usePathname();
@@ -104,7 +104,10 @@ export function BottomNav() {
         <>
             <div className="fixed bottom-0 left-0 right-0 z-40 h-16 bg-sky-500 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden">
                 <div className="grid h-full grid-cols-7 items-center">
-                    <NavLink href="/" icon={LayoutDashboard} label="ড্যাসবোর্ড" />
+                    <button onClick={() => router.back()} className="flex flex-col items-center justify-center gap-1 text-white/60 transition-colors hover:text-white/80">
+                        <ArrowLeft className="h-5 w-5" />
+                        <span className="text-[10px] font-medium">ফেরত</span>
+                    </button>
                     <NavLink href="/student-list" icon={Users} label="শিক্ষার্থী" />
                     <NavLink href="/attendance" icon={CalendarCheck} label="হাজিরা" />
                     

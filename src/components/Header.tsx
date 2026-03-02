@@ -1,9 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ArrowLeft,
   Menu,
   LayoutDashboard,
   UserPlus,
@@ -106,10 +106,6 @@ export function Header() {
       <div className="flex items-center gap-2">
         {user && (
           <>
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0 rounded-lg text-white hover:bg-white/20 md:hidden">
-              <ArrowLeft className="h-6 w-6" />
-              <span className="sr-only">Go back</span>
-            </Button>
             {isClient ? (
             <Sheet>
               <SheetTrigger asChild>
