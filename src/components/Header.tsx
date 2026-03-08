@@ -102,7 +102,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
+    <header className="sticky top-0 z-30 flex h-24 items-center justify-between gap-4 border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
       <div className="flex items-center gap-4">
         {user && (
           <>
@@ -273,12 +273,12 @@ export function Header() {
         )}
       </div>
       
-      <div className="flex-1 flex items-center justify-center min-w-0">
+      <div className="flex-1 flex items-center min-w-0">
         <Link href="/" className="flex items-center gap-3">
           {isSchoolInfoLoading ? <Skeleton className="h-[78px] w-[78px] rounded-full flex-shrink-0" /> : (schoolInfo.logoUrl && (
             <Image src={schoolInfo.logoUrl} alt="School Logo" width={78} height={78} className="rounded-full flex-shrink-0" />
           ))}
-          <h1 className="text-2xl md:text-5xl font-bold whitespace-nowrap drop-shadow-md truncate">
+          <h1 className="text-xl md:text-5xl font-bold whitespace-nowrap drop-shadow-md truncate">
             {isSchoolInfoLoading ? <Skeleton className="h-10 w-72" /> : schoolInfo.name}
           </h1>
         </Link>
