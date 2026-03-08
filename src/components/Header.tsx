@@ -275,11 +275,11 @@ export function Header() {
       
       <div className="flex-1 flex items-center justify-center min-w-0">
         <Link href="/" className="flex items-center gap-3">
-          {isSchoolInfoLoading ? <Skeleton className="h-[53px] w-[53px] rounded-full flex-shrink-0" /> : (schoolInfo.logoUrl && (
-            <Image src={schoolInfo.logoUrl} alt="School Logo" width={60} height={60} className="rounded-full flex-shrink-0" />
+          {isSchoolInfoLoading ? <Skeleton className="h-[78px] w-[78px] rounded-full flex-shrink-0" /> : (schoolInfo.logoUrl && (
+            <Image src={schoolInfo.logoUrl} alt="School Logo" width={78} height={78} className="rounded-full flex-shrink-0" />
           ))}
-          <h1 className="text-xl md:text-4xl font-bold whitespace-nowrap drop-shadow-md truncate">
-            {isSchoolInfoLoading ? <Skeleton className="h-8 w-56" /> : schoolInfo.name}
+          <h1 className="text-2xl md:text-5xl font-bold whitespace-nowrap drop-shadow-md truncate">
+            {isSchoolInfoLoading ? <Skeleton className="h-10 w-72" /> : schoolInfo.name}
           </h1>
         </Link>
       </div>
