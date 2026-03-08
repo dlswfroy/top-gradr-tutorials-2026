@@ -102,7 +102,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-24 items-center justify-between gap-4 border-b bg-sky-500 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
+    <header className="sticky top-0 z-30 flex h-24 items-center justify-between gap-4 border-b bg-sky-400 px-4 text-white shadow-sm sm:px-6 md:px-8 no-print">
       <div className="flex items-center gap-4">
         {user && (
           <>

@@ -102,7 +102,7 @@ export function BottomNav() {
 
     return (
         <>
-            <div className="fixed bottom-0 left-0 right-0 z-40 h-16 bg-sky-500 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden">
+            <div className="fixed bottom-0 left-0 right-0 z-40 h-16 bg-sky-400 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden">
                 <div className="grid h-full grid-cols-7 items-center">
                     <button onClick={() => router.back()} className="flex flex-col items-center justify-center gap-1 text-white/60 transition-colors hover:text-white/80">
                         <ArrowLeft className="h-5 w-5" />
@@ -114,7 +114,7 @@ export function BottomNav() {
                     <Dialog open={searchOpen} onOpenChange={handleSearchOpen}>
                         <DialogTrigger asChild>
                             <div className="flex justify-center">
-                                <button className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-white text-sky-500 shadow-lg ring-4 ring-sky-500">
+                                <button className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-white text-sky-400 shadow-lg ring-4 ring-sky-400">
                                     <Search className="h-7 w-7" />
                                 </button>
                             </div>
